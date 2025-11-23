@@ -5,7 +5,7 @@ export interface FamilyMember {
   role: 'parent' | 'child';
   avatar?: string;
   coins: number;
-  color?: string;
+  color: string;
 }
 
 export interface Task {
@@ -33,7 +33,7 @@ export interface Appointment {
   title: string;
   date: Date;
   time: string;
-  assignedTo: string;
+  assignedTo: string[];
   color: string;
   repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
   description?: string;
@@ -56,6 +56,7 @@ export interface Expense {
   name: string;
   amount: number;
   category: 'fixed' | 'variable';
+  variableCategory?: 'boodschappen' | 'benzine' | 'kleding' | 'entertainment' | 'overig';
   date: Date;
   paid: boolean;
   recurring?: boolean;

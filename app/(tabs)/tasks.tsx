@@ -22,10 +22,8 @@ export default function TasksScreen() {
   const isParent = currentUser?.role === 'parent';
   const children = familyMembers.filter(m => m.role === 'child');
 
-  // Filter tasks based on current user
-  const visibleTasks = isParent 
-    ? tasks 
-    : tasks.filter(t => t.assignedTo === currentUser?.id);
+  // Filter tasks: children see only their own, parents see only their own
+  const visibleTasks = tasks.filter(t => t.assignedTo === currentUser?.id);
 
   const handleCompleteTask = (taskId: string, coins: number) => {
     setCompletedTaskCoins(coins);
@@ -65,14 +63,9 @@ export default function TasksScreen() {
     Alert.alert('Gelukt!', 'Taak toegevoegd');
   };
 
-  const groupedTasks = children.map(child => ({
-    child,
-    tasks: visibleTasks.filter(t => t.assignedTo === child.id),
-  }));
-
   // If child, show only their tasks with weather widget
   if (!isParent && currentUser) {
-    const myTasks = visibleTasks.filter(t => t.assignedTo === currentUser.id);
+    const myTasks = visibleTasks;
     
     return (
       <View style={styles.container}>
@@ -149,7 +142,12 @@ export default function TasksScreen() {
     );
   }
 
-  // Parent view
+  // Parent view - show all children's tasks grouped
+  const groupedTasks = children.map(child => ({
+    child,
+    tasks: tasks.filter(t => t.assignedTo === child.id),
+  }));
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -268,6 +266,7 @@ export default function TasksScreen() {
                 selectedIcon={newTaskIcon}
                 onSelectIcon={setNewTaskIcon}
                 type="task"
+                taskName={newTaskName}
               />
 
               <TextInput

@@ -12,13 +12,13 @@ interface IconOption {
 
 const TASK_ICONS: IconOption[] = [
   { ios: 'bed', android: 'bed', label: 'Bed opmaken' },
-  { ios: 'water-drop', android: 'water-drop', label: 'Tanden poetsen' },
+  { ios: 'toothbrush', android: 'brush', label: 'Tanden poetsen' },
   { ios: 'checkmark-shirt', android: 'checkroom', label: 'Kleding klaarleggen' },
-  { ios: 'tshirt', android: 'dry-cleaning', label: 'Kleding in wasmand' },
+  { ios: 'basket', android: 'shopping-basket', label: 'Kleding in wasmand' },
   { ios: 'backpack', android: 'school', label: 'Schooltas pakken' },
   { ios: 'bag', android: 'shopping-bag', label: 'Schooltas uitpakken' },
   { ios: 'book', android: 'book', label: 'Huiswerk' },
-  { ios: 'sparkles', android: 'auto-awesome', label: 'Kamer opruimen' },
+  { ios: 'toy-brick', android: 'toys', label: 'Kamer opruimen' },
   { ios: 'toys', android: 'toys', label: 'Speelgoed' },
   { ios: 'restaurant', android: 'restaurant', label: 'Eten' },
   { ios: 'checkmark', android: 'check', label: 'Vinkje' },
@@ -58,16 +58,88 @@ const HOUSEHOLD_ICONS: IconOption[] = [
   { ios: 'wrench', android: 'handyman', label: 'Repareren' },
   { ios: 'screwdriver', android: 'construction', label: 'Ophangen' },
   { ios: 'paintbrush', android: 'format-paint', label: 'Schilderen' },
+  { ios: 'mop', android: 'cleaning-services', label: 'Dweilen' },
+  { ios: 'vacuum', android: 'vacuum', label: 'Stofzuigen' },
 ];
 
 interface IconPickerProps {
   selectedIcon: string;
   onSelectIcon: (icon: string) => void;
   type?: 'task' | 'household';
+  taskName?: string;
 }
 
-export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task' }: IconPickerProps) {
+// Function to suggest icon based on task name
+const suggestIcon = (taskName: string, type: 'task' | 'household'): string => {
+  const name = taskName.toLowerCase();
   const icons = type === 'household' ? HOUSEHOLD_ICONS : TASK_ICONS;
+  
+  // Common keywords mapping
+  const keywords: { [key: string]: string } = {
+    // Task keywords
+    'tanden': 'brush',
+    'poetsen': 'brush',
+    'tandenborstel': 'brush',
+    'bed': 'bed',
+    'opmaken': 'bed',
+    'kleding': 'checkroom',
+    'kleren': 'checkroom',
+    'wasmand': 'shopping-basket',
+    'was': 'shopping-basket',
+    'schooltas': 'school',
+    'rugtas': 'school',
+    'tas': 'school',
+    'school': 'school',
+    'huiswerk': 'book',
+    'leren': 'book',
+    'kamer': 'toys',
+    'opruimen': 'toys',
+    'speelgoed': 'toys',
+    'eten': 'restaurant',
+    'maaltijd': 'restaurant',
+    
+    // Household keywords
+    'dweilen': 'cleaning-services',
+    'dweil': 'cleaning-services',
+    'stofzuigen': 'vacuum',
+    'stofzuiger': 'vacuum',
+    'schoonmaken': 'auto-awesome',
+    'schoon': 'auto-awesome',
+    'afval': 'delete',
+    'vuilnis': 'delete',
+    'keuken': 'kitchen',
+    'badkamer': 'shower',
+    'planten': 'eco',
+    'tuin': 'eco',
+    'auto': 'directions-car',
+    'klussen': 'build',
+    'repareren': 'handyman',
+    'ophangen': 'construction',
+  };
+  
+  // Check for keyword matches
+  for (const [keyword, iconName] of Object.entries(keywords)) {
+    if (name.includes(keyword)) {
+      return iconName;
+    }
+  }
+  
+  // Default icons
+  return type === 'household' ? 'home' : 'check';
+};
+
+export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', taskName = '' }: IconPickerProps) {
+  const icons = type === 'household' ? HOUSEHOLD_ICONS : TASK_ICONS;
+  
+  // Suggest icon when task name changes
+  React.useEffect(() => {
+    if (taskName && taskName.trim().length > 2) {
+      const suggested = suggestIcon(taskName, type);
+      if (suggested !== selectedIcon) {
+        onSelectIcon(suggested);
+      }
+    }
+  }, [taskName]);
 
   return (
     <View style={styles.container}>

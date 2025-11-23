@@ -22,6 +22,7 @@ interface FamilyContextType {
   setCurrentUser: (user: FamilyMember | null) => void;
   setFinancePasscode: (passcode: string) => void;
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
+  updateFamilyMember: (memberId: string, updates: Partial<FamilyMember>) => void;
   completeTask: (taskId: string) => void;
   addCoins: (memberId: string, amount: number) => void;
   redeemReward: (memberId: string, rewardId: string) => void;
@@ -81,6 +82,14 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       id: Date.now().toString(),
     };
     setFamilyMembers(prev => [...prev, newMember]);
+  };
+
+  const updateFamilyMember = (memberId: string, updates: Partial<FamilyMember>) => {
+    setFamilyMembers(prev =>
+      prev.map(member =>
+        member.id === memberId ? { ...member, ...updates } : member
+      )
+    );
   };
 
   const completeTask = (taskId: string) => {
@@ -226,9 +235,10 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     setReceipts(prev => [...prev, newReceipt]);
     
     addExpense({
-      name: 'Bonnetje',
+      name: receipt.category || 'Bonnetje',
       amount: receipt.amount,
       category: 'variable',
+      variableCategory: (receipt.category?.toLowerCase() as any) || 'overig',
       date: receipt.date,
       paid: true,
       recurring: false,
@@ -339,6 +349,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         setCurrentUser,
         setFinancePasscode,
         addFamilyMember,
+        updateFamilyMember,
         completeTask,
         addCoins,
         redeemReward,

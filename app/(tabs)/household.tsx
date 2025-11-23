@@ -176,7 +176,7 @@ export default function HouseholdScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Taaknaam (bijv. Stofzuigen)"
+                placeholder="Taaknaam (bijv. Stofzuigen, Dweilen)"
                 placeholderTextColor={colors.textSecondary}
                 value={newTaskName}
                 onChangeText={setNewTaskName}
@@ -186,6 +186,7 @@ export default function HouseholdScreen() {
                 selectedIcon={newTaskIcon}
                 onSelectIcon={setNewTaskIcon}
                 type="household"
+                taskName={newTaskName}
               />
 
               <Text style={styles.inputLabel}>Toewijzen aan:</Text>

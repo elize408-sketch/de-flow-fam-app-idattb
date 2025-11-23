@@ -12,10 +12,20 @@ export default function AgendaScreen() {
   const [newAppointmentTitle, setNewAppointmentTitle] = useState('');
   const [newAppointmentDate, setNewAppointmentDate] = useState(new Date());
   const [newAppointmentTime, setNewAppointmentTime] = useState('10:00');
-  const [newAppointmentAssignedTo, setNewAppointmentAssignedTo] = useState('');
+  const [newAppointmentAssignedTo, setNewAppointmentAssignedTo] = useState<string[]>([]);
   const [newAppointmentRepeat, setNewAppointmentRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const toggleMemberSelection = (memberId: string) => {
+    setNewAppointmentAssignedTo(prev => {
+      if (prev.includes(memberId)) {
+        return prev.filter(id => id !== memberId);
+      } else {
+        return [...prev, memberId];
+      }
+    });
+  };
 
   const handleAddAppointment = () => {
     if (!newAppointmentTitle.trim()) {
@@ -23,26 +33,28 @@ export default function AgendaScreen() {
       return;
     }
 
-    if (!newAppointmentAssignedTo) {
-      Alert.alert('Fout', 'Selecteer een gezinslid');
+    if (newAppointmentAssignedTo.length === 0) {
+      Alert.alert('Fout', 'Selecteer minimaal één gezinslid');
       return;
     }
 
-    const member = familyMembers.find(m => m.id === newAppointmentAssignedTo);
+    // Use the first selected member's color, or mix colors if multiple
+    const firstMember = familyMembers.find(m => m.id === newAppointmentAssignedTo[0]);
+    const appointmentColor = firstMember?.color || colors.accent;
 
     addAppointment({
       title: newAppointmentTitle.trim(),
       date: newAppointmentDate,
       time: newAppointmentTime,
       assignedTo: newAppointmentAssignedTo,
-      color: member?.color || colors.accent,
+      color: appointmentColor,
       repeatType: newAppointmentRepeat,
     });
 
     setNewAppointmentTitle('');
     setNewAppointmentDate(new Date());
     setNewAppointmentTime('10:00');
-    setNewAppointmentAssignedTo('');
+    setNewAppointmentAssignedTo([]);
     setNewAppointmentRepeat('none');
     setShowAddModal(false);
     Alert.alert('Gelukt!', 'Afspraak toegevoegd');
@@ -182,7 +194,7 @@ export default function AgendaScreen() {
             appointments
               .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
               .map((appointment, index) => {
-                const member = familyMembers.find(m => m.id === appointment.assignedTo);
+                const members = familyMembers.filter(m => appointment.assignedTo.includes(m.id));
                 return (
                   <React.Fragment key={index}>
                     <View style={[styles.appointmentCard, { borderLeftColor: appointment.color, borderLeftWidth: 4 }]}>
@@ -191,9 +203,17 @@ export default function AgendaScreen() {
                         <Text style={styles.appointmentMeta}>
                           📅 {new Date(appointment.date).toLocaleDateString('nl-NL')} om {appointment.time}
                         </Text>
-                        <Text style={styles.appointmentMeta}>
-                          👤 {member?.name || 'Onbekend'}
-                        </Text>
+                        <View style={styles.membersRow}>
+                          <Text style={styles.appointmentMeta}>👥 </Text>
+                          {members.map((member, mIndex) => (
+                            <React.Fragment key={mIndex}>
+                              <View style={[styles.memberBadge, { backgroundColor: member.color }]}>
+                                <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
+                              </View>
+                            </React.Fragment>
+                          ))}
+                          <Text style={styles.appointmentMeta}> {members.map(m => m.name).join(', ')}</Text>
+                        </View>
                         {appointment.repeatType !== 'none' && (
                           <Text style={styles.appointmentMeta}>
                             🔄 {appointment.repeatType === 'daily' && 'Dagelijks'}
@@ -237,112 +257,131 @@ export default function AgendaScreen() {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nieuwe afspraak</Text>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Nieuwe afspraak</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Titel"
-              placeholderTextColor={colors.textSecondary}
-              value={newAppointmentTitle}
-              onChangeText={setNewAppointmentTitle}
-            />
-
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.dateButtonText}>
-                📅 {newAppointmentDate.toLocaleDateString('nl-NL')}
-              </Text>
-            </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={newAppointmentDate}
-                mode="date"
-                display="default"
-                onChange={(event, selectedDate) => {
-                  setShowDatePicker(false);
-                  if (selectedDate) {
-                    setNewAppointmentDate(selectedDate);
-                  }
-                }}
+              <TextInput
+                style={styles.input}
+                placeholder="Titel"
+                placeholderTextColor={colors.textSecondary}
+                value={newAppointmentTitle}
+                onChangeText={setNewAppointmentTitle}
               />
-            )}
 
-            <TextInput
-              style={styles.input}
-              placeholder="Tijd (bijv. 10:00)"
-              placeholderTextColor={colors.textSecondary}
-              value={newAppointmentTime}
-              onChangeText={setNewAppointmentTime}
-            />
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateButtonText}>
+                  📅 {newAppointmentDate.toLocaleDateString('nl-NL')}
+                </Text>
+              </TouchableOpacity>
 
-            <Text style={styles.inputLabel}>Voor wie:</Text>
-            <View style={styles.memberSelector}>
-              {familyMembers.map((member, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={[
-                      styles.memberOption,
-                      newAppointmentAssignedTo === member.id && styles.memberOptionActive,
-                    ]}
-                    onPress={() => setNewAppointmentAssignedTo(member.id)}
-                  >
-                    <View style={[styles.memberAvatar, { backgroundColor: member.color || colors.accent }]}>
-                      <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
-                    </View>
-                    <Text style={styles.memberName}>{member.name}</Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={newAppointmentDate}
+                  mode="date"
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) {
+                      setNewAppointmentDate(selectedDate);
+                    }
+                  }}
+                />
+              )}
 
-            <Text style={styles.inputLabel}>Herhaling:</Text>
-            <View style={styles.repeatSelector}>
-              {[
-                { value: 'none', label: 'Geen' },
-                { value: 'daily', label: 'Dagelijks' },
-                { value: 'weekly', label: 'Wekelijks' },
-                { value: 'monthly', label: 'Maandelijks' },
-              ].map((option, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={[
-                      styles.repeatOption,
-                      newAppointmentRepeat === option.value && styles.repeatOptionActive,
-                    ]}
-                    onPress={() => setNewAppointmentRepeat(option.value as any)}
-                  >
-                    <Text
+              <TextInput
+                style={styles.input}
+                placeholder="Tijd (bijv. 10:00)"
+                placeholderTextColor={colors.textSecondary}
+                value={newAppointmentTime}
+                onChangeText={setNewAppointmentTime}
+              />
+
+              <Text style={styles.inputLabel}>Voor wie: (meerdere mogelijk)</Text>
+              <View style={styles.memberSelector}>
+                {familyMembers.map((member, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
                       style={[
-                        styles.repeatOptionText,
-                        newAppointmentRepeat === option.value && styles.repeatOptionTextActive,
+                        styles.memberOption,
+                        newAppointmentAssignedTo.includes(member.id) && styles.memberOptionActive,
                       ]}
+                      onPress={() => toggleMemberSelection(member.id)}
                     >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
+                      <View style={[styles.memberAvatar, { backgroundColor: member.color || colors.accent }]}>
+                        <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
+                      </View>
+                      <Text style={styles.memberName}>{member.name}</Text>
+                      {newAppointmentAssignedTo.includes(member.id) && (
+                        <View style={styles.checkmark}>
+                          <IconSymbol
+                            ios_icon_name="checkmark"
+                            android_material_icon_name="check"
+                            size={16}
+                            color={colors.accent}
+                          />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => setShowAddModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Annuleren</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleAddAppointment}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
-              </TouchableOpacity>
+              <Text style={styles.inputLabel}>Herhaling:</Text>
+              <View style={styles.repeatSelector}>
+                {[
+                  { value: 'none', label: 'Geen' },
+                  { value: 'daily', label: 'Dagelijks' },
+                  { value: 'weekly', label: 'Wekelijks' },
+                  { value: 'monthly', label: 'Maandelijks' },
+                ].map((option, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.repeatOption,
+                        newAppointmentRepeat === option.value && styles.repeatOptionActive,
+                      ]}
+                      onPress={() => setNewAppointmentRepeat(option.value as any)}
+                    >
+                      <Text
+                        style={[
+                          styles.repeatOptionText,
+                          newAppointmentRepeat === option.value && styles.repeatOptionTextActive,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowAddModal(false);
+                    setNewAppointmentTitle('');
+                    setNewAppointmentDate(new Date());
+                    setNewAppointmentTime('10:00');
+                    setNewAppointmentAssignedTo([]);
+                    setNewAppointmentRepeat('none');
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleAddAppointment}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -512,6 +551,26 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     fontFamily: 'Nunito_400Regular',
   },
+  membersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+    flexWrap: 'wrap',
+  },
+  memberBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 4,
+  },
+  memberBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
   deleteButton: {
     padding: 10,
   },
@@ -519,8 +578,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   modalContent: {
     backgroundColor: colors.card,
@@ -528,7 +590,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '100%',
     maxWidth: 400,
-    maxHeight: '90%',
+    alignSelf: 'center',
     boxShadow: `0px 8px 24px ${colors.shadow}`,
     elevation: 5,
   },
@@ -581,6 +643,7 @@ const styles = StyleSheet.create({
     minWidth: 70,
     borderWidth: 2,
     borderColor: 'transparent',
+    position: 'relative',
   },
   memberOptionActive: {
     borderColor: colors.accent,
@@ -605,6 +668,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  checkmark: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   repeatSelector: {
     flexDirection: 'row',
