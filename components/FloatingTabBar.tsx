@@ -42,7 +42,7 @@ interface FloatingTabBarProps {
 export default function FloatingTabBar({
   tabs,
   containerWidth = screenWidth * 0.95,
-  borderRadius = 20,
+  borderRadius = 16,
   bottomMargin
 }: FloatingTabBarProps) {
   const router = useRouter();
@@ -90,14 +90,14 @@ export default function FloatingTabBar({
     router.push(route);
   };
 
-  // Determine if we need to stack tabs vertically
-  const needsVerticalLayout = tabs.length > 5;
-  const tabsPerRow = needsVerticalLayout ? Math.ceil(tabs.length / 2) : tabs.length;
-  const tabWidthPercent = ((100 / tabsPerRow) - 1).toFixed(2);
+  // Determine layout based on number of tabs
+  const needsGridLayout = tabs.length > 5;
+  const tabsPerRow = needsGridLayout ? 4 : tabs.length;
+  const tabWidthPercent = needsGridLayout ? 25 : ((100 / tabs.length) - 1);
 
   const indicatorStyle = useAnimatedStyle(() => {
-    if (needsVerticalLayout) {
-      // For vertical layout, don't show indicator
+    if (needsGridLayout) {
+      // For grid layout, don't show sliding indicator
       return { opacity: 0 };
     }
     const tabWidth = (containerWidth - 8) / tabs.length;
@@ -156,10 +156,10 @@ export default function FloatingTabBar({
           style={[dynamicStyles.blurContainer, { borderRadius }]}
         >
           <View style={dynamicStyles.background} />
-          {!needsVerticalLayout && <Animated.View style={[dynamicStyles.indicator, indicatorStyle]} />}
+          {!needsGridLayout && <Animated.View style={[dynamicStyles.indicator, indicatorStyle]} />}
           <View style={[
             styles.tabsContainer,
-            needsVerticalLayout && styles.tabsContainerVertical
+            needsGridLayout && styles.tabsContainerGrid
           ]}>
             {tabs.map((tab, index) => {
               const isActive = activeTabIndex === index;
@@ -169,8 +169,8 @@ export default function FloatingTabBar({
                   <TouchableOpacity
                     style={[
                       styles.tab,
-                      needsVerticalLayout && styles.tabVertical,
-                      isActive && needsVerticalLayout && styles.tabVerticalActive
+                      needsGridLayout && styles.tabGrid,
+                      isActive && needsGridLayout && styles.tabGridActive
                     ]}
                     onPress={() => handleTabPress(tab.route)}
                     activeOpacity={0.7}
@@ -179,19 +179,20 @@ export default function FloatingTabBar({
                       <IconSymbol
                         android_material_icon_name={tab.icon}
                         ios_icon_name={tab.icon}
-                        size={needsVerticalLayout ? 20 : 24}
-                        color={isActive ? (needsVerticalLayout ? colors.vibrantOrange : colors.card) : colors.text}
+                        size={needsGridLayout ? 22 : 24}
+                        color={isActive ? (needsGridLayout ? colors.vibrantOrange : colors.card) : colors.text}
                       />
                       <Text
                         style={[
                           styles.tabLabel,
-                          needsVerticalLayout && styles.tabLabelVertical,
+                          needsGridLayout && styles.tabLabelGrid,
                           { color: colors.text },
-                          isActive && !needsVerticalLayout && { color: colors.card, fontWeight: '700' },
-                          isActive && needsVerticalLayout && { color: colors.vibrantOrange, fontWeight: '700' },
+                          isActive && !needsGridLayout && { color: colors.card, fontWeight: '700' },
+                          isActive && needsGridLayout && { color: colors.vibrantOrange, fontWeight: '700' },
                         ]}
                         numberOfLines={1}
                         adjustsFontSizeToFit
+                        minimumFontScale={0.7}
                       >
                         {tab.label}
                       </Text>
@@ -232,7 +233,6 @@ const styles = StyleSheet.create({
     left: 2,
     bottom: 4,
     borderRadius: 16,
-    width: `${(100 / 2) - 1}%`,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -240,12 +240,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  tabsContainerVertical: {
+  tabsContainerGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     height: 'auto',
-    minHeight: 100,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    justifyContent: 'flex-start',
   },
   tab: {
     flex: 1,
@@ -253,29 +254,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
   },
-  tabVertical: {
+  tabGrid: {
     flex: 0,
     width: '25%',
-    paddingVertical: 6,
+    paddingVertical: 10,
     paddingHorizontal: 4,
-    marginVertical: 2,
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  tabVerticalActive: {
-    backgroundColor: colors.primary,
+  tabGridActive: {
+    backgroundColor: 'rgba(213, 160, 147, 0.15)',
     borderRadius: 12,
   },
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: 4,
   },
   tabLabel: {
     fontSize: 9,
     fontWeight: '500',
     marginTop: 2,
+    textAlign: 'center',
   },
-  tabLabelVertical: {
-    fontSize: 8,
-    marginTop: 1,
+  tabLabelGrid: {
+    fontSize: 10,
+    marginTop: 3,
+    textAlign: 'center',
   },
 });
