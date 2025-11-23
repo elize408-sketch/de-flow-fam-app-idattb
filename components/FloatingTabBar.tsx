@@ -92,8 +92,8 @@ export default function FloatingTabBar({
 
   // Determine layout based on number of tabs
   const needsGridLayout = tabs.length > 5;
-  const tabsPerRow = needsGridLayout ? 4 : tabs.length;
-  const tabWidthPercent = needsGridLayout ? 25 : ((100 / tabs.length) - 1);
+  const tabsPerRow = needsGridLayout ? 3 : tabs.length; // 3 items per row for grid
+  const tabWidthPercent = needsGridLayout ? 33.33 : ((100 / tabs.length) - 1);
 
   const indicatorStyle = useAnimatedStyle(() => {
     if (needsGridLayout) {
@@ -179,7 +179,7 @@ export default function FloatingTabBar({
                       <IconSymbol
                         android_material_icon_name={tab.icon}
                         ios_icon_name={tab.icon}
-                        size={needsGridLayout ? 22 : 24}
+                        size={24}
                         color={isActive ? (needsGridLayout ? colors.vibrantOrange : colors.card) : colors.text}
                       />
                       <Text
@@ -191,8 +191,7 @@ export default function FloatingTabBar({
                           isActive && needsGridLayout && { color: colors.vibrantOrange, fontWeight: '700' },
                         ]}
                         numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.7}
+                        ellipsizeMode="tail"
                       >
                         {tab.label}
                       </Text>
@@ -244,8 +243,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     height: 'auto',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
     justifyContent: 'flex-start',
   },
   tab: {
@@ -256,12 +255,13 @@ const styles = StyleSheet.create({
   },
   tabGrid: {
     flex: 0,
-    width: '25%',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    marginBottom: 8,
+    width: '33.33%',
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    marginBottom: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 70,
   },
   tabGridActive: {
     backgroundColor: 'rgba(213, 160, 147, 0.15)',
@@ -270,7 +270,9 @@ const styles = StyleSheet.create({
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
+    width: '100%',
+    paddingHorizontal: 4,
   },
   tabLabel: {
     fontSize: 9,
@@ -279,8 +281,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tabLabelGrid: {
-    fontSize: 10,
-    marginTop: 3,
+    fontSize: 11,
+    marginTop: 4,
     textAlign: 'center',
+    width: '100%',
   },
 });
