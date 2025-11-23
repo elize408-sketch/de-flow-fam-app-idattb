@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -32,7 +32,11 @@ export default function HomeScreen() {
                   }}
                 >
                   <View style={styles.memberCardAvatar}>
-                    <Text style={styles.memberCardAvatarText}>{member.name.charAt(0)}</Text>
+                    {member.photoUri ? (
+                      <Image source={{ uri: member.photoUri }} style={styles.memberCardPhoto} />
+                    ) : (
+                      <Text style={styles.memberCardAvatarText}>{member.name.charAt(0)}</Text>
+                    )}
                   </View>
                   <Text style={styles.memberCardName}>{member.name}</Text>
                   <Text style={styles.memberCardRole}>
@@ -54,16 +58,21 @@ export default function HomeScreen() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Parent view - show overview of all family members
+  // Parent view - show their own tasks and appointments
   if (isParent) {
-    const children = familyMembers.filter(m => m.role === 'child');
+    const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
+    const myAppointments = appointments.filter(apt => {
+      const aptDate = new Date(apt.date);
+      aptDate.setHours(0, 0, 0, 0);
+      return apt.assignedTo.includes(currentUser.id) && aptDate.getTime() === today.getTime();
+    });
 
     return (
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
           <View style={styles.header}>
             <Text style={styles.title}>Flow Fam</Text>
-            <Text style={styles.subtitle}>Gezinsoverzicht</Text>
+            <Text style={styles.tagline}>Rust, overzicht en liefde in één gezinsapp</Text>
           </View>
 
           <TouchableOpacity 
@@ -72,7 +81,11 @@ export default function HomeScreen() {
           >
             <View style={styles.memberSelectorContent}>
               <View style={[styles.memberAvatar, { backgroundColor: memberColor }]}>
-                <Text style={styles.memberAvatarText}>{currentUser.name.charAt(0)}</Text>
+                {currentUser.photoUri ? (
+                  <Image source={{ uri: currentUser.photoUri }} style={styles.memberAvatarPhoto} />
+                ) : (
+                  <Text style={styles.memberAvatarText}>{currentUser.name.charAt(0)}</Text>
+                )}
               </View>
               <Text style={styles.memberSelectorName}>{currentUser.name}</Text>
               <IconSymbol 
@@ -87,107 +100,52 @@ export default function HomeScreen() {
           {/* Weather Widget */}
           <WeatherWidget />
 
-          {/* Per family member overview */}
-          {children.map((child, childIndex) => {
-            const childTasks = tasks.filter(t => 
-              t.assignedTo === child.id && 
-              !t.completed
-            );
-            const childAppointments = appointments.filter(apt => {
-              const aptDate = new Date(apt.date);
-              aptDate.setHours(0, 0, 0, 0);
-              return apt.assignedTo.includes(child.id) && aptDate.getTime() === today.getTime();
-            });
-
-            return (
-              <React.Fragment key={childIndex}>
-                <View style={[styles.childOverviewCard, { borderLeftColor: child.color, borderLeftWidth: 4 }]}>
-                  <View style={styles.childOverviewHeader}>
-                    <View style={[styles.childOverviewAvatar, { backgroundColor: child.color }]}>
-                      <Text style={styles.childOverviewAvatarText}>{child.name.charAt(0)}</Text>
-                    </View>
-                    <View style={styles.childOverviewInfo}>
-                      <Text style={styles.childOverviewName}>{child.name}</Text>
-                      <Text style={styles.childOverviewMeta}>
-                        {childTasks.length} taken • {childAppointments.length} afspraken vandaag
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Today's appointments */}
-                  {childAppointments.length > 0 && (
-                    <View style={styles.childOverviewSection}>
-                      <Text style={styles.childOverviewSectionTitle}>📅 Vandaag</Text>
-                      {childAppointments.map((apt, aptIndex) => (
-                        <React.Fragment key={aptIndex}>
-                          <View style={styles.miniAppointmentCard}>
-                            <Text style={styles.miniAppointmentTime}>{apt.time}</Text>
-                            <Text style={styles.miniAppointmentTitle}>{apt.title}</Text>
-                          </View>
-                        </React.Fragment>
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Today's tasks */}
-                  {childTasks.length > 0 && (
-                    <View style={styles.childOverviewSection}>
-                      <Text style={styles.childOverviewSectionTitle}>✅ Taken</Text>
-                      {childTasks.slice(0, 3).map((task, taskIndex) => (
-                        <React.Fragment key={taskIndex}>
-                          <View style={styles.miniTaskCard}>
-                            <IconSymbol
-                              ios_icon_name={task.icon}
-                              android_material_icon_name={task.icon as any}
-                              size={20}
-                              color={child.color}
-                            />
-                            <Text style={styles.miniTaskName}>{task.name}</Text>
-                            <Text style={styles.miniTaskCoins}>{task.coins}🪙</Text>
-                          </View>
-                        </React.Fragment>
-                      ))}
-                      {childTasks.length > 3 && (
-                        <Text style={styles.moreText}>+{childTasks.length - 3} meer...</Text>
-                      )}
-                    </View>
-                  )}
-
-                  {childTasks.length === 0 && childAppointments.length === 0 && (
-                    <Text style={styles.emptyOverviewText}>Geen taken of afspraken vandaag</Text>
-                  )}
-                </View>
-              </React.Fragment>
-            );
-          })}
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Snelle navigatie</Text>
-            <View style={styles.navigationGrid}>
-              {[
-                { title: 'Financiën', icon: 'account-balance-wallet', route: '/(tabs)/finances', color: colors.primary },
-                { title: 'Agenda', icon: 'calendar-today', route: '/(tabs)/agenda', color: colors.secondary },
-                { title: 'Taken', icon: 'check-circle', route: '/(tabs)/tasks', color: colors.accent },
-                { title: 'Huishouden', icon: 'home', route: '/(tabs)/household', color: colors.highlight },
-                { title: 'Maaltijden', icon: 'restaurant', route: '/(tabs)/meals', color: colors.primary },
-                { title: 'Herinneringen', icon: 'photo-library', route: '/(tabs)/memories', color: colors.secondary },
-              ].map((item, index) => (
+          {/* My appointments today */}
+          {myAppointments.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>📅 Mijn afspraken vandaag</Text>
+              {myAppointments.map((apt, index) => (
                 <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={[styles.navCard, { backgroundColor: item.color }]}
-                    onPress={() => router.push(item.route as any)}
-                  >
-                    <IconSymbol
-                      ios_icon_name={item.icon}
-                      android_material_icon_name={item.icon}
-                      size={28}
-                      color={colors.text}
-                    />
-                    <Text style={styles.navCardText}>{item.title}</Text>
-                  </TouchableOpacity>
+                  <View style={[styles.appointmentCard, { borderLeftColor: memberColor }]}>
+                    <Text style={styles.appointmentTime}>{apt.time}</Text>
+                    <Text style={styles.appointmentTitle}>{apt.title}</Text>
+                  </View>
                 </React.Fragment>
               ))}
             </View>
+          )}
+
+          {/* My tasks */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>✅ Mijn taken</Text>
+            {myTasks.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyEmoji}>✨</Text>
+                <Text style={styles.emptyText}>Geen taken vandaag!</Text>
+              </View>
+            ) : (
+              myTasks.map((task, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={styles.taskCard}
+                    onPress={() => router.push('/(tabs)/tasks')}
+                  >
+                    <View style={[styles.taskIcon, { backgroundColor: memberColor }]}>
+                      <IconSymbol
+                        ios_icon_name={task.icon}
+                        android_material_icon_name={task.icon as any}
+                        size={24}
+                        color={colors.card}
+                      />
+                    </View>
+                    <Text style={styles.taskName}>{task.name}</Text>
+                    <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
+                      <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
+                    </View>
+                  </TouchableOpacity>
+                </React.Fragment>
+              ))
+            )}
           </View>
         </ScrollView>
 
@@ -214,7 +172,11 @@ export default function HomeScreen() {
                     }}
                   >
                     <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
-                      <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
+                      {member.photoUri ? (
+                        <Image source={{ uri: member.photoUri }} style={styles.memberOptionPhoto} />
+                      ) : (
+                        <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
+                      )}
                     </View>
                     <View style={styles.memberOptionInfo}>
                       <Text style={styles.memberOptionName}>{member.name}</Text>
@@ -262,7 +224,11 @@ export default function HomeScreen() {
         >
           <View style={styles.memberSelectorContent}>
             <View style={[styles.memberAvatar, { backgroundColor: memberColor }]}>
-              <Text style={styles.memberAvatarText}>{currentUser.name.charAt(0)}</Text>
+              {currentUser.photoUri ? (
+                <Image source={{ uri: currentUser.photoUri }} style={styles.memberAvatarPhoto} />
+              ) : (
+                <Text style={styles.memberAvatarText}>{currentUser.name.charAt(0)}</Text>
+              )}
             </View>
             <Text style={styles.memberSelectorName}>{currentUser.name}</Text>
             <IconSymbol 
@@ -333,32 +299,6 @@ export default function HomeScreen() {
             ))
           )}
         </View>
-
-        {/* Quick navigation for children */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Meer</Text>
-          <View style={styles.navigationGrid}>
-            {[
-              { title: 'Taken', icon: 'check-circle', route: '/(tabs)/tasks', color: memberColor },
-              { title: 'Beloningen', icon: 'star', route: '/(tabs)/rewards', color: memberColor },
-            ].map((item, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
-                  style={[styles.navCard, { backgroundColor: item.color }]}
-                  onPress={() => router.push(item.route as any)}
-                >
-                  <IconSymbol
-                    ios_icon_name={item.icon}
-                    android_material_icon_name={item.icon}
-                    size={32}
-                    color={colors.card}
-                  />
-                  <Text style={[styles.navCardText, { color: colors.card }]}>{item.title}</Text>
-                </TouchableOpacity>
-              </React.Fragment>
-            ))}
-          </View>
-        </View>
       </ScrollView>
 
       <Modal
@@ -384,7 +324,11 @@ export default function HomeScreen() {
                   }}
                 >
                   <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
-                    <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
+                    {member.photoUri ? (
+                      <Image source={{ uri: member.photoUri }} style={styles.memberOptionPhoto} />
+                    ) : (
+                      <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
+                    )}
                   </View>
                   <View style={styles.memberOptionInfo}>
                     <Text style={styles.memberOptionName}>{member.name}</Text>
@@ -467,6 +411,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
+    overflow: 'hidden',
+  },
+  memberCardPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
   },
   memberCardAvatarText: {
     fontSize: 32,
@@ -496,6 +446,13 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
+  tagline: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 5,
+    fontStyle: 'italic',
+    fontFamily: 'Nunito_400Regular',
+  },
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
@@ -522,6 +479,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+    overflow: 'hidden',
+  },
+  memberAvatarPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
   },
   memberAvatarText: {
     fontSize: 24,
@@ -561,113 +524,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     fontFamily: 'Poppins_700Bold',
-  },
-  childOverviewCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  childOverviewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  childOverviewAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  childOverviewAvatarText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  childOverviewInfo: {
-    flex: 1,
-  },
-  childOverviewName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 5,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  childOverviewMeta: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  childOverviewSection: {
-    marginTop: 15,
-  },
-  childOverviewSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 10,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  miniAppointmentCard: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  miniAppointmentTime: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.accent,
-    marginRight: 10,
-    fontFamily: 'Poppins_700Bold',
-  },
-  miniAppointmentTitle: {
-    fontSize: 14,
-    color: colors.text,
-    flex: 1,
-    fontFamily: 'Nunito_400Regular',
-  },
-  miniTaskCard: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  miniTaskName: {
-    fontSize: 14,
-    color: colors.text,
-    flex: 1,
-    marginLeft: 10,
-    fontFamily: 'Nunito_400Regular',
-  },
-  miniTaskCoins: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.highlight,
-    fontFamily: 'Poppins_700Bold',
-  },
-  moreText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-  },
-  emptyOverviewText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    fontFamily: 'Nunito_400Regular',
   },
   section: {
     marginBottom: 30,
@@ -753,29 +609,6 @@ const styles = StyleSheet.create({
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
   },
-  navigationGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 15,
-  },
-  navCard: {
-    width: '47%',
-    aspectRatio: 1,
-    borderRadius: 20,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  navCardText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 10,
-    textAlign: 'center',
-    fontFamily: 'Poppins_600SemiBold',
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -815,6 +648,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+    overflow: 'hidden',
+  },
+  memberOptionPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
   },
   memberOptionAvatarText: {
     fontSize: 24,

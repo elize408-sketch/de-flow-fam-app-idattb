@@ -8,7 +8,7 @@ export default function TabLayout() {
   const { currentUser } = useFamily();
   const isParent = currentUser?.role === 'parent';
 
-  // Parent tabs - full menu
+  // Parent tabs - full menu with all options
   const parentTabs: TabBarItem[] = [
     {
       name: '(home)',
@@ -17,22 +17,34 @@ export default function TabLayout() {
       label: 'Home',
     },
     {
-      name: 'finances',
-      route: '/(tabs)/finances',
-      icon: 'account-balance-wallet',
-      label: 'Financiën',
-    },
-    {
       name: 'agenda',
       route: '/(tabs)/agenda',
       icon: 'calendar-today',
       label: 'Agenda',
     },
     {
-      name: 'tasks',
-      route: '/(tabs)/tasks',
-      icon: 'check-circle',
-      label: 'Taken',
+      name: 'household',
+      route: '/(tabs)/household',
+      icon: 'home-repair-service',
+      label: 'Huishouden',
+    },
+    {
+      name: 'meals',
+      route: '/(tabs)/meals',
+      icon: 'restaurant',
+      label: 'Maaltijden',
+    },
+    {
+      name: 'finances',
+      route: '/(tabs)/finances',
+      icon: 'account-balance-wallet',
+      label: 'Financiën',
+    },
+    {
+      name: 'memories',
+      route: '/(tabs)/memories',
+      icon: 'photo-library',
+      label: 'Herinneringen',
     },
     {
       name: 'profile',

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -20,9 +20,8 @@ export default function TasksScreen() {
   const [newTaskIcon, setNewTaskIcon] = useState('check');
 
   const isParent = currentUser?.role === 'parent';
-  const children = familyMembers.filter(m => m.role === 'child');
 
-  // Filter tasks: children see only their own, parents see only their own
+  // Filter tasks: everyone sees only their own tasks
   const visibleTasks = tasks.filter(t => t.assignedTo === currentUser?.id);
 
   const handleCompleteTask = (taskId: string, coins: number) => {
@@ -38,7 +37,7 @@ export default function TasksScreen() {
     }
 
     if (!newTaskAssignedTo) {
-      Alert.alert('Fout', 'Selecteer een kind');
+      Alert.alert('Fout', 'Selecteer een gezinslid');
       return;
     }
 
@@ -142,18 +141,13 @@ export default function TasksScreen() {
     );
   }
 
-  // Parent view - show all children's tasks grouped
-  const groupedTasks = children.map(child => ({
-    child,
-    tasks: tasks.filter(t => t.assignedTo === child.id),
-  }));
-
+  // Parent view - show their own tasks
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Taken</Text>
-          <Text style={styles.subtitle}>Overzicht van alle taken</Text>
+          <Text style={styles.title}>Mijn Taken</Text>
+          <Text style={styles.subtitle}>Beheer je eigen taken</Text>
         </View>
 
         {isParent && (
@@ -171,69 +165,51 @@ export default function TasksScreen() {
           </TouchableOpacity>
         )}
 
-        {groupedTasks.map((group, groupIndex) => (
-          <React.Fragment key={groupIndex}>
-            <View style={styles.childSection}>
-              <View style={styles.childHeader}>
-                <View style={[styles.childAvatar, { backgroundColor: group.child.color || colors.accent }]}>
-                  <Text style={styles.childAvatarText}>{group.child.name.charAt(0)}</Text>
+        {visibleTasks.length === 0 ? (
+          <View style={styles.emptyTasks}>
+            <Text style={styles.emptyTasksEmoji}>✨</Text>
+            <Text style={styles.emptyTasksText}>Nog geen taken</Text>
+          </View>
+        ) : (
+          visibleTasks.map((task, taskIndex) => (
+            <React.Fragment key={taskIndex}>
+              <TouchableOpacity
+                style={[styles.taskCard, task.completed && styles.taskCardCompleted]}
+                onPress={() => !task.completed && handleCompleteTask(task.id, task.coins)}
+                disabled={task.completed}
+              >
+                <View style={styles.taskIcon}>
+                  <IconSymbol
+                    ios_icon_name={task.icon}
+                    android_material_icon_name={task.icon as any}
+                    size={28}
+                    color={task.completed ? colors.textSecondary : colors.accent}
+                  />
                 </View>
-                <View style={styles.childInfo}>
-                  <Text style={styles.childName}>{group.child.name}</Text>
-                  <View style={styles.coinsContainer}>
-                    <Text style={styles.coinsText}>{group.child.coins}</Text>
-                    <Text style={styles.coinEmoji}>🪙</Text>
+                <View style={styles.taskInfo}>
+                  <Text style={[styles.taskName, task.completed && styles.taskNameCompleted]}>
+                    {task.name}
+                  </Text>
+                  <View style={styles.taskMeta}>
+                    <Text style={styles.taskMetaText}>
+                      {task.repeatType === 'daily' && '🔄 Dagelijks'}
+                      {task.repeatType === 'weekly' && '📅 Wekelijks'}
+                      {task.repeatType === 'monthly' && '📆 Maandelijks'}
+                      {task.repeatType === 'none' && '📌 Eenmalig'}
+                    </Text>
+                    <Text style={styles.taskMetaText}>
+                      ✅ {task.completedCount}x voltooid
+                    </Text>
                   </View>
                 </View>
-              </View>
-
-              {group.tasks.length === 0 ? (
-                <View style={styles.emptyTasks}>
-                  <Text style={styles.emptyTasksText}>Nog geen taken</Text>
+                <View style={[styles.taskCoins, task.completed && styles.taskCoinsCompleted]}>
+                  <Text style={styles.taskCoinsText}>{task.coins}</Text>
+                  <Text style={styles.taskCoinEmoji}>🪙</Text>
                 </View>
-              ) : (
-                group.tasks.map((task, taskIndex) => (
-                  <React.Fragment key={taskIndex}>
-                    <TouchableOpacity
-                      style={[styles.taskCard, task.completed && styles.taskCardCompleted]}
-                      onPress={() => !task.completed && handleCompleteTask(task.id, task.coins)}
-                      disabled={task.completed}
-                    >
-                      <View style={styles.taskIcon}>
-                        <IconSymbol
-                          ios_icon_name={task.icon}
-                          android_material_icon_name={task.icon as any}
-                          size={28}
-                          color={task.completed ? colors.textSecondary : colors.accent}
-                        />
-                      </View>
-                      <View style={styles.taskInfo}>
-                        <Text style={[styles.taskName, task.completed && styles.taskNameCompleted]}>
-                          {task.name}
-                        </Text>
-                        <View style={styles.taskMeta}>
-                          <Text style={styles.taskMetaText}>
-                            {task.repeatType === 'daily' && '🔄 Dagelijks'}
-                            {task.repeatType === 'weekly' && '📅 Wekelijks'}
-                            {task.repeatType === 'monthly' && '📆 Maandelijks'}
-                            {task.repeatType === 'none' && '📌 Eenmalig'}
-                          </Text>
-                          <Text style={styles.taskMetaText}>
-                            ✅ {task.completedCount}x voltooid
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={[styles.taskCoins, task.completed && styles.taskCoinsCompleted]}>
-                        <Text style={styles.taskCoinsText}>{task.coins}</Text>
-                        <Text style={styles.taskCoinEmoji}>🪙</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))
-              )}
-            </View>
-          </React.Fragment>
-        ))}
+              </TouchableOpacity>
+            </React.Fragment>
+          ))
+        )}
       </ScrollView>
 
       <TaskCompletionAnimation
@@ -279,20 +255,24 @@ export default function TasksScreen() {
               />
 
               <Text style={styles.inputLabel}>Toewijzen aan:</Text>
-              <View style={styles.childSelector}>
-                {children.map((child, index) => (
+              <View style={styles.memberSelector}>
+                {familyMembers.map((member, index) => (
                   <React.Fragment key={index}>
                     <TouchableOpacity
                       style={[
-                        styles.childOption,
-                        newTaskAssignedTo === child.id && styles.childOptionActive,
+                        styles.memberOption,
+                        newTaskAssignedTo === member.id && styles.memberOptionActive,
                       ]}
-                      onPress={() => setNewTaskAssignedTo(child.id)}
+                      onPress={() => setNewTaskAssignedTo(member.id)}
                     >
-                      <View style={[styles.childOptionAvatar, { backgroundColor: child.color || colors.accent }]}>
-                        <Text style={styles.childOptionAvatarText}>{child.name.charAt(0)}</Text>
+                      <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
+                        {member.photoUri ? (
+                          <Image source={{ uri: member.photoUri }} style={styles.memberOptionPhoto} />
+                        ) : (
+                          <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
+                        )}
                       </View>
-                      <Text style={styles.childOptionName}>{child.name}</Text>
+                      <Text style={styles.memberOptionName}>{member.name}</Text>
                     </TouchableOpacity>
                   </React.Fragment>
                 ))}
@@ -426,57 +406,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontFamily: 'Poppins_600SemiBold',
   },
-  childSection: {
-    marginBottom: 30,
-  },
-  childHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    backgroundColor: colors.card,
-    padding: 15,
-    borderRadius: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  childAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  childAvatarText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  childInfo: {
-    flex: 1,
-  },
-  childName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 5,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  coinsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  coinsText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.highlight,
-    marginRight: 5,
-    fontFamily: 'Poppins_700Bold',
-  },
-  coinEmoji: {
-    fontSize: 16,
-  },
   emptyTasks: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -605,13 +534,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontFamily: 'Poppins_600SemiBold',
   },
-  childSelector: {
+  memberSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
     marginBottom: 20,
   },
-  childOption: {
+  memberOption: {
     backgroundColor: colors.background,
     borderRadius: 15,
     padding: 10,
@@ -620,25 +549,31 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  childOptionActive: {
+  memberOptionActive: {
     borderColor: colors.accent,
     backgroundColor: colors.primary,
   },
-  childOptionAvatar: {
+  memberOptionAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 5,
+    overflow: 'hidden',
   },
-  childOptionAvatarText: {
+  memberOptionPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+  },
+  memberOptionAvatarText: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
   },
-  childOptionName: {
+  memberOptionName: {
     fontSize: 12,
     fontWeight: '600',
     color: colors.text,

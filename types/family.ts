@@ -4,6 +4,7 @@ export interface FamilyMember {
   name: string;
   role: 'parent' | 'child';
   avatar?: string;
+  photoUri?: string;
   coins: number;
   color: string;
 }

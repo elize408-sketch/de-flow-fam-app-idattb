@@ -41,7 +41,7 @@ interface FloatingTabBarProps {
 
 export default function FloatingTabBar({
   tabs,
-  containerWidth = screenWidth * 0.9,
+  containerWidth = screenWidth * 0.95,
   borderRadius = 35,
   bottomMargin
 }: FloatingTabBarProps) {
@@ -110,8 +110,8 @@ export default function FloatingTabBar({
   const dynamicStyles = {
     blurContainer: {
       ...styles.blurContainer,
-      borderWidth: 1.2,
-      borderColor: colors.accent,
+      borderWidth: 2,
+      borderColor: colors.vibrantPink,
       ...Platform.select({
         ios: {
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -130,7 +130,7 @@ export default function FloatingTabBar({
     },
     indicator: {
       ...styles.indicator,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.vibrantPink,
       width: `${tabWidthPercent}%` as `${number}%`,
     },
   };
@@ -166,13 +166,13 @@ export default function FloatingTabBar({
                         android_material_icon_name={tab.icon}
                         ios_icon_name={tab.icon}
                         size={24}
-                        color={isActive ? colors.accent : colors.textSecondary}
+                        color={isActive ? colors.card : colors.text}
                       />
                       <Text
                         style={[
                           styles.tabLabel,
-                          { color: colors.textSecondary },
-                          isActive && { color: colors.accent, fontWeight: '600' },
+                          { color: colors.text },
+                          isActive && { color: colors.card, fontWeight: '700' },
                         ]}
                       >
                         {tab.label}
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   container: {
-    marginHorizontal: 20,
+    marginHorizontal: 10,
     alignSelf: 'center',
   },
   blurContainer: {

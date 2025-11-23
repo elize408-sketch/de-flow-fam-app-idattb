@@ -11,16 +11,22 @@ export const colors = {
   card: '#FFFFFF',            // White
   highlight: '#CBA85B',       // Gold
   shadow: 'rgba(0, 0, 0, 0.08)',
+  vibrantPink: '#FF6B9D',     // Vibrant Pink
+  vibrantBlue: '#4A90E2',     // Vibrant Blue
+  vibrantGreen: '#7ED321',    // Vibrant Green
+  vibrantOrange: '#F5A623',   // Vibrant Orange
+  vibrantPurple: '#9013FE',   // Vibrant Purple
+  vibrantTeal: '#50E3C2',     // Vibrant Teal
 };
 
 export const buttonStyles = StyleSheet.create({
   instructionsButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.vibrantBlue,
     alignSelf: 'center',
     width: '100%',
   },
   backButton: {
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.vibrantGreen,
     alignSelf: 'center',
     width: '100%',
   },
