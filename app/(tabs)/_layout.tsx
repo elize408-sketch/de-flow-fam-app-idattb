@@ -37,7 +37,7 @@ export default function TabLayout() {
     {
       name: 'finances',
       route: '/(tabs)/finances',
-      icon: 'account-balance-wallet',
+      icon: 'custom-euro',
       label: 'Financiën',
     },
     {

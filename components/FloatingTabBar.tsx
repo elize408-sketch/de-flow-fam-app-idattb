@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Platform,
   Dimensions,
+  Image,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,7 +29,7 @@ const { width: screenWidth } = Dimensions.get('window');
 export interface TabBarItem {
   name: string;
   route: Href;
-  icon: keyof typeof MaterialIcons.glyphMap;
+  icon: keyof typeof MaterialIcons.glyphMap | 'custom-toothbrush' | 'custom-euro';
   label: string;
 }
 
@@ -139,7 +140,47 @@ export default function FloatingTabBar({
       ...styles.indicator,
       backgroundColor: colors.vibrantOrange,
       width: `${tabWidthPercent}%` as `${number}%`,
+      borderRadius: 20,
     },
+  };
+
+  const renderIcon = (tab: TabBarItem, isActive: boolean) => {
+    const iconColor = isActive ? (needsGridLayout ? colors.vibrantOrange : colors.card) : colors.text;
+    
+    if (tab.icon === 'custom-toothbrush') {
+      return (
+        <Image
+          source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
+          style={[
+            styles.customIcon,
+            { tintColor: iconColor }
+          ]}
+          resizeMode="contain"
+        />
+      );
+    }
+    
+    if (tab.icon === 'custom-euro') {
+      return (
+        <Image
+          source={require('@/assets/images/ef024723-5af7-4fad-8bd5-12b97c4294d7.png')}
+          style={[
+            styles.customIcon,
+            { tintColor: iconColor }
+          ]}
+          resizeMode="contain"
+        />
+      );
+    }
+    
+    return (
+      <IconSymbol
+        android_material_icon_name={tab.icon as any}
+        ios_icon_name={tab.icon}
+        size={24}
+        color={iconColor}
+      />
+    );
   };
 
   return (
@@ -176,12 +217,7 @@ export default function FloatingTabBar({
                     activeOpacity={0.7}
                   >
                     <View style={styles.tabContent}>
-                      <IconSymbol
-                        android_material_icon_name={tab.icon}
-                        ios_icon_name={tab.icon}
-                        size={24}
-                        color={isActive ? (needsGridLayout ? colors.vibrantOrange : colors.card) : colors.text}
-                      />
+                      {renderIcon(tab, isActive)}
                       <Text
                         style={[
                           styles.tabLabel,
@@ -231,7 +267,6 @@ const styles = StyleSheet.create({
     top: 4,
     left: 2,
     bottom: 4,
-    borderRadius: 16,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -286,5 +321,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
     width: '100%',
+  },
+  customIcon: {
+    width: 24,
+    height: 24,
   },
 });

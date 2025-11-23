@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 
@@ -8,11 +8,12 @@ interface IconOption {
   ios: string;
   android: string;
   label: string;
+  isCustom?: boolean;
 }
 
 const TASK_ICONS: IconOption[] = [
   { ios: 'bed', android: 'bed', label: 'Bed opmaken' },
-  { ios: 'toothbrush', android: 'brush', label: 'Tanden poetsen' },
+  { ios: 'toothbrush', android: 'brush', label: 'Tanden poetsen', isCustom: true },
   { ios: 'checkmark-shirt', android: 'checkroom', label: 'Kleding klaarleggen' },
   { ios: 'basket', android: 'shopping-basket', label: 'Kleding in wasmand' },
   { ios: 'backpack', android: 'school', label: 'Schooltas pakken' },
@@ -156,6 +157,32 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
     }
   }, [taskName]);
 
+  const renderIcon = (icon: IconOption, isSelected: boolean) => {
+    const iconColor = isSelected ? colors.card : colors.text;
+    
+    if (icon.isCustom && icon.android === 'brush') {
+      return (
+        <Image
+          source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
+          style={[
+            styles.customIconImage,
+            { tintColor: iconColor }
+          ]}
+          resizeMode="contain"
+        />
+      );
+    }
+    
+    return (
+      <IconSymbol
+        ios_icon_name={icon.ios}
+        android_material_icon_name={icon.android as any}
+        size={24}
+        color={iconColor}
+      />
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Kies een icoon:</Text>
@@ -173,12 +200,7 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
               ]}
               onPress={() => onSelectIcon(icon.android)}
             >
-              <IconSymbol
-                ios_icon_name={icon.ios}
-                android_material_icon_name={icon.android as any}
-                size={24}
-                color={selectedIcon === icon.android ? colors.card : colors.text}
-              />
+              {renderIcon(icon, selectedIcon === icon.android)}
               <Text 
                 style={[
                   styles.iconLabel,
@@ -237,5 +259,9 @@ const styles = StyleSheet.create({
   iconLabelSelected: {
     color: colors.card,
     fontWeight: '600',
+  },
+  customIconImage: {
+    width: 24,
+    height: 24,
   },
 });

@@ -250,13 +250,30 @@ export default function HomeScreen() {
     );
   }
 
-  // Child view - show their own tasks and weather
+  // Child view - show their own tasks and appointments for the day
   const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
   const myAppointments = appointments.filter(apt => {
     const aptDate = new Date(apt.date);
     aptDate.setHours(0, 0, 0, 0);
     return apt.assignedTo.includes(currentUser.id) && aptDate.getTime() === today.getTime();
   });
+
+  // Combine tasks and appointments into a daily overview
+  const dailyOverview = [
+    ...myAppointments.map(apt => ({
+      type: 'appointment' as const,
+      time: apt.time,
+      endTime: apt.endTime,
+      title: apt.title,
+      icon: 'event',
+    })),
+    ...myTasks.map(task => ({
+      type: 'task' as const,
+      title: task.name,
+      icon: task.icon,
+      coins: task.coins,
+    })),
+  ];
 
   return (
     <View style={styles.container}>
@@ -300,10 +317,56 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Daily overview - What's happening today */}
+        {dailyOverview.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📋 Wat staat mij vandaag te wachten?</Text>
+            <View style={styles.dailyOverviewCard}>
+              {dailyOverview.map((item, index) => (
+                <React.Fragment key={index}>
+                  <View style={styles.dailyOverviewItem}>
+                    <View style={[styles.dailyOverviewIcon, { backgroundColor: memberColor }]}>
+                      {item.type === 'appointment' ? (
+                        <IconSymbol
+                          ios_icon_name="calendar"
+                          android_material_icon_name="event"
+                          size={20}
+                          color={colors.card}
+                        />
+                      ) : (
+                        <Image
+                          source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
+                          style={[
+                            styles.dailyOverviewCustomIcon,
+                            { tintColor: colors.card }
+                          ]}
+                          resizeMode="contain"
+                        />
+                      )}
+                    </View>
+                    <View style={styles.dailyOverviewContent}>
+                      {item.type === 'appointment' && item.time && (
+                        <Text style={styles.dailyOverviewTime}>
+                          {item.time}{item.endTime ? ` - ${item.endTime}` : ''}
+                        </Text>
+                      )}
+                      <Text style={styles.dailyOverviewTitle}>{item.title}</Text>
+                      {item.type === 'task' && item.coins && (
+                        <Text style={styles.dailyOverviewCoins}>🪙 {item.coins} muntjes</Text>
+                      )}
+                    </View>
+                  </View>
+                  {index < dailyOverview.length - 1 && <View style={styles.dailyOverviewDivider} />}
+                </React.Fragment>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Today's appointments */}
         {myAppointments.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📅 Vandaag</Text>
+            <Text style={styles.sectionTitle}>📅 Mijn afspraken vandaag</Text>
             {myAppointments.map((apt, index) => (
               <React.Fragment key={index}>
                 <View style={[styles.appointmentCard, { borderLeftColor: memberColor }]}>
@@ -331,12 +394,23 @@ export default function HomeScreen() {
                   onPress={() => router.push('/(tabs)/tasks')}
                 >
                   <View style={[styles.taskIcon, { backgroundColor: memberColor }]}>
-                    <IconSymbol
-                      ios_icon_name={task.icon}
-                      android_material_icon_name={task.icon as any}
-                      size={24}
-                      color={colors.card}
-                    />
+                    {task.icon === 'brush' ? (
+                      <Image
+                        source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
+                        style={[
+                          styles.taskCustomIcon,
+                          { tintColor: colors.card }
+                        ]}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <IconSymbol
+                        ios_icon_name={task.icon}
+                        android_material_icon_name={task.icon as any}
+                        size={24}
+                        color={colors.card}
+                      />
+                    )}
                   </View>
                   <Text style={styles.taskName}>{task.name}</Text>
                   <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
@@ -586,6 +660,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: colors.text,
+    marginBottom: 15,
     fontFamily: 'Poppins_600SemiBold',
   },
   seeAllText: {
@@ -593,6 +668,57 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.vibrantOrange,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  dailyOverviewCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  dailyOverviewItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+  },
+  dailyOverviewIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  dailyOverviewCustomIcon: {
+    width: 20,
+    height: 20,
+  },
+  dailyOverviewContent: {
+    flex: 1,
+  },
+  dailyOverviewTime: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
+    marginBottom: 4,
+    fontFamily: 'Poppins_700Bold',
+  },
+  dailyOverviewTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  dailyOverviewCoins: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  dailyOverviewDivider: {
+    height: 1,
+    backgroundColor: colors.background,
+    marginVertical: 8,
   },
   appointmentCard: {
     backgroundColor: colors.card,
@@ -650,6 +776,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+  },
+  taskCustomIcon: {
+    width: 24,
+    height: 24,
   },
   taskName: {
     flex: 1,
