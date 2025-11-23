@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Stack } from 'expo-router';
 import FloatingTabBar, { TabBarItem } from '@/components/FloatingTabBar';
+import { FamilyProvider } from '@/contexts/FamilyContext';
 
 export default function TabLayout() {
-  // Define the tabs configuration
   const tabs: TabBarItem[] = [
     {
       name: '(home)',
@@ -12,26 +13,41 @@ export default function TabLayout() {
       label: 'Home',
     },
     {
-      name: 'profile',
-      route: '/(tabs)/profile',
-      icon: 'person',
-      label: 'Profile',
+      name: 'tasks',
+      route: '/(tabs)/tasks',
+      icon: 'check-circle',
+      label: 'Taken',
+    },
+    {
+      name: 'rewards',
+      route: '/(tabs)/rewards',
+      icon: 'star',
+      label: 'Beloningen',
+    },
+    {
+      name: 'agenda',
+      route: '/(tabs)/agenda',
+      icon: 'calendar-today',
+      label: 'Agenda',
     },
   ];
 
-  // For Android and Web, use Stack navigation with custom floating tab bar
   return (
-    <>
+    <FamilyProvider>
       <Stack
         screenOptions={{
           headerShown: false,
-          animation: 'none', // Remove fade animation to prevent black screen flash
+          animation: 'none',
         }}
       >
         <Stack.Screen key="home" name="(home)" />
-        <Stack.Screen key="profile" name="profile" />
+        <Stack.Screen key="tasks" name="tasks" />
+        <Stack.Screen key="rewards" name="rewards" />
+        <Stack.Screen key="agenda" name="agenda" />
+        <Stack.Screen key="household" name="household" />
+        <Stack.Screen key="meals" name="meals" />
       </Stack>
       <FloatingTabBar tabs={tabs} />
-    </>
+    </FamilyProvider>
   );
 }
