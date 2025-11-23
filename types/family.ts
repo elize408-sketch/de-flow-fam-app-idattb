@@ -5,6 +5,7 @@ export interface FamilyMember {
   role: 'parent' | 'child';
   avatar?: string;
   coins: number;
+  color?: string;
 }
 
 export interface Task {
@@ -16,6 +17,7 @@ export interface Task {
   completed: boolean;
   repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
   completedCount: number;
+  createdBy?: string;
 }
 
 export interface Reward {
@@ -34,6 +36,7 @@ export interface Appointment {
   assignedTo: string;
   color: string;
   repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
+  description?: string;
 }
 
 export interface HouseholdTask {
@@ -42,22 +45,43 @@ export interface HouseholdTask {
   assignedTo: string;
   completed: boolean;
   dueDate?: Date;
+  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
+  icon?: string;
 }
 
 export interface Expense {
   id: string;
   name: string;
   amount: number;
-  category: string;
+  category: 'fixed' | 'variable';
   date: Date;
   paid: boolean;
+  recurring?: boolean;
+}
+
+export interface Income {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'salary' | 'partner' | 'benefits' | 'other';
+}
+
+export interface Receipt {
+  id: string;
+  imageUri: string;
+  amount: number;
+  date: Date;
+  category: string;
 }
 
 export interface Meal {
   id: string;
   name: string;
   type: 'breakfast' | 'lunch' | 'dinner';
-  date: Date;
+  date?: Date;
   recipe?: string;
   ingredients?: string[];
+  instructions?: string;
+  prepTime?: number;
+  servings?: number;
 }

@@ -1,20 +1,49 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FamilyMember, Task, Reward } from '@/types/family';
+import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal } from '@/types/family';
 import { initialFamilyMembers, initialTasks, initialRewards } from '@/data/familyData';
 
 interface FamilyContextType {
   familyMembers: FamilyMember[];
   tasks: Task[];
   rewards: Reward[];
-  selectedChild: FamilyMember | null;
-  setSelectedChild: (child: FamilyMember | null) => void;
+  appointments: Appointment[];
+  householdTasks: HouseholdTask[];
+  expenses: Expense[];
+  incomes: Income[];
+  receipts: Receipt[];
+  meals: Meal[];
+  selectedMember: FamilyMember | null;
+  currentUser: FamilyMember | null;
+  setSelectedMember: (member: FamilyMember | null) => void;
+  setCurrentUser: (user: FamilyMember | null) => void;
+  addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   completeTask: (taskId: string) => void;
   addCoins: (memberId: string, amount: number) => void;
   redeemReward: (memberId: string, rewardId: string) => void;
-  addTask: (task: Task) => void;
+  addTask: (task: Omit<Task, 'id' | 'completedCount'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
   deleteTask: (taskId: string) => void;
+  addAppointment: (appointment: Omit<Appointment, 'id'>) => void;
+  updateAppointment: (appointmentId: string, updates: Partial<Appointment>) => void;
+  deleteAppointment: (appointmentId: string) => void;
+  addHouseholdTask: (task: Omit<HouseholdTask, 'id'>) => void;
+  updateHouseholdTask: (taskId: string, updates: Partial<HouseholdTask>) => void;
+  deleteHouseholdTask: (taskId: string) => void;
+  addExpense: (expense: Omit<Expense, 'id'>) => void;
+  updateExpense: (expenseId: string, updates: Partial<Expense>) => void;
+  deleteExpense: (expenseId: string) => void;
+  addIncome: (income: Omit<Income, 'id'>) => void;
+  updateIncome: (incomeId: string, updates: Partial<Income>) => void;
+  deleteIncome: (incomeId: string) => void;
+  addReceipt: (receipt: Omit<Receipt, 'id'>) => void;
+  addMeal: (meal: Omit<Meal, 'id'>) => void;
+  updateMeal: (mealId: string, updates: Partial<Meal>) => void;
+  deleteMeal: (mealId: string) => void;
+  getTotalIncome: () => number;
+  getTotalFixedExpenses: () => number;
+  getTotalVariableExpenses: () => number;
+  getRemainingBudget: () => number;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -23,13 +52,27 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialFamilyMembers);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [rewards] = useState<Reward[]>(initialRewards);
-  const [selectedChild, setSelectedChild] = useState<FamilyMember | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [householdTasks, setHouseholdTasks] = useState<HouseholdTask[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
+  const [currentUser, setCurrentUser] = useState<FamilyMember | null>(familyMembers[0]);
+
+  const addFamilyMember = (member: Omit<FamilyMember, 'id'>) => {
+    const newMember: FamilyMember = {
+      ...member,
+      id: Date.now().toString(),
+    };
+    setFamilyMembers(prev => [...prev, newMember]);
+  };
 
   const completeTask = (taskId: string) => {
     setTasks(prevTasks =>
       prevTasks.map(task => {
         if (task.id === taskId && !task.completed) {
-          // Add coins to the assigned family member
           addCoins(task.assignedTo, task.coins);
           return {
             ...task,
@@ -68,8 +111,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const addTask = (task: Task) => {
-    setTasks(prevTasks => [...prevTasks, task]);
+  const addTask = (task: Omit<Task, 'id' | 'completedCount'>) => {
+    const newTask: Task = {
+      ...task,
+      id: Date.now().toString(),
+      completedCount: 0,
+    };
+    setTasks(prevTasks => [...prevTasks, newTask]);
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
@@ -84,20 +132,177 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
   };
 
+  const addAppointment = (appointment: Omit<Appointment, 'id'>) => {
+    const newAppointment: Appointment = {
+      ...appointment,
+      id: Date.now().toString(),
+    };
+    setAppointments(prev => [...prev, newAppointment]);
+  };
+
+  const updateAppointment = (appointmentId: string, updates: Partial<Appointment>) => {
+    setAppointments(prev =>
+      prev.map(apt => (apt.id === appointmentId ? { ...apt, ...updates } : apt))
+    );
+  };
+
+  const deleteAppointment = (appointmentId: string) => {
+    setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+  };
+
+  const addHouseholdTask = (task: Omit<HouseholdTask, 'id'>) => {
+    const newTask: HouseholdTask = {
+      ...task,
+      id: Date.now().toString(),
+    };
+    setHouseholdTasks(prev => [...prev, newTask]);
+  };
+
+  const updateHouseholdTask = (taskId: string, updates: Partial<HouseholdTask>) => {
+    setHouseholdTasks(prev =>
+      prev.map(task => (task.id === taskId ? { ...task, ...updates } : task))
+    );
+  };
+
+  const deleteHouseholdTask = (taskId: string) => {
+    setHouseholdTasks(prev => prev.filter(task => task.id !== taskId));
+  };
+
+  const addExpense = (expense: Omit<Expense, 'id'>) => {
+    const newExpense: Expense = {
+      ...expense,
+      id: Date.now().toString(),
+    };
+    setExpenses(prev => [...prev, newExpense]);
+  };
+
+  const updateExpense = (expenseId: string, updates: Partial<Expense>) => {
+    setExpenses(prev =>
+      prev.map(exp => (exp.id === expenseId ? { ...exp, ...updates } : exp))
+    );
+  };
+
+  const deleteExpense = (expenseId: string) => {
+    setExpenses(prev => prev.filter(exp => exp.id !== expenseId));
+  };
+
+  const addIncome = (income: Omit<Income, 'id'>) => {
+    const newIncome: Income = {
+      ...income,
+      id: Date.now().toString(),
+    };
+    setIncomes(prev => [...prev, newIncome]);
+  };
+
+  const updateIncome = (incomeId: string, updates: Partial<Income>) => {
+    setIncomes(prev =>
+      prev.map(inc => (inc.id === incomeId ? { ...inc, ...updates } : inc))
+    );
+  };
+
+  const deleteIncome = (incomeId: string) => {
+    setIncomes(prev => prev.filter(inc => inc.id !== incomeId));
+  };
+
+  const addReceipt = (receipt: Omit<Receipt, 'id'>) => {
+    const newReceipt: Receipt = {
+      ...receipt,
+      id: Date.now().toString(),
+    };
+    setReceipts(prev => [...prev, newReceipt]);
+    
+    // Automatically add as variable expense
+    addExpense({
+      name: 'Bonnetje',
+      amount: receipt.amount,
+      category: 'variable',
+      date: receipt.date,
+      paid: true,
+      recurring: false,
+    });
+  };
+
+  const addMeal = (meal: Omit<Meal, 'id'>) => {
+    const newMeal: Meal = {
+      ...meal,
+      id: Date.now().toString(),
+    };
+    setMeals(prev => [...prev, newMeal]);
+  };
+
+  const updateMeal = (mealId: string, updates: Partial<Meal>) => {
+    setMeals(prev =>
+      prev.map(meal => (meal.id === mealId ? { ...meal, ...updates } : meal))
+    );
+  };
+
+  const deleteMeal = (mealId: string) => {
+    setMeals(prev => prev.filter(meal => meal.id !== mealId));
+  };
+
+  const getTotalIncome = () => {
+    return incomes.reduce((sum, income) => sum + income.amount, 0);
+  };
+
+  const getTotalFixedExpenses = () => {
+    return expenses
+      .filter(exp => exp.category === 'fixed')
+      .reduce((sum, exp) => sum + exp.amount, 0);
+  };
+
+  const getTotalVariableExpenses = () => {
+    return expenses
+      .filter(exp => exp.category === 'variable')
+      .reduce((sum, exp) => sum + exp.amount, 0);
+  };
+
+  const getRemainingBudget = () => {
+    return getTotalIncome() - getTotalFixedExpenses() - getTotalVariableExpenses();
+  };
+
   return (
     <FamilyContext.Provider
       value={{
         familyMembers,
         tasks,
         rewards,
-        selectedChild,
-        setSelectedChild,
+        appointments,
+        householdTasks,
+        expenses,
+        incomes,
+        receipts,
+        meals,
+        selectedMember,
+        currentUser,
+        setSelectedMember,
+        setCurrentUser,
+        addFamilyMember,
         completeTask,
         addCoins,
         redeemReward,
         addTask,
         updateTask,
         deleteTask,
+        addAppointment,
+        updateAppointment,
+        deleteAppointment,
+        addHouseholdTask,
+        updateHouseholdTask,
+        deleteHouseholdTask,
+        addExpense,
+        updateExpense,
+        deleteExpense,
+        addIncome,
+        updateIncome,
+        deleteIncome,
+        addReceipt,
+        addMeal,
+        updateMeal,
+        deleteMeal,
+        getTotalIncome,
+        getTotalFixedExpenses,
+        getTotalVariableExpenses,
+        getRemainingBudget,
       }}
     >
       {children}

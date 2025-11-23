@@ -7,24 +7,28 @@ export const initialFamilyMembers: FamilyMember[] = [
     name: 'Mama',
     role: 'parent',
     coins: 0,
+    color: '#F5D9CF',
   },
   {
     id: '2',
     name: 'Papa',
     role: 'parent',
     coins: 0,
+    color: '#C8D3C0',
   },
   {
     id: '3',
     name: 'Emma',
     role: 'child',
     coins: 25,
+    color: '#D5A093',
   },
   {
     id: '4',
     name: 'Lucas',
     role: 'child',
     coins: 18,
+    color: '#CBA85B',
   },
 ];
 
@@ -38,6 +42,7 @@ export const initialTasks: Task[] = [
     completed: false,
     repeatType: 'daily',
     completedCount: 12,
+    createdBy: '1',
   },
   {
     id: '2',
@@ -48,6 +53,7 @@ export const initialTasks: Task[] = [
     completed: false,
     repeatType: 'daily',
     completedCount: 28,
+    createdBy: '1',
   },
   {
     id: '3',
@@ -58,6 +64,7 @@ export const initialTasks: Task[] = [
     completed: false,
     repeatType: 'daily',
     completedCount: 15,
+    createdBy: '1',
   },
   {
     id: '4',
@@ -68,6 +75,7 @@ export const initialTasks: Task[] = [
     completed: false,
     repeatType: 'daily',
     completedCount: 8,
+    createdBy: '2',
   },
   {
     id: '5',
@@ -78,6 +86,7 @@ export const initialTasks: Task[] = [
     completed: false,
     repeatType: 'daily',
     completedCount: 10,
+    createdBy: '2',
   },
 ];
 

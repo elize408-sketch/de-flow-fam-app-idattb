@@ -1,17 +1,17 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { familyMembers } = useFamily();
+  const { familyMembers, selectedMember, setSelectedMember } = useFamily();
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
 
-  const children = familyMembers.filter(member => member.role === 'child');
+  const displayMember = selectedMember || familyMembers[0];
 
   const navigationItems = [
     { title: 'Taken', icon: 'check-circle', route: '/(tabs)/tasks', color: colors.primary },
@@ -19,62 +19,99 @@ export default function HomeScreen() {
     { title: 'Huishouden', icon: 'home', route: '/(tabs)/household', color: colors.accent },
     { title: 'Maaltijden', icon: 'restaurant', route: '/(tabs)/meals', color: colors.highlight },
     { title: 'Beloningen', icon: 'star', route: '/(tabs)/rewards', color: colors.primary },
+    { title: 'Financiën', icon: 'account-balance-wallet', route: '/(tabs)/finances', color: colors.secondary },
   ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Flow Fam</Text>
-        <Text style={styles.subtitle}>Welkom bij jullie gezinsapp</Text>
-      </View>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Flow Fam</Text>
+          <Text style={styles.subtitle}>Welkom bij jullie gezinsapp</Text>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Gezinsleden</Text>
-        <View style={styles.membersContainer}>
-          {children.map((member, index) => (
-            <React.Fragment key={index}>
-              <TouchableOpacity
-                style={styles.memberCard}
-                onPress={() => router.push(`/(tabs)/child/${member.id}`)}
-              >
-                <View style={styles.avatarContainer}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{member.name.charAt(0)}</Text>
+        <TouchableOpacity 
+          style={styles.memberSelector}
+          onPress={() => setShowMemberPicker(true)}
+        >
+          <View style={styles.memberSelectorContent}>
+            <View style={[styles.memberAvatar, { backgroundColor: displayMember.color || colors.accent }]}>
+              <Text style={styles.memberAvatarText}>{displayMember.name.charAt(0)}</Text>
+            </View>
+            <Text style={styles.memberSelectorName}>{displayMember.name}</Text>
+            <IconSymbol 
+              ios_icon_name="chevron.down" 
+              android_material_icon_name="arrow-drop-down" 
+              size={24} 
+              color={colors.text} 
+            />
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Snelle navigatie</Text>
+          <View style={styles.navigationGrid}>
+            {navigationItems.map((item, index) => (
+              <React.Fragment key={index}>
+                <TouchableOpacity
+                  style={[styles.navCard, { backgroundColor: item.color }]}
+                  onPress={() => router.push(item.route as any)}
+                >
+                  <IconSymbol
+                    ios_icon_name={item.icon}
+                    android_material_icon_name={item.icon}
+                    size={32}
+                    color={colors.text}
+                  />
+                  <Text style={styles.navCardText}>{item.title}</Text>
+                </TouchableOpacity>
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      <Modal
+        visible={showMemberPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMemberPicker(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowMemberPicker(false)}
+        >
+          <View style={styles.memberPickerModal}>
+            <Text style={styles.modalTitle}>Kies gezinslid</Text>
+            {familyMembers.map((member, index) => (
+              <React.Fragment key={index}>
+                <TouchableOpacity
+                  style={styles.memberOption}
+                  onPress={() => {
+                    setSelectedMember(member);
+                    setShowMemberPicker(false);
+                  }}
+                >
+                  <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
+                    <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
                   </View>
-                </View>
-                <Text style={styles.memberName}>{member.name}</Text>
-                <View style={styles.coinsContainer}>
-                  <Text style={styles.coinsText}>{member.coins}</Text>
-                  <Text style={styles.coinEmoji}>🪙</Text>
-                </View>
-              </TouchableOpacity>
-            </React.Fragment>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Snelle navigatie</Text>
-        <View style={styles.navigationGrid}>
-          {navigationItems.map((item, index) => (
-            <React.Fragment key={index}>
-              <TouchableOpacity
-                style={[styles.navCard, { backgroundColor: item.color }]}
-                onPress={() => router.push(item.route as any)}
-              >
-                <IconSymbol
-                  ios_icon_name={item.icon}
-                  android_material_icon_name={item.icon}
-                  size={32}
-                  color={colors.text}
-                />
-                <Text style={styles.navCardText}>{item.title}</Text>
-              </TouchableOpacity>
-            </React.Fragment>
-          ))}
-        </View>
-      </View>
-    </ScrollView>
+                  <Text style={styles.memberOptionName}>{member.name}</Text>
+                  {displayMember.id === member.id && (
+                    <IconSymbol 
+                      ios_icon_name="checkmark" 
+                      android_material_icon_name="check" 
+                      size={24} 
+                      color={colors.accent} 
+                    />
+                  )}
+                </TouchableOpacity>
+              </React.Fragment>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </View>
   );
 }
 
@@ -90,7 +127,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
   },
   title: {
     fontSize: 36,
@@ -104,6 +141,39 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontFamily: 'Nunito_400Regular',
   },
+  memberSelector: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 30,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  memberSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  memberAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  memberAvatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberSelectorName: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
   section: {
     marginBottom: 30,
   },
@@ -113,62 +183,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 15,
     fontFamily: 'Poppins_600SemiBold',
-  },
-  membersContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 15,
-  },
-  memberCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 15,
-    alignItems: 'center',
-    width: '47%',
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  avatarContainer: {
-    marginBottom: 10,
-  },
-  avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  memberName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  coinsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.highlight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  coinsText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.card,
-    marginRight: 5,
-    fontFamily: 'Poppins_700Bold',
-  },
-  coinEmoji: {
-    fontSize: 16,
   },
   navigationGrid: {
     flexDirection: 'row',
@@ -191,6 +205,59 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginTop: 10,
     textAlign: 'center',
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  memberPickerModal: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    boxShadow: `0px 8px 24px ${colors.shadow}`,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 10,
+    backgroundColor: colors.background,
+  },
+  memberOptionAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  memberOptionAvatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberOptionName: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
 });

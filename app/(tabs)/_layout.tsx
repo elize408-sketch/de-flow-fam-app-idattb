@@ -19,16 +19,16 @@ export default function TabLayout() {
       label: 'Taken',
     },
     {
-      name: 'rewards',
-      route: '/(tabs)/rewards',
-      icon: 'star',
-      label: 'Beloningen',
+      name: 'meals',
+      route: '/(tabs)/meals',
+      icon: 'restaurant',
+      label: 'Maaltijden',
     },
     {
-      name: 'agenda',
-      route: '/(tabs)/agenda',
-      icon: 'calendar-today',
-      label: 'Agenda',
+      name: 'profile',
+      route: '/(tabs)/profile',
+      icon: 'settings',
+      label: 'Instellingen',
     },
   ];
 
@@ -46,6 +46,8 @@ export default function TabLayout() {
         <Stack.Screen key="agenda" name="agenda" />
         <Stack.Screen key="household" name="household" />
         <Stack.Screen key="meals" name="meals" />
+        <Stack.Screen key="finances" name="finances" />
+        <Stack.Screen key="profile" name="profile" />
       </Stack>
       <FloatingTabBar tabs={tabs} />
     </FamilyProvider>
