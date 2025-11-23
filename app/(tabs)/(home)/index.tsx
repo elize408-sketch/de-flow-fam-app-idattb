@@ -5,40 +5,266 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import WeatherWidget from '@/components/WeatherWidget';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { familyMembers, selectedMember, setSelectedMember } = useFamily();
-  const [showMemberPicker, setShowMemberPicker] = useState(false);
+  const { familyMembers, currentUser, setCurrentUser, tasks, appointments } = useFamily();
+  const [showMemberPicker, setShowMemberPicker] = useState(!currentUser);
 
-  const displayMember = selectedMember || familyMembers[0];
+  // If no user selected, force selection
+  if (!currentUser) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.selectionContainer}>
+          <Text style={styles.selectionEmoji}>👋</Text>
+          <Text style={styles.selectionTitle}>Welkom bij Flow Fam!</Text>
+          <Text style={styles.selectionSubtitle}>Wie ben jij?</Text>
+          
+          <View style={styles.memberGrid}>
+            {familyMembers.map((member, index) => (
+              <React.Fragment key={index}>
+                <TouchableOpacity
+                  style={[styles.memberCard, { backgroundColor: member.color || colors.accent }]}
+                  onPress={() => {
+                    setCurrentUser(member);
+                    setShowMemberPicker(false);
+                  }}
+                >
+                  <View style={styles.memberCardAvatar}>
+                    <Text style={styles.memberCardAvatarText}>{member.name.charAt(0)}</Text>
+                  </View>
+                  <Text style={styles.memberCardName}>{member.name}</Text>
+                  <Text style={styles.memberCardRole}>
+                    {member.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+                  </Text>
+                </TouchableOpacity>
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
+  }
 
-  const navigationItems = [
-    { title: 'Taken', icon: 'check-circle', route: '/(tabs)/tasks', color: colors.primary },
-    { title: 'Agenda', icon: 'calendar-today', route: '/(tabs)/agenda', color: colors.secondary },
-    { title: 'Huishouden', icon: 'home', route: '/(tabs)/household', color: colors.accent },
-    { title: 'Maaltijden', icon: 'restaurant', route: '/(tabs)/meals', color: colors.highlight },
-    { title: 'Beloningen', icon: 'star', route: '/(tabs)/rewards', color: colors.primary },
-    { title: 'Financiën', icon: 'account-balance-wallet', route: '/(tabs)/finances', color: colors.secondary },
-  ];
+  const isParent = currentUser.role === 'parent';
+  const memberColor = currentUser.color || colors.accent;
+
+  // Get today's date
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Parent view - show overview of all family members
+  if (isParent) {
+    const children = familyMembers.filter(m => m.role === 'child');
+
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.contentContainer}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Flow Fam</Text>
+            <Text style={styles.subtitle}>Gezinsoverzicht</Text>
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.memberSelector, { borderColor: memberColor }]}
+            onPress={() => setShowMemberPicker(true)}
+          >
+            <View style={styles.memberSelectorContent}>
+              <View style={[styles.memberAvatar, { backgroundColor: memberColor }]}>
+                <Text style={styles.memberAvatarText}>{currentUser.name.charAt(0)}</Text>
+              </View>
+              <Text style={styles.memberSelectorName}>{currentUser.name}</Text>
+              <IconSymbol 
+                ios_icon_name="chevron.down" 
+                android_material_icon_name="arrow-drop-down" 
+                size={24} 
+                color={colors.text} 
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* Weather Widget */}
+          <WeatherWidget />
+
+          {/* Per family member overview */}
+          {children.map((child, childIndex) => {
+            const childTasks = tasks.filter(t => 
+              t.assignedTo === child.id && 
+              !t.completed
+            );
+            const childAppointments = appointments.filter(apt => {
+              const aptDate = new Date(apt.date);
+              aptDate.setHours(0, 0, 0, 0);
+              return apt.assignedTo.includes(child.id) && aptDate.getTime() === today.getTime();
+            });
+
+            return (
+              <React.Fragment key={childIndex}>
+                <View style={[styles.childOverviewCard, { borderLeftColor: child.color, borderLeftWidth: 4 }]}>
+                  <View style={styles.childOverviewHeader}>
+                    <View style={[styles.childOverviewAvatar, { backgroundColor: child.color }]}>
+                      <Text style={styles.childOverviewAvatarText}>{child.name.charAt(0)}</Text>
+                    </View>
+                    <View style={styles.childOverviewInfo}>
+                      <Text style={styles.childOverviewName}>{child.name}</Text>
+                      <Text style={styles.childOverviewMeta}>
+                        {childTasks.length} taken • {childAppointments.length} afspraken vandaag
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Today's appointments */}
+                  {childAppointments.length > 0 && (
+                    <View style={styles.childOverviewSection}>
+                      <Text style={styles.childOverviewSectionTitle}>📅 Vandaag</Text>
+                      {childAppointments.map((apt, aptIndex) => (
+                        <React.Fragment key={aptIndex}>
+                          <View style={styles.miniAppointmentCard}>
+                            <Text style={styles.miniAppointmentTime}>{apt.time}</Text>
+                            <Text style={styles.miniAppointmentTitle}>{apt.title}</Text>
+                          </View>
+                        </React.Fragment>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Today's tasks */}
+                  {childTasks.length > 0 && (
+                    <View style={styles.childOverviewSection}>
+                      <Text style={styles.childOverviewSectionTitle}>✅ Taken</Text>
+                      {childTasks.slice(0, 3).map((task, taskIndex) => (
+                        <React.Fragment key={taskIndex}>
+                          <View style={styles.miniTaskCard}>
+                            <IconSymbol
+                              ios_icon_name={task.icon}
+                              android_material_icon_name={task.icon as any}
+                              size={20}
+                              color={child.color}
+                            />
+                            <Text style={styles.miniTaskName}>{task.name}</Text>
+                            <Text style={styles.miniTaskCoins}>{task.coins}🪙</Text>
+                          </View>
+                        </React.Fragment>
+                      ))}
+                      {childTasks.length > 3 && (
+                        <Text style={styles.moreText}>+{childTasks.length - 3} meer...</Text>
+                      )}
+                    </View>
+                  )}
+
+                  {childTasks.length === 0 && childAppointments.length === 0 && (
+                    <Text style={styles.emptyOverviewText}>Geen taken of afspraken vandaag</Text>
+                  )}
+                </View>
+              </React.Fragment>
+            );
+          })}
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Snelle navigatie</Text>
+            <View style={styles.navigationGrid}>
+              {[
+                { title: 'Financiën', icon: 'account-balance-wallet', route: '/(tabs)/finances', color: colors.primary },
+                { title: 'Agenda', icon: 'calendar-today', route: '/(tabs)/agenda', color: colors.secondary },
+                { title: 'Taken', icon: 'check-circle', route: '/(tabs)/tasks', color: colors.accent },
+                { title: 'Huishouden', icon: 'home', route: '/(tabs)/household', color: colors.highlight },
+                { title: 'Maaltijden', icon: 'restaurant', route: '/(tabs)/meals', color: colors.primary },
+                { title: 'Herinneringen', icon: 'photo-library', route: '/(tabs)/memories', color: colors.secondary },
+              ].map((item, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={[styles.navCard, { backgroundColor: item.color }]}
+                    onPress={() => router.push(item.route as any)}
+                  >
+                    <IconSymbol
+                      ios_icon_name={item.icon}
+                      android_material_icon_name={item.icon}
+                      size={28}
+                      color={colors.text}
+                    />
+                    <Text style={styles.navCardText}>{item.title}</Text>
+                  </TouchableOpacity>
+                </React.Fragment>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+
+        <Modal
+          visible={showMemberPicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowMemberPicker(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowMemberPicker(false)}
+          >
+            <View style={styles.memberPickerModal}>
+              <Text style={styles.modalTitle}>Wissel van profiel</Text>
+              {familyMembers.map((member, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={styles.memberOption}
+                    onPress={() => {
+                      setCurrentUser(member);
+                      setShowMemberPicker(false);
+                    }}
+                  >
+                    <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
+                      <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
+                    </View>
+                    <View style={styles.memberOptionInfo}>
+                      <Text style={styles.memberOptionName}>{member.name}</Text>
+                      <Text style={styles.memberOptionRole}>
+                        {member.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+                      </Text>
+                    </View>
+                    {currentUser.id === member.id && (
+                      <IconSymbol 
+                        ios_icon_name="checkmark" 
+                        android_material_icon_name="check" 
+                        size={24} 
+                        color={colors.accent} 
+                      />
+                    )}
+                  </TouchableOpacity>
+                </React.Fragment>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </View>
+    );
+  }
+
+  // Child view - show their own tasks and weather
+  const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
+  const myAppointments = appointments.filter(apt => {
+    const aptDate = new Date(apt.date);
+    aptDate.setHours(0, 0, 0, 0);
+    return apt.assignedTo.includes(currentUser.id) && aptDate.getTime() === today.getTime();
+  });
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Flow Fam</Text>
-          <Text style={styles.subtitle}>Welkom bij jullie gezinsapp</Text>
+          <Text style={styles.title}>Hallo {currentUser.name}! 👋</Text>
+          <Text style={styles.subtitle}>Wat ga je vandaag doen?</Text>
         </View>
 
         <TouchableOpacity 
-          style={styles.memberSelector}
+          style={[styles.memberSelector, { borderColor: memberColor }]}
           onPress={() => setShowMemberPicker(true)}
         >
           <View style={styles.memberSelectorContent}>
-            <View style={[styles.memberAvatar, { backgroundColor: displayMember.color || colors.accent }]}>
-              <Text style={styles.memberAvatarText}>{displayMember.name.charAt(0)}</Text>
+            <View style={[styles.memberAvatar, { backgroundColor: memberColor }]}>
+              <Text style={styles.memberAvatarText}>{currentUser.name.charAt(0)}</Text>
             </View>
-            <Text style={styles.memberSelectorName}>{displayMember.name}</Text>
+            <Text style={styles.memberSelectorName}>{currentUser.name}</Text>
             <IconSymbol 
               ios_icon_name="chevron.down" 
               android_material_icon_name="arrow-drop-down" 
@@ -48,10 +274,74 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
 
+        {/* Weather Widget for children */}
+        <WeatherWidget />
+
+        {/* Coins display */}
+        <View style={[styles.coinsCard, { borderColor: memberColor }]}>
+          <Text style={styles.coinsEmoji}>🪙</Text>
+          <View>
+            <Text style={styles.coinsLabel}>Mijn muntjes</Text>
+            <Text style={[styles.coinsAmount, { color: memberColor }]}>{currentUser.coins}</Text>
+          </View>
+        </View>
+
+        {/* Today's appointments */}
+        {myAppointments.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📅 Vandaag</Text>
+            {myAppointments.map((apt, index) => (
+              <React.Fragment key={index}>
+                <View style={[styles.appointmentCard, { borderLeftColor: memberColor }]}>
+                  <Text style={styles.appointmentTime}>{apt.time}</Text>
+                  <Text style={styles.appointmentTitle}>{apt.title}</Text>
+                </View>
+              </React.Fragment>
+            ))}
+          </View>
+        )}
+
+        {/* My tasks */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Snelle navigatie</Text>
+          <Text style={styles.sectionTitle}>✅ Mijn taken</Text>
+          {myTasks.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyEmoji}>✨</Text>
+              <Text style={styles.emptyText}>Geen taken vandaag!</Text>
+            </View>
+          ) : (
+            myTasks.map((task, index) => (
+              <React.Fragment key={index}>
+                <TouchableOpacity
+                  style={styles.taskCard}
+                  onPress={() => router.push('/(tabs)/tasks')}
+                >
+                  <View style={[styles.taskIcon, { backgroundColor: memberColor }]}>
+                    <IconSymbol
+                      ios_icon_name={task.icon}
+                      android_material_icon_name={task.icon as any}
+                      size={24}
+                      color={colors.card}
+                    />
+                  </View>
+                  <Text style={styles.taskName}>{task.name}</Text>
+                  <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
+                    <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
+                  </View>
+                </TouchableOpacity>
+              </React.Fragment>
+            ))
+          )}
+        </View>
+
+        {/* Quick navigation for children */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Meer</Text>
           <View style={styles.navigationGrid}>
-            {navigationItems.map((item, index) => (
+            {[
+              { title: 'Taken', icon: 'check-circle', route: '/(tabs)/tasks', color: memberColor },
+              { title: 'Beloningen', icon: 'star', route: '/(tabs)/rewards', color: memberColor },
+            ].map((item, index) => (
               <React.Fragment key={index}>
                 <TouchableOpacity
                   style={[styles.navCard, { backgroundColor: item.color }]}
@@ -61,9 +351,9 @@ export default function HomeScreen() {
                     ios_icon_name={item.icon}
                     android_material_icon_name={item.icon}
                     size={32}
-                    color={colors.text}
+                    color={colors.card}
                   />
-                  <Text style={styles.navCardText}>{item.title}</Text>
+                  <Text style={[styles.navCardText, { color: colors.card }]}>{item.title}</Text>
                 </TouchableOpacity>
               </React.Fragment>
             ))}
@@ -83,21 +373,26 @@ export default function HomeScreen() {
           onPress={() => setShowMemberPicker(false)}
         >
           <View style={styles.memberPickerModal}>
-            <Text style={styles.modalTitle}>Kies gezinslid</Text>
+            <Text style={styles.modalTitle}>Wissel van profiel</Text>
             {familyMembers.map((member, index) => (
               <React.Fragment key={index}>
                 <TouchableOpacity
                   style={styles.memberOption}
                   onPress={() => {
-                    setSelectedMember(member);
+                    setCurrentUser(member);
                     setShowMemberPicker(false);
                   }}
                 >
                   <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
                     <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
                   </View>
-                  <Text style={styles.memberOptionName}>{member.name}</Text>
-                  {displayMember.id === member.id && (
+                  <View style={styles.memberOptionInfo}>
+                    <Text style={styles.memberOptionName}>{member.name}</Text>
+                    <Text style={styles.memberOptionRole}>
+                      {member.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+                    </Text>
+                  </View>
+                  {currentUser.id === member.id && (
                     <IconSymbol 
                       ios_icon_name="checkmark" 
                       android_material_icon_name="check" 
@@ -125,12 +420,78 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 120,
   },
+  selectionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  selectionEmoji: {
+    fontSize: 80,
+    marginBottom: 20,
+  },
+  selectionTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 10,
+    fontFamily: 'Poppins_700Bold',
+  },
+  selectionSubtitle: {
+    fontSize: 18,
+    color: colors.textSecondary,
+    marginBottom: 40,
+    fontFamily: 'Nunito_400Regular',
+  },
+  memberGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 15,
+    justifyContent: 'center',
+  },
+  memberCard: {
+    width: 150,
+    aspectRatio: 1,
+    borderRadius: 20,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  memberCardAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  memberCardAvatarText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberCardName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.card,
+    marginBottom: 5,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberCardRole: {
+    fontSize: 14,
+    color: colors.card,
+    fontFamily: 'Nunito_400Regular',
+  },
   header: {
     alignItems: 'center',
     marginBottom: 20,
   },
   title: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
@@ -145,9 +506,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 20,
     padding: 15,
-    marginBottom: 30,
+    marginBottom: 20,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
+    borderWidth: 2,
   },
   memberSelectorContent: {
     flexDirection: 'row',
@@ -174,6 +536,139 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
+  coinsCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+    borderWidth: 2,
+  },
+  coinsEmoji: {
+    fontSize: 48,
+    marginRight: 15,
+  },
+  coinsLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 5,
+    fontFamily: 'Nunito_400Regular',
+  },
+  coinsAmount: {
+    fontSize: 32,
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+  },
+  childOverviewCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  childOverviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  childOverviewAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  childOverviewAvatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  childOverviewInfo: {
+    flex: 1,
+  },
+  childOverviewName: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 5,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  childOverviewMeta: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  childOverviewSection: {
+    marginTop: 15,
+  },
+  childOverviewSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 10,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  miniAppointmentCard: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  miniAppointmentTime: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.accent,
+    marginRight: 10,
+    fontFamily: 'Poppins_700Bold',
+  },
+  miniAppointmentTitle: {
+    fontSize: 14,
+    color: colors.text,
+    flex: 1,
+    fontFamily: 'Nunito_400Regular',
+  },
+  miniTaskCard: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  miniTaskName: {
+    fontSize: 14,
+    color: colors.text,
+    flex: 1,
+    marginLeft: 10,
+    fontFamily: 'Nunito_400Regular',
+  },
+  miniTaskCoins: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.highlight,
+    fontFamily: 'Poppins_700Bold',
+  },
+  moreText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 5,
+    fontFamily: 'Nunito_400Regular',
+  },
+  emptyOverviewText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    fontFamily: 'Nunito_400Regular',
+  },
   section: {
     marginBottom: 30,
   },
@@ -183,6 +678,80 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 15,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  appointmentCard: {
+    backgroundColor: colors.card,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  appointmentTime: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.accent,
+    marginBottom: 5,
+    fontFamily: 'Poppins_700Bold',
+  },
+  appointmentTitle: {
+    fontSize: 16,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
+  emptyCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  taskCard: {
+    backgroundColor: colors.card,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  taskIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  taskName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  taskCoins: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  taskCoinsText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
   },
   navigationGrid: {
     flexDirection: 'row',
@@ -200,7 +769,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   navCardText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text,
     marginTop: 10,
@@ -240,24 +809,32 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   memberOptionAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
   memberOptionAvatarText: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
   },
-  memberOptionName: {
+  memberOptionInfo: {
     flex: 1,
+  },
+  memberOptionName: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,
+    marginBottom: 2,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  memberOptionRole: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
   },
 });

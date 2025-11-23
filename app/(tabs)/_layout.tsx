@@ -2,10 +2,48 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import FloatingTabBar, { TabBarItem } from '@/components/FloatingTabBar';
-import { FamilyProvider } from '@/contexts/FamilyContext';
+import { useFamily } from '@/contexts/FamilyContext';
 
 export default function TabLayout() {
-  const tabs: TabBarItem[] = [
+  const { currentUser } = useFamily();
+  const isParent = currentUser?.role === 'parent';
+
+  // Parent tabs - full menu
+  const parentTabs: TabBarItem[] = [
+    {
+      name: '(home)',
+      route: '/(tabs)/(home)/',
+      icon: 'home',
+      label: 'Home',
+    },
+    {
+      name: 'finances',
+      route: '/(tabs)/finances',
+      icon: 'account-balance-wallet',
+      label: 'Financiën',
+    },
+    {
+      name: 'agenda',
+      route: '/(tabs)/agenda',
+      icon: 'calendar-today',
+      label: 'Agenda',
+    },
+    {
+      name: 'tasks',
+      route: '/(tabs)/tasks',
+      icon: 'check-circle',
+      label: 'Taken',
+    },
+    {
+      name: 'profile',
+      route: '/(tabs)/profile',
+      icon: 'settings',
+      label: 'Instellingen',
+    },
+  ];
+
+  // Child tabs - simplified menu
+  const childTabs: TabBarItem[] = [
     {
       name: '(home)',
       route: '/(tabs)/(home)/',
@@ -19,16 +57,10 @@ export default function TabLayout() {
       label: 'Taken',
     },
     {
-      name: 'meals',
-      route: '/(tabs)/meals',
-      icon: 'restaurant',
-      label: 'Maaltijden',
-    },
-    {
-      name: 'memories',
-      route: '/(tabs)/memories',
-      icon: 'photo-library',
-      label: 'Herinneringen',
+      name: 'rewards',
+      route: '/(tabs)/rewards',
+      icon: 'star',
+      label: 'Beloningen',
     },
     {
       name: 'profile',
@@ -38,8 +70,10 @@ export default function TabLayout() {
     },
   ];
 
+  const tabs = isParent ? parentTabs : childTabs;
+
   return (
-    <FamilyProvider>
+    <>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -57,6 +91,6 @@ export default function TabLayout() {
         <Stack.Screen key="profile" name="profile" />
       </Stack>
       <FloatingTabBar tabs={tabs} />
-    </FamilyProvider>
+    </>
   );
 }

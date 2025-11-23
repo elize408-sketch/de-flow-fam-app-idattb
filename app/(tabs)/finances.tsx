@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -54,6 +54,7 @@ export default function FinancesScreen() {
   const [newPotGoal, setNewPotGoal] = useState('');
   const [newPotMonthly, setNewPotMonthly] = useState('');
   const [newPotIcon, setNewPotIcon] = useState('💰');
+  const [newPotPhoto, setNewPotPhoto] = useState<string | undefined>(undefined);
 
   const isParent = currentUser?.role === 'parent';
 
@@ -287,6 +288,26 @@ export default function FinancesScreen() {
     }
   };
 
+  const handleSelectPotPhoto = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setNewPotPhoto(result.assets[0].uri);
+    }
+  };
+
   const handleAddPot = () => {
     if (!newPotName.trim() || !newPotGoal.trim() || !newPotMonthly.trim()) {
       Alert.alert('Fout', 'Vul alle velden in');
@@ -308,12 +329,14 @@ export default function FinancesScreen() {
       monthlyDeposit: monthly,
       color: colors.accent,
       icon: newPotIcon,
+      photoUri: newPotPhoto,
     });
 
     setNewPotName('');
     setNewPotGoal('');
     setNewPotMonthly('');
     setNewPotIcon('💰');
+    setNewPotPhoto(undefined);
     setShowAddPotModal(false);
     Alert.alert('Gelukt!', 'Spaarpotje aangemaakt');
   };
@@ -440,7 +463,11 @@ export default function FinancesScreen() {
                       setShowPotDetailsModal(true);
                     }}
                   >
-                    <Text style={styles.potIcon}>{pot.icon}</Text>
+                    {pot.photoUri ? (
+                      <Image source={{ uri: pot.photoUri }} style={styles.potPhoto} />
+                    ) : (
+                      <Text style={styles.potIcon}>{pot.icon}</Text>
+                    )}
                     <View style={styles.potInfo}>
                       <Text style={styles.potName}>{pot.name}</Text>
                       <View style={styles.progressBar}>
@@ -570,7 +597,6 @@ export default function FinancesScreen() {
         )}
       </ScrollView>
 
-      {/* Modals continue in next part due to length... */}
       {/* Add Income Modal */}
       <Modal
         visible={showAddIncomeModal}
@@ -815,73 +841,96 @@ export default function FinancesScreen() {
         onRequestClose={() => setShowAddPotModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Spaarpotje aanmaken</Text>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Spaarpotje aanmaken</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Naam (bijv. Vakantie)"
-              placeholderTextColor={colors.textSecondary}
-              value={newPotName}
-              onChangeText={setNewPotName}
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Naam (bijv. Vakantie)"
+                placeholderTextColor={colors.textSecondary}
+                value={newPotName}
+                onChangeText={setNewPotName}
+              />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Spaardoel (€)"
-              placeholderTextColor={colors.textSecondary}
-              value={newPotGoal}
-              onChangeText={setNewPotGoal}
-              keyboardType="decimal-pad"
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Spaardoel (€)"
+                placeholderTextColor={colors.textSecondary}
+                value={newPotGoal}
+                onChangeText={setNewPotGoal}
+                keyboardType="decimal-pad"
+              />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Maandelijks bedrag (€)"
-              placeholderTextColor={colors.textSecondary}
-              value={newPotMonthly}
-              onChangeText={setNewPotMonthly}
-              keyboardType="decimal-pad"
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Maandelijks bedrag (€)"
+                placeholderTextColor={colors.textSecondary}
+                value={newPotMonthly}
+                onChangeText={setNewPotMonthly}
+                keyboardType="decimal-pad"
+              />
 
-            <Text style={styles.inputLabel}>Kies een icoon:</Text>
-            <View style={styles.iconSelector}>
-              {['💰', '🏖️', '🏠', '🚗', '🎓', '🎁', '✈️', '🏥'].map((icon, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={[
-                      styles.iconOption,
-                      newPotIcon === icon && styles.iconOptionActive,
-                    ]}
-                    onPress={() => setNewPotIcon(icon)}
-                  >
-                    <Text style={styles.iconOptionEmoji}>{icon}</Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
-
-            <View style={styles.modalButtons}>
+              <Text style={styles.inputLabel}>Foto toevoegen (optioneel):</Text>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => {
-                  setShowAddPotModal(false);
-                  setNewPotName('');
-                  setNewPotGoal('');
-                  setNewPotMonthly('');
-                  setNewPotIcon('💰');
-                }}
+                style={styles.photoButton}
+                onPress={handleSelectPotPhoto}
               >
-                <Text style={styles.modalButtonText}>Annuleren</Text>
+                {newPotPhoto ? (
+                  <Image source={{ uri: newPotPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <>
+                    <IconSymbol
+                      ios_icon_name="camera"
+                      android_material_icon_name="add-a-photo"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.photoButtonText}>Foto selecteren</Text>
+                  </>
+                )}
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleAddPot}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Aanmaken</Text>
-              </TouchableOpacity>
+
+              <Text style={styles.inputLabel}>Of kies een icoon:</Text>
+              <View style={styles.iconSelector}>
+                {['💰', '🏖️', '🏠', '🚗', '🎓', '🎁', '✈️', '🏥'].map((icon, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.iconOption,
+                        newPotIcon === icon && styles.iconOptionActive,
+                      ]}
+                      onPress={() => setNewPotIcon(icon)}
+                    >
+                      <Text style={styles.iconOptionEmoji}>{icon}</Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowAddPotModal(false);
+                    setNewPotName('');
+                    setNewPotGoal('');
+                    setNewPotMonthly('');
+                    setNewPotIcon('💰');
+                    setNewPotPhoto(undefined);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleAddPot}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Aanmaken</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -897,7 +946,11 @@ export default function FinancesScreen() {
             <View style={styles.modalContent}>
               {selectedPot && (
                 <>
-                  <Text style={styles.potDetailIcon}>{selectedPot.icon}</Text>
+                  {selectedPot.photoUri ? (
+                    <Image source={{ uri: selectedPot.photoUri }} style={styles.potDetailPhoto} />
+                  ) : (
+                    <Text style={styles.potDetailIcon}>{selectedPot.icon}</Text>
+                  )}
                   <Text style={styles.modalTitle}>{selectedPot.name}</Text>
                   
                   <View style={styles.potDetailCard}>
@@ -1238,6 +1291,12 @@ const styles = StyleSheet.create({
     fontSize: 40,
     marginRight: 15,
   },
+  potPhoto: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+  },
   potInfo: {
     flex: 1,
   },
@@ -1466,6 +1525,28 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Nunito_400Regular',
   },
+  photoButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: colors.secondary,
+    borderStyle: 'dashed',
+  },
+  photoButtonText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 10,
+    fontFamily: 'Nunito_400Regular',
+  },
+  photoPreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
   iconSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1493,6 +1574,13 @@ const styles = StyleSheet.create({
     fontSize: 60,
     textAlign: 'center',
     marginBottom: 10,
+  },
+  potDetailPhoto: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignSelf: 'center',
+    marginBottom: 15,
   },
   potDetailCard: {
     backgroundColor: colors.background,

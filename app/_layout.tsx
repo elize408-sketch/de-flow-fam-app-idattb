@@ -15,6 +15,7 @@ import {
   Nunito_700Bold,
 } from '@expo-google-fonts/nunito';
 import { colors } from '@/styles/commonStyles';
+import { FamilyProvider } from '@/contexts/FamilyContext';
 
 const CustomLightTheme = {
   ...DefaultTheme,
@@ -68,38 +69,40 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={CustomLightTheme}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: 'modal',
-            headerShown: true,
-            title: 'Modal',
-          }}
-        />
-        <Stack.Screen
-          name="formsheet"
-          options={{
-            presentation: 'formSheet',
-            headerShown: true,
-            title: 'Form Sheet',
-          }}
-        />
-        <Stack.Screen
-          name="transparent-modal"
-          options={{
-            presentation: 'transparentModal',
-            animation: 'fade',
+    <FamilyProvider>
+      <ThemeProvider value={CustomLightTheme}>
+        <Stack
+          screenOptions={{
             headerShown: false,
           }}
-        />
-      </Stack>
-    </ThemeProvider>
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="modal"
+            options={{
+              presentation: 'modal',
+              headerShown: true,
+              title: 'Modal',
+            }}
+          />
+          <Stack.Screen
+            name="formsheet"
+            options={{
+              presentation: 'formSheet',
+              headerShown: true,
+              title: 'Form Sheet',
+            }}
+          />
+          <Stack.Screen
+            name="transparent-modal"
+            options={{
+              presentation: 'transparentModal',
+              animation: 'fade',
+              headerShown: false,
+            }}
+          />
+        </Stack>
+      </ThemeProvider>
+    </FamilyProvider>
   );
 }
