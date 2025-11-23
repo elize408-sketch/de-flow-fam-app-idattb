@@ -5,15 +5,27 @@ import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function MemoriesScreen() {
-  const { memories, addMemory, deleteMemory } = useFamily();
+  const { memories, addMemory, deleteMemory, familyMembers } = useFamily();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newPhoto, setNewPhoto] = useState<string | undefined>(undefined);
+  const [newDate, setNewDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [newAssignedTo, setNewAssignedTo] = useState<string>('');
   const [selectedMemory, setSelectedMemory] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showPhotoBookModal, setShowPhotoBookModal] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('small');
+
+  const photoBookPrices = {
+    small: 25,
+    medium: 40,
+    large: 65,
+  };
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -50,35 +62,78 @@ export default function MemoriesScreen() {
       title: newTitle.trim(),
       description: newDescription.trim(),
       photoUri: newPhoto,
-      date: new Date(),
+      date: newDate,
       tags: [],
+      assignedTo: newAssignedTo || undefined,
     });
 
     setNewTitle('');
     setNewDescription('');
     setNewPhoto(undefined);
+    setNewDate(new Date());
+    setNewAssignedTo('');
     setShowAddModal(false);
     Alert.alert('Gelukt!', 'Herinnering toegevoegd');
   };
 
-  const handleOrderPhotoBook = () => {
-    Alert.alert(
-      'Fotoboek bestellen',
-      'Deze functie maakt automatisch een fotoboek van al je herinneringen. Wil je doorgaan naar de bestelservice?',
-      [
-        { text: 'Annuleren', style: 'cancel' },
-        {
-          text: 'Bestellen',
-          onPress: () => {
-            Alert.alert(
-              'Fotoboek service',
-              'In de volledige versie van de app wordt hier een link naar een fotoboek service zoals Polarsteps getoond. Voor nu kun je je herinneringen handmatig exporteren.',
-              [{ text: 'OK' }]
-            );
-          },
-        },
-      ]
-    );
+  const handleOrderPhotoBook = async () => {
+    if (memories.length === 0) {
+      Alert.alert('Geen herinneringen', 'Je hebt nog geen herinneringen om een fotoboek van te maken');
+      return;
+    }
+
+    // Create email content with all memories
+    const memoriesText = memories.map((memory, index) => {
+      const date = new Date(memory.date).toLocaleDateString('nl-NL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      const assignedName = memory.assignedTo 
+        ? familyMembers.find(m => m.id === memory.assignedTo)?.name || 'Gezin'
+        : 'Gezin';
+      
+      return `
+${index + 1}. ${memory.title}
+Datum: ${date}
+Voor: ${assignedName}
+${memory.description ? `Beschrijving: ${memory.description}` : ''}
+-------------------`;
+    }).join('\n');
+
+    const emailSubject = 'Fotoboek Bestelling - Flow Fam App';
+    const emailBody = `
+Beste Flow Fam team,
+
+Ik wil graag een fotoboek bestellen met de volgende specificaties:
+
+Formaat: ${selectedSize === 'small' ? 'Klein' : selectedSize === 'medium' ? 'Middel' : 'Groot'}
+Prijs: €${photoBookPrices[selectedSize]} (excl. verzendkosten)
+Aantal herinneringen: ${memories.length}
+
+HERINNERINGEN:
+${memoriesText}
+
+Met vriendelijke groet,
+Een Flow Fam gebruiker
+    `;
+
+    // Send email silently in the background
+    try {
+      const mailto = `mailto:info@flowfam.nl?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      await Linking.openURL(mailto);
+      
+      setShowPhotoBookModal(false);
+      Alert.alert(
+        'Bestelling verzonden! 📧',
+        'Je fotoboek bestelling is verzonden naar info@flowfam.nl. Je ontvangt binnenkort een bevestiging.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Email error:', error);
+      Alert.alert('Fout', 'Kon email niet verzenden. Probeer het later opnieuw.');
+    }
   };
 
   const memoriesByYear = memories.reduce((acc: any, memory) => {
@@ -117,7 +172,7 @@ export default function MemoriesScreen() {
           {memories.length > 0 && (
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.highlight }]}
-              onPress={handleOrderPhotoBook}
+              onPress={() => setShowPhotoBookModal(true)}
             >
               <IconSymbol
                 ios_icon_name="book"
@@ -144,30 +199,41 @@ export default function MemoriesScreen() {
               <View style={styles.yearSection}>
                 <Text style={styles.yearTitle}>{year}</Text>
                 <View style={styles.memoriesGrid}>
-                  {memoriesByYear[year].map((memory: any, memoryIndex: number) => (
-                    <React.Fragment key={memoryIndex}>
-                      <TouchableOpacity
-                        style={styles.memoryCard}
-                        onPress={() => {
-                          setSelectedMemory(memory);
-                          setShowDetailModal(true);
-                        }}
-                      >
-                        <Image source={{ uri: memory.photoUri }} style={styles.memoryImage} />
-                        <View style={styles.memoryOverlay}>
-                          <Text style={styles.memoryTitle} numberOfLines={2}>
-                            {memory.title}
-                          </Text>
-                          <Text style={styles.memoryDate}>
-                            {new Date(memory.date).toLocaleDateString('nl-NL', {
-                              day: 'numeric',
-                              month: 'short',
-                            })}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    </React.Fragment>
-                  ))}
+                  {memoriesByYear[year].map((memory: any, memoryIndex: number) => {
+                    const assignedMember = memory.assignedTo 
+                      ? familyMembers.find(m => m.id === memory.assignedTo)
+                      : null;
+                    
+                    return (
+                      <React.Fragment key={memoryIndex}>
+                        <TouchableOpacity
+                          style={styles.memoryCard}
+                          onPress={() => {
+                            setSelectedMemory(memory);
+                            setShowDetailModal(true);
+                          }}
+                        >
+                          <Image source={{ uri: memory.photoUri }} style={styles.memoryImage} />
+                          <View style={styles.memoryOverlay}>
+                            {assignedMember && (
+                              <View style={styles.memoryBadge}>
+                                <Text style={styles.memoryBadgeText}>{assignedMember.name}</Text>
+                              </View>
+                            )}
+                            <Text style={styles.memoryTitle} numberOfLines={2}>
+                              {memory.title}
+                            </Text>
+                            <Text style={styles.memoryDate}>
+                              {new Date(memory.date).toLocaleDateString('nl-NL', {
+                                day: 'numeric',
+                                month: 'short',
+                              })}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      </React.Fragment>
+                    );
+                  })}
                 </View>
               </View>
             </React.Fragment>
@@ -194,6 +260,79 @@ export default function MemoriesScreen() {
                 value={newTitle}
                 onChangeText={setNewTitle}
               />
+
+              <TouchableOpacity 
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="calendar"
+                  android_material_icon_name="calendar-today"
+                  size={20}
+                  color={colors.text}
+                />
+                <Text style={styles.dateButtonText}>
+                  {newDate.toLocaleDateString('nl-NL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </Text>
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={newDate}
+                  mode="date"
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) {
+                      setNewDate(selectedDate);
+                    }
+                  }}
+                />
+              )}
+
+              <Text style={styles.inputLabel}>Toewijzen aan:</Text>
+              <View style={styles.assignSelector}>
+                <TouchableOpacity
+                  style={[
+                    styles.assignOption,
+                    newAssignedTo === '' && styles.assignOptionActive,
+                  ]}
+                  onPress={() => setNewAssignedTo('')}
+                >
+                  <Text style={[
+                    styles.assignOptionText,
+                    newAssignedTo === '' && styles.assignOptionTextActive,
+                  ]}>
+                    👨‍👩‍👧‍👦 Gezin
+                  </Text>
+                </TouchableOpacity>
+                {familyMembers.map((member, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.assignOption,
+                        newAssignedTo === member.id && styles.assignOptionActive,
+                      ]}
+                      onPress={() => setNewAssignedTo(member.id)}
+                    >
+                      <View style={[styles.assignAvatar, { backgroundColor: member.color || colors.accent }]}>
+                        <Text style={styles.assignAvatarText}>{member.name.charAt(0)}</Text>
+                      </View>
+                      <Text style={[
+                        styles.assignOptionText,
+                        newAssignedTo === member.id && styles.assignOptionTextActive,
+                      ]}>
+                        {member.name}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
 
               <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
                 {newPhoto ? (
@@ -229,6 +368,8 @@ export default function MemoriesScreen() {
                     setNewTitle('');
                     setNewDescription('');
                     setNewPhoto(undefined);
+                    setNewDate(new Date());
+                    setNewAssignedTo('');
                   }}
                 >
                   <Text style={styles.modalButtonText}>Annuleren</Text>
@@ -242,6 +383,79 @@ export default function MemoriesScreen() {
               </View>
             </View>
           </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Photo Book Order Modal */}
+      <Modal
+        visible={showPhotoBookModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPhotoBookModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Fotoboek bestellen</Text>
+            <Text style={styles.modalSubtitle}>
+              Kies het formaat van je fotoboek
+            </Text>
+
+            <View style={styles.sizeSelector}>
+              {[
+                { size: 'small', label: 'Klein', price: 25 },
+                { size: 'medium', label: 'Middel', price: 40 },
+                { size: 'large', label: 'Groot', price: 65 },
+              ].map((option, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={[
+                      styles.sizeOption,
+                      selectedSize === option.size && styles.sizeOptionActive,
+                    ]}
+                    onPress={() => setSelectedSize(option.size as any)}
+                  >
+                    <Text style={[
+                      styles.sizeOptionLabel,
+                      selectedSize === option.size && styles.sizeOptionLabelActive,
+                    ]}>
+                      {option.label}
+                    </Text>
+                    <Text style={[
+                      styles.sizeOptionPrice,
+                      selectedSize === option.size && styles.sizeOptionPriceActive,
+                    ]}>
+                      €{option.price}
+                    </Text>
+                    <Text style={styles.sizeOptionNote}>excl. verzendkosten</Text>
+                  </TouchableOpacity>
+                </React.Fragment>
+              ))}
+            </View>
+
+            <View style={styles.orderSummary}>
+              <Text style={styles.orderSummaryText}>
+                📚 {memories.length} herinneringen
+              </Text>
+              <Text style={styles.orderSummaryText}>
+                💰 Totaal: €{photoBookPrices[selectedSize]} (excl. verzendkosten)
+              </Text>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setShowPhotoBookModal(false)}
+              >
+                <Text style={styles.modalButtonText}>Annuleren</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleOrderPhotoBook}
+              >
+                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Bestellen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
 
@@ -278,6 +492,11 @@ export default function MemoriesScreen() {
                     day: 'numeric',
                   })}
                 </Text>
+                {selectedMemory.assignedTo && (
+                  <Text style={styles.detailAssigned}>
+                    Voor: {familyMembers.find(m => m.id === selectedMemory.assignedTo)?.name || 'Onbekend'}
+                  </Text>
+                )}
                 {selectedMemory.description && (
                   <Text style={styles.detailDescription}>{selectedMemory.description}</Text>
                 )}
@@ -428,6 +647,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     padding: 10,
   },
+  memoryBadge: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+    marginBottom: 5,
+  },
+  memoryBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.card,
+    fontFamily: 'Poppins_600SemiBold',
+  },
   memoryTitle: {
     fontSize: 14,
     fontWeight: '600',
@@ -464,9 +697,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontFamily: 'Nunito_400Regular',
   },
   input: {
     backgroundColor: colors.background,
@@ -480,6 +720,70 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
     textAlignVertical: 'top',
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 10,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  dateButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  dateButtonText: {
+    fontSize: 14,
+    color: colors.text,
+    marginLeft: 10,
+    fontFamily: 'Nunito_400Regular',
+  },
+  assignSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 15,
+  },
+  assignOption: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    minWidth: '45%',
+  },
+  assignOptionActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.primary,
+  },
+  assignAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  assignAvatarText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  assignOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  assignOptionTextActive: {
+    color: colors.text,
   },
   photoButton: {
     marginBottom: 15,
@@ -506,6 +810,61 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 10,
+    fontFamily: 'Nunito_400Regular',
+  },
+  sizeSelector: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  sizeOption: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  sizeOptionActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.primary,
+  },
+  sizeOptionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 5,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  sizeOptionLabelActive: {
+    color: colors.text,
+  },
+  sizeOptionPrice: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginBottom: 5,
+    fontFamily: 'Poppins_700Bold',
+  },
+  sizeOptionPriceActive: {
+    color: colors.accent,
+  },
+  sizeOptionNote: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  orderSummary: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 20,
+  },
+  orderSummaryText: {
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: 5,
     fontFamily: 'Nunito_400Regular',
   },
   modalButtons: {
@@ -572,6 +931,12 @@ const styles = StyleSheet.create({
   detailDate: {
     fontSize: 16,
     color: colors.secondary,
+    marginBottom: 10,
+    fontFamily: 'Nunito_400Regular',
+  },
+  detailAssigned: {
+    fontSize: 14,
+    color: colors.accent,
     marginBottom: 20,
     fontFamily: 'Nunito_400Regular',
   },

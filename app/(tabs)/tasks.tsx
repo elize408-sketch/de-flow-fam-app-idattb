@@ -6,6 +6,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import TaskCompletionAnimation from '@/components/TaskCompletionAnimation';
 import IconPicker from '@/components/IconPicker';
+import WeatherWidget from '@/components/WeatherWidget';
 
 export default function TasksScreen() {
   const { tasks, familyMembers, completeTask, addTask, currentUser } = useFamily();
@@ -69,7 +70,7 @@ export default function TasksScreen() {
     tasks: visibleTasks.filter(t => t.assignedTo === child.id),
   }));
 
-  // If child, show only their tasks
+  // If child, show only their tasks with weather widget
   if (!isParent && currentUser) {
     const myTasks = visibleTasks.filter(t => t.assignedTo === currentUser.id);
     
@@ -80,6 +81,9 @@ export default function TasksScreen() {
             <Text style={styles.title}>Mijn Taken</Text>
             <Text style={styles.subtitle}>Verdien muntjes door taken te voltooien!</Text>
           </View>
+
+          {/* Weather Widget for Children */}
+          <WeatherWidget />
 
           <View style={styles.coinsCard}>
             <Text style={styles.coinsEmoji}>🪙</Text>

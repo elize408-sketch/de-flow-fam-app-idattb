@@ -52,7 +52,7 @@ export default function RewardsScreen() {
         <React.Fragment key={childIndex}>
           <View style={styles.childSection}>
             <View style={styles.childHeader}>
-              <View style={styles.childAvatar}>
+              <View style={[styles.childAvatar, { backgroundColor: child.color || colors.accent }]}>
                 <Text style={styles.childAvatarText}>{child.name.charAt(0)}</Text>
               </View>
               <View style={styles.childInfo}>
@@ -146,7 +146,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,

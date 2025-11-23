@@ -54,6 +54,7 @@ interface FamilyContextType {
   getTotalFixedExpenses: () => number;
   getTotalVariableExpenses: () => number;
   getRemainingBudget: () => number;
+  getMonthlyOverview: () => { income: number; fixed: number; variable: number; remaining: number };
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -308,6 +309,15 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     return getTotalIncome() - getTotalFixedExpenses() - getTotalVariableExpenses();
   };
 
+  const getMonthlyOverview = () => {
+    const income = getTotalIncome();
+    const fixed = getTotalFixedExpenses();
+    const variable = getTotalVariableExpenses();
+    const remaining = income - fixed - variable;
+    
+    return { income, fixed, variable, remaining };
+  };
+
   return (
     <FamilyContext.Provider
       value={{
@@ -361,6 +371,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         getTotalFixedExpenses,
         getTotalVariableExpenses,
         getRemainingBudget,
+        getMonthlyOverview,
       }}
     >
       {children}

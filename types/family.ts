@@ -47,6 +47,8 @@ export interface HouseholdTask {
   dueDate?: Date;
   repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
   icon?: string;
+  notes?: string;
+  type?: 'regular' | 'repair';
 }
 
 export interface Expense {
@@ -64,6 +66,7 @@ export interface Income {
   name: string;
   amount: number;
   type: 'salary' | 'partner' | 'benefits' | 'other';
+  resetDate?: number;
 }
 
 export interface Receipt {
@@ -96,6 +99,7 @@ export interface SavingsPot {
   color: string;
   icon: string;
   targetDate?: Date;
+  photoUri?: string;
 }
 
 export interface Memory {
@@ -105,4 +109,11 @@ export interface Memory {
   photoUri: string;
   date: Date;
   tags?: string[];
+  assignedTo?: string;
+}
+
+export interface PhotoBookOrder {
+  size: 'small' | 'medium' | 'large';
+  price: number;
+  memories: Memory[];
 }
