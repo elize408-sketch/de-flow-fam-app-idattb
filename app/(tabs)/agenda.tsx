@@ -12,6 +12,7 @@ export default function AgendaScreen() {
   const [newAppointmentTitle, setNewAppointmentTitle] = useState('');
   const [newAppointmentDate, setNewAppointmentDate] = useState(new Date());
   const [newAppointmentTime, setNewAppointmentTime] = useState('10:00');
+  const [newAppointmentEndTime, setNewAppointmentEndTime] = useState('');
   const [newAppointmentAssignedTo, setNewAppointmentAssignedTo] = useState<string[]>([]);
   const [newAppointmentRepeat, setNewAppointmentRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -46,6 +47,7 @@ export default function AgendaScreen() {
       title: newAppointmentTitle.trim(),
       date: newAppointmentDate,
       time: newAppointmentTime,
+      endTime: newAppointmentEndTime.trim() || undefined,
       assignedTo: newAppointmentAssignedTo,
       color: appointmentColor,
       repeatType: newAppointmentRepeat,
@@ -54,6 +56,7 @@ export default function AgendaScreen() {
     setNewAppointmentTitle('');
     setNewAppointmentDate(new Date());
     setNewAppointmentTime('10:00');
+    setNewAppointmentEndTime('');
     setNewAppointmentAssignedTo([]);
     setNewAppointmentRepeat('none');
     setShowAddModal(false);
@@ -202,6 +205,7 @@ export default function AgendaScreen() {
                         <Text style={styles.appointmentTitle}>{appointment.title}</Text>
                         <Text style={styles.appointmentMeta}>
                           📅 {new Date(appointment.date).toLocaleDateString('nl-NL')} om {appointment.time}
+                          {appointment.endTime && ` - ${appointment.endTime}`}
                         </Text>
                         <View style={styles.membersRow}>
                           <Text style={styles.appointmentMeta}>👥 </Text>
@@ -294,10 +298,18 @@ export default function AgendaScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Tijd (bijv. 10:00)"
+                placeholder="Starttijd (bijv. 10:00)"
                 placeholderTextColor={colors.textSecondary}
                 value={newAppointmentTime}
                 onChangeText={setNewAppointmentTime}
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Eindtijd (optioneel, bijv. 11:30)"
+                placeholderTextColor={colors.textSecondary}
+                value={newAppointmentEndTime}
+                onChangeText={setNewAppointmentEndTime}
               />
 
               <Text style={styles.inputLabel}>Voor wie: (meerdere mogelijk)</Text>
@@ -367,6 +379,7 @@ export default function AgendaScreen() {
                     setNewAppointmentTitle('');
                     setNewAppointmentDate(new Date());
                     setNewAppointmentTime('10:00');
+                    setNewAppointmentEndTime('');
                     setNewAppointmentAssignedTo([]);
                     setNewAppointmentRepeat('none');
                   }}
@@ -396,7 +409,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 140,
   },
   header: {
     alignItems: 'center',

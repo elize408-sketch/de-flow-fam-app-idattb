@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal,
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import IconPicker from '@/components/IconPicker';
 import * as ImagePicker from 'expo-image-picker';
 
 const AVAILABLE_COLORS = [
@@ -20,14 +21,19 @@ const AVAILABLE_COLORS = [
 ];
 
 export default function ProfileScreen() {
-  const { familyMembers, addFamilyMember, updateFamilyMember, currentUser, tasks, deleteTask } = useFamily();
+  const { familyMembers, addFamilyMember, updateFamilyMember, currentUser, tasks, deleteTask, updateTask } = useFamily();
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showManageChildTasksModal, setShowManageChildTasksModal] = useState(false);
+  const [showEditTaskModal, setShowEditTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState<any>(null);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<'parent' | 'child'>('child');
   const [newMemberColor, setNewMemberColor] = useState(AVAILABLE_COLORS[0].value);
   const [newMemberPhoto, setNewMemberPhoto] = useState<string | null>(null);
-  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editTaskName, setEditTaskName] = useState('');
+  const [editTaskCoins, setEditTaskCoins] = useState('');
+  const [editTaskIcon, setEditTaskIcon] = useState('check');
+  const [editTaskRepeat, setEditTaskRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
 
   const isParent = currentUser?.role === 'parent';
 
@@ -35,7 +41,7 @@ export default function ProfileScreen() {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (permissionResult.granted === false) {
-      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto\'s om een profielfoto te kunnen toevoegen.');
+      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s om een profielfoto te kunnen toevoegen.');
       return;
     }
 
@@ -55,7 +61,7 @@ export default function ProfileScreen() {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (permissionResult.granted === false) {
-      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto\'s om een profielfoto te kunnen toevoegen.');
+      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s om een profielfoto te kunnen toevoegen.');
       return;
     }
 
@@ -110,6 +116,43 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  const openEditTaskModal = (task: any) => {
+    setEditingTask(task);
+    setEditTaskName(task.name);
+    setEditTaskCoins(task.coins.toString());
+    setEditTaskIcon(task.icon);
+    setEditTaskRepeat(task.repeatType || 'none');
+    setShowEditTaskModal(true);
+  };
+
+  const handleEditTask = () => {
+    if (!editTaskName.trim()) {
+      Alert.alert('Fout', 'Vul een taaknaam in');
+      return;
+    }
+
+    const coins = parseInt(editTaskCoins);
+    if (isNaN(coins) || coins < 0) {
+      Alert.alert('Fout', 'Vul een geldig aantal muntjes in');
+      return;
+    }
+
+    updateTask(editingTask.id, {
+      name: editTaskName.trim(),
+      coins: coins,
+      icon: editTaskIcon,
+      repeatType: editTaskRepeat,
+    });
+
+    setEditingTask(null);
+    setEditTaskName('');
+    setEditTaskCoins('');
+    setEditTaskIcon('check');
+    setEditTaskRepeat('none');
+    setShowEditTaskModal(false);
+    Alert.alert('Gelukt!', 'Taak bijgewerkt');
   };
 
   const children = familyMembers.filter(m => m.role === 'child');
@@ -359,19 +402,42 @@ export default function ProfileScreen() {
                           <Text style={styles.taskManageName}>{task.name}</Text>
                           <Text style={styles.taskManageMeta}>
                             {assignedChild?.name} • {task.coins}🪙
+                            {task.repeatType && task.repeatType !== 'none' && (
+                              <Text> • 🔄 {
+                                task.repeatType === 'daily' ? 'Dagelijks' :
+                                task.repeatType === 'weekly' ? 'Wekelijks' :
+                                task.repeatType === 'monthly' ? 'Maandelijks' : ''
+                              }</Text>
+                            )}
                           </Text>
                         </View>
-                        <TouchableOpacity
-                          style={styles.deleteTaskButton}
-                          onPress={() => handleDeleteTask(task.id, task.name)}
-                        >
-                          <IconSymbol
-                            ios_icon_name="trash"
-                            android_material_icon_name="delete"
-                            size={20}
-                            color={colors.card}
-                          />
-                        </TouchableOpacity>
+                        <View style={styles.taskActions}>
+                          <TouchableOpacity
+                            style={styles.editTaskButton}
+                            onPress={() => {
+                              setShowManageChildTasksModal(false);
+                              openEditTaskModal(task);
+                            }}
+                          >
+                            <IconSymbol
+                              ios_icon_name="pencil"
+                              android_material_icon_name="edit"
+                              size={20}
+                              color={colors.card}
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.deleteTaskButton}
+                            onPress={() => handleDeleteTask(task.id, task.name)}
+                          >
+                            <IconSymbol
+                              ios_icon_name="trash"
+                              android_material_icon_name="delete"
+                              size={20}
+                              color={colors.card}
+                            />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </React.Fragment>
                   );
@@ -388,6 +454,97 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Task Modal */}
+      <Modal
+        visible={showEditTaskModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditTaskModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Taak bewerken</Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Taaknaam"
+                placeholderTextColor={colors.textSecondary}
+                value={editTaskName}
+                onChangeText={setEditTaskName}
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Aantal muntjes"
+                placeholderTextColor={colors.textSecondary}
+                value={editTaskCoins}
+                onChangeText={setEditTaskCoins}
+                keyboardType="numeric"
+              />
+
+              <IconPicker
+                selectedIcon={editTaskIcon}
+                onSelectIcon={setEditTaskIcon}
+                type="task"
+                taskName={editTaskName}
+              />
+
+              <Text style={styles.inputLabel}>Herhaling:</Text>
+              <View style={styles.repeatSelector}>
+                {[
+                  { value: 'none', label: 'Geen' },
+                  { value: 'daily', label: 'Dagelijks' },
+                  { value: 'weekly', label: 'Wekelijks' },
+                  { value: 'monthly', label: 'Maandelijks' },
+                ].map((option, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.repeatOption,
+                        editTaskRepeat === option.value && styles.repeatOptionActive,
+                      ]}
+                      onPress={() => setEditTaskRepeat(option.value as any)}
+                    >
+                      <Text
+                        style={[
+                          styles.repeatOptionText,
+                          editTaskRepeat === option.value && styles.repeatOptionTextActive,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowEditTaskModal(false);
+                    setEditingTask(null);
+                    setEditTaskName('');
+                    setEditTaskCoins('');
+                    setEditTaskIcon('check');
+                    setEditTaskRepeat('none');
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleEditTask}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -400,7 +557,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 140,
   },
   header: {
     alignItems: 'center',
@@ -791,6 +948,18 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
   },
+  taskActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editTaskButton: {
+    backgroundColor: colors.vibrantOrange,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   deleteTaskButton: {
     backgroundColor: '#E74C3C',
     width: 36,
@@ -798,5 +967,34 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  repeatSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  repeatOption: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 12,
+    flex: 1,
+    minWidth: '45%',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  repeatOptionActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.primary,
+  },
+  repeatOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  repeatOptionTextActive: {
+    color: colors.text,
   },
 });

@@ -59,7 +59,7 @@ const HOUSEHOLD_ICONS: IconOption[] = [
   { ios: 'screwdriver', android: 'construction', label: 'Ophangen' },
   { ios: 'paintbrush', android: 'format-paint', label: 'Schilderen' },
   { ios: 'mop', android: 'cleaning-services', label: 'Dweilen' },
-  { ios: 'vacuum', android: 'vacuum', label: 'Stofzuigen' },
+  { ios: 'vacuum', android: 'cleaning-services', label: 'Stofzuigen' },
 ];
 
 const SCHEDULE_ICONS: IconOption[] = [
@@ -110,8 +110,8 @@ const suggestIcon = (taskName: string, type: 'task' | 'household' | 'schedule'):
     'maaltijd': 'restaurant',
     'dweilen': 'cleaning-services',
     'dweil': 'cleaning-services',
-    'stofzuigen': 'vacuum',
-    'stofzuiger': 'vacuum',
+    'stofzuigen': 'cleaning-services',
+    'stofzuiger': 'cleaning-services',
     'schoonmaken': 'auto-awesome',
     'schoon': 'auto-awesome',
     'afval': 'delete',

@@ -8,7 +8,7 @@ export default function TabLayout() {
   const { currentUser } = useFamily();
   const isParent = currentUser?.role === 'parent';
 
-  // Parent tabs - full menu with all options
+  // Parent tabs - full menu with all options including shopping and notes
   const parentTabs: TabBarItem[] = [
     {
       name: '(home)',
@@ -39,6 +39,18 @@ export default function TabLayout() {
       route: '/(tabs)/finances',
       icon: 'account-balance-wallet',
       label: 'Financiën',
+    },
+    {
+      name: 'shopping',
+      route: '/(tabs)/shopping',
+      icon: 'shopping-cart',
+      label: 'Boodschappen',
+    },
+    {
+      name: 'notes',
+      route: '/(tabs)/notes',
+      icon: 'note',
+      label: 'Notities',
     },
     {
       name: 'memories',
@@ -99,6 +111,8 @@ export default function TabLayout() {
         <Stack.Screen key="household" name="household" />
         <Stack.Screen key="meals" name="meals" />
         <Stack.Screen key="finances" name="finances" />
+        <Stack.Screen key="shopping" name="shopping" />
+        <Stack.Screen key="notes" name="notes" />
         <Stack.Screen key="memories" name="memories" />
         <Stack.Screen key="profile" name="profile" />
       </Stack>

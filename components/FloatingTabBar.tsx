@@ -90,9 +90,16 @@ export default function FloatingTabBar({
     router.push(route);
   };
 
-  const tabWidthPercent = ((100 / tabs.length) - 1).toFixed(2);
+  // Determine if we need to stack tabs vertically
+  const needsVerticalLayout = tabs.length > 5;
+  const tabsPerRow = needsVerticalLayout ? Math.ceil(tabs.length / 2) : tabs.length;
+  const tabWidthPercent = ((100 / tabsPerRow) - 1).toFixed(2);
 
   const indicatorStyle = useAnimatedStyle(() => {
+    if (needsVerticalLayout) {
+      // For vertical layout, don't show indicator
+      return { opacity: 0 };
+    }
     const tabWidth = (containerWidth - 8) / tabs.length;
     return {
       transform: [
@@ -149,15 +156,22 @@ export default function FloatingTabBar({
           style={[dynamicStyles.blurContainer, { borderRadius }]}
         >
           <View style={dynamicStyles.background} />
-          <Animated.View style={[dynamicStyles.indicator, indicatorStyle]} />
-          <View style={styles.tabsContainer}>
+          {!needsVerticalLayout && <Animated.View style={[dynamicStyles.indicator, indicatorStyle]} />}
+          <View style={[
+            styles.tabsContainer,
+            needsVerticalLayout && styles.tabsContainerVertical
+          ]}>
             {tabs.map((tab, index) => {
               const isActive = activeTabIndex === index;
 
               return (
                 <React.Fragment key={index}>
                   <TouchableOpacity
-                    style={styles.tab}
+                    style={[
+                      styles.tab,
+                      needsVerticalLayout && styles.tabVertical,
+                      isActive && needsVerticalLayout && styles.tabVerticalActive
+                    ]}
                     onPress={() => handleTabPress(tab.route)}
                     activeOpacity={0.7}
                   >
@@ -165,16 +179,19 @@ export default function FloatingTabBar({
                       <IconSymbol
                         android_material_icon_name={tab.icon}
                         ios_icon_name={tab.icon}
-                        size={24}
-                        color={isActive ? colors.card : colors.text}
+                        size={needsVerticalLayout ? 20 : 24}
+                        color={isActive ? (needsVerticalLayout ? colors.vibrantOrange : colors.card) : colors.text}
                       />
                       <Text
                         style={[
                           styles.tabLabel,
+                          needsVerticalLayout && styles.tabLabelVertical,
                           { color: colors.text },
-                          isActive && { color: colors.card, fontWeight: '700' },
+                          isActive && !needsVerticalLayout && { color: colors.card, fontWeight: '700' },
+                          isActive && needsVerticalLayout && { color: colors.vibrantOrange, fontWeight: '700' },
                         ]}
                         numberOfLines={1}
+                        adjustsFontSizeToFit
                       >
                         {tab.label}
                       </Text>
@@ -223,11 +240,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
+  tabsContainerVertical: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    height: 'auto',
+    minHeight: 100,
+    paddingVertical: 8,
+  },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
+  },
+  tabVertical: {
+    flex: 0,
+    width: '25%',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    marginVertical: 2,
+  },
+  tabVerticalActive: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
   },
   tabContent: {
     alignItems: 'center',
@@ -238,5 +273,9 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '500',
     marginTop: 2,
+  },
+  tabLabelVertical: {
+    fontSize: 8,
+    marginTop: 1,
   },
 });

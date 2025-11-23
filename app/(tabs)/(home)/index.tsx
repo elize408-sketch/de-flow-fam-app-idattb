@@ -9,7 +9,7 @@ import WeatherWidget from '@/components/WeatherWidget';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { familyMembers, currentUser, setCurrentUser, tasks, appointments } = useFamily();
+  const { familyMembers, currentUser, setCurrentUser, tasks, appointments, shoppingList, familyNotes } = useFamily();
   const [showMemberPicker, setShowMemberPicker] = useState(!currentUser);
 
   // If no user selected, force selection
@@ -58,7 +58,7 @@ export default function HomeScreen() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Parent view - show their own tasks and appointments
+  // Parent view - show their own tasks, appointments, shopping, and notes
   if (isParent) {
     const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
     const myAppointments = appointments.filter(apt => {
@@ -66,6 +66,8 @@ export default function HomeScreen() {
       aptDate.setHours(0, 0, 0, 0);
       return apt.assignedTo.includes(currentUser.id) && aptDate.getTime() === today.getTime();
     });
+    const activeShoppingItems = shoppingList.filter(item => !item.completed).slice(0, 5);
+    const recentNotes = familyNotes.slice(0, 3);
 
     return (
       <View style={styles.container}>
@@ -107,7 +109,7 @@ export default function HomeScreen() {
               {myAppointments.map((apt, index) => (
                 <React.Fragment key={index}>
                   <View style={[styles.appointmentCard, { borderLeftColor: memberColor }]}>
-                    <Text style={styles.appointmentTime}>{apt.time}</Text>
+                    <Text style={styles.appointmentTime}>{apt.time}{apt.endTime ? ` - ${apt.endTime}` : ''}</Text>
                     <Text style={styles.appointmentTitle}>{apt.title}</Text>
                   </View>
                 </React.Fragment>
@@ -121,7 +123,7 @@ export default function HomeScreen() {
             {myTasks.length === 0 ? (
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyEmoji}>✨</Text>
-                <Text style={styles.emptyText}>Geen taken vandaag!</Text>
+                <Text style={styles.emptyText}>Wat goed! Je hebt al je taken afgerond!</Text>
               </View>
             ) : (
               myTasks.map((task, index) => (
@@ -147,6 +149,52 @@ export default function HomeScreen() {
               ))
             )}
           </View>
+
+          {/* Shopping list preview */}
+          {activeShoppingItems.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>🛒 Boodschappen</Text>
+                <TouchableOpacity onPress={() => router.push('/(tabs)/shopping')}>
+                  <Text style={styles.seeAllText}>Alles →</Text>
+                </TouchableOpacity>
+              </View>
+              {activeShoppingItems.map((item, index) => (
+                <React.Fragment key={index}>
+                  <View style={styles.quickItem}>
+                    <Text style={styles.quickItemText}>• {item.name}</Text>
+                  </View>
+                </React.Fragment>
+              ))}
+            </View>
+          )}
+
+          {/* Notes preview */}
+          {recentNotes.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>📝 Notities</Text>
+                <TouchableOpacity onPress={() => router.push('/(tabs)/notes')}>
+                  <Text style={styles.seeAllText}>Alles →</Text>
+                </TouchableOpacity>
+              </View>
+              {recentNotes.map((note, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={styles.notePreviewCard}
+                    onPress={() => router.push('/(tabs)/notes')}
+                  >
+                    <Text style={styles.notePreviewTitle}>{note.title}</Text>
+                    {note.content && (
+                      <Text style={styles.notePreviewContent} numberOfLines={2}>
+                        {note.content}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </React.Fragment>
+              ))}
+            </View>
+          )}
         </ScrollView>
 
         <Modal
@@ -259,7 +307,7 @@ export default function HomeScreen() {
             {myAppointments.map((apt, index) => (
               <React.Fragment key={index}>
                 <View style={[styles.appointmentCard, { borderLeftColor: memberColor }]}>
-                  <Text style={styles.appointmentTime}>{apt.time}</Text>
+                  <Text style={styles.appointmentTime}>{apt.time}{apt.endTime ? ` - ${apt.endTime}` : ''}</Text>
                   <Text style={styles.appointmentTitle}>{apt.title}</Text>
                 </View>
               </React.Fragment>
@@ -273,7 +321,7 @@ export default function HomeScreen() {
           {myTasks.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyEmoji}>✨</Text>
-              <Text style={styles.emptyText}>Geen taken vandaag!</Text>
+              <Text style={styles.emptyText}>Wat goed! Je hebt al je taken afgerond!</Text>
             </View>
           ) : (
             myTasks.map((task, index) => (
@@ -362,7 +410,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 140,
   },
   selectionContainer: {
     flex: 1,
@@ -528,11 +576,22 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 30,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 15,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  seeAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.vibrantOrange,
     fontFamily: 'Poppins_600SemiBold',
   },
   appointmentCard: {
@@ -572,6 +631,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
   },
   taskCard: {
     backgroundColor: colors.card,
@@ -608,6 +668,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
+  },
+  quickItem: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 2,
+  },
+  quickItemText: {
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
+  notePreviewCard: {
+    backgroundColor: colors.card,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  notePreviewTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 5,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  notePreviewContent: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
   },
   modalOverlay: {
     flex: 1,
