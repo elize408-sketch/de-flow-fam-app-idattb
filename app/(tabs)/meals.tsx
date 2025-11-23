@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Animated, Image } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function MealsScreen() {
   const { meals, addMeal, deleteMeal } = useFamily();
@@ -13,11 +14,32 @@ export default function MealsScreen() {
   const [newMealName, setNewMealName] = useState('');
   const [newMealIngredients, setNewMealIngredients] = useState('');
   const [newMealInstructions, setNewMealInstructions] = useState('');
+  const [newMealPhoto, setNewMealPhoto] = useState<string | undefined>(undefined);
   const [aiIngredients, setAiIngredients] = useState('');
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [spinValue] = useState(new Animated.Value(0));
   const [selectedMeal, setSelectedMeal] = useState<string>('');
   const [isSpinning, setIsSpinning] = useState(false);
+
+  const handlePickPhoto = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s om een foto te kunnen toevoegen');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+      aspect: [4, 3],
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setNewMealPhoto(result.assets[0].uri);
+    }
+  };
 
   const handleAddMeal = () => {
     if (!newMealName.trim()) {
@@ -37,11 +59,13 @@ export default function MealsScreen() {
       instructions: newMealInstructions.trim(),
       prepTime: 30,
       servings: 4,
+      photoUri: newMealPhoto,
     });
 
     setNewMealName('');
     setNewMealIngredients('');
     setNewMealInstructions('');
+    setNewMealPhoto(undefined);
     setShowAddMealModal(false);
     Alert.alert('Gelukt!', 'Recept toegevoegd');
   };
@@ -72,7 +96,6 @@ export default function MealsScreen() {
       return;
     }
 
-    // Simulate AI suggestion (in real app, this would call an AI API)
     const ingredients = aiIngredients.split(',').map(i => i.trim());
     const suggestions = [
       `Pasta met ${ingredients[0] || 'groenten'} en ${ingredients[1] || 'kaas'}`,
@@ -151,9 +174,13 @@ export default function MealsScreen() {
             meals.map((meal, index) => (
               <React.Fragment key={index}>
                 <View style={styles.mealCard}>
-                  <View style={styles.mealIcon}>
-                    <Text style={styles.mealIconEmoji}>🍽️</Text>
-                  </View>
+                  {meal.photoUri ? (
+                    <Image source={{ uri: meal.photoUri }} style={styles.mealPhoto} />
+                  ) : (
+                    <View style={styles.mealIcon}>
+                      <Text style={styles.mealIconEmoji}>🍽️</Text>
+                    </View>
+                  )}
                   <View style={styles.mealInfo}>
                     <Text style={styles.mealName}>{meal.name}</Text>
                     {meal.ingredients && (
@@ -200,57 +227,76 @@ export default function MealsScreen() {
         onRequestClose={() => setShowAddMealModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nieuw recept toevoegen</Text>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Nieuw recept toevoegen</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Naam van het recept"
-              placeholderTextColor={colors.textSecondary}
-              value={newMealName}
-              onChangeText={setNewMealName}
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Naam van het recept"
+                placeholderTextColor={colors.textSecondary}
+                value={newMealName}
+                onChangeText={setNewMealName}
+              />
 
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Ingrediënten (één per regel)"
-              placeholderTextColor={colors.textSecondary}
-              value={newMealIngredients}
-              onChangeText={setNewMealIngredients}
-              multiline
-              numberOfLines={4}
-            />
-
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Bereidingswijze"
-              placeholderTextColor={colors.textSecondary}
-              value={newMealInstructions}
-              onChangeText={setNewMealInstructions}
-              multiline
-              numberOfLines={4}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => {
-                  setShowAddMealModal(false);
-                  setNewMealName('');
-                  setNewMealIngredients('');
-                  setNewMealInstructions('');
-                }}
-              >
-                <Text style={styles.modalButtonText}>Annuleren</Text>
+              <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
+                {newMealPhoto ? (
+                  <Image source={{ uri: newMealPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <IconSymbol
+                      ios_icon_name="camera"
+                      android_material_icon_name="camera-alt"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.photoPlaceholderText}>Foto toevoegen</Text>
+                  </View>
+                )}
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleAddMeal}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
-              </TouchableOpacity>
+
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Ingrediënten (één per regel)"
+                placeholderTextColor={colors.textSecondary}
+                value={newMealIngredients}
+                onChangeText={setNewMealIngredients}
+                multiline
+                numberOfLines={4}
+              />
+
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Bereidingswijze"
+                placeholderTextColor={colors.textSecondary}
+                value={newMealInstructions}
+                onChangeText={setNewMealInstructions}
+                multiline
+                numberOfLines={4}
+              />
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowAddMealModal(false);
+                    setNewMealName('');
+                    setNewMealIngredients('');
+                    setNewMealInstructions('');
+                    setNewMealPhoto(undefined);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleAddMeal}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -450,17 +496,23 @@ const styles = StyleSheet.create({
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
+  mealPhoto: {
+    width: 60,
+    height: 60,
+    borderRadius: 15,
+    marginRight: 15,
+  },
   mealIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 15,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
   mealIconEmoji: {
-    fontSize: 24,
+    fontSize: 32,
   },
   mealInfo: {
     flex: 1,
@@ -484,8 +536,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   modalContent: {
     backgroundColor: colors.card,
@@ -493,6 +548,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '100%',
     maxWidth: 400,
+    alignSelf: 'center',
     boxShadow: `0px 8px 24px ${colors.shadow}`,
     elevation: 5,
   },
@@ -516,6 +572,33 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
     textAlignVertical: 'top',
+  },
+  photoButton: {
+    marginBottom: 15,
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  photoPreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 15,
+  },
+  photoPlaceholder: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.secondary,
+    borderStyle: 'dashed',
+  },
+  photoPlaceholderText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 10,
+    fontFamily: 'Nunito_400Regular',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -548,6 +631,7 @@ const styles = StyleSheet.create({
     padding: 30,
     width: '100%',
     maxWidth: 400,
+    alignSelf: 'center',
     alignItems: 'center',
     boxShadow: `0px 8px 24px ${colors.shadow}`,
     elevation: 5,

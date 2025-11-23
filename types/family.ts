@@ -84,4 +84,25 @@ export interface Meal {
   instructions?: string;
   prepTime?: number;
   servings?: number;
+  photoUri?: string;
+}
+
+export interface SavingsPot {
+  id: string;
+  name: string;
+  goalAmount: number;
+  currentAmount: number;
+  monthlyDeposit: number;
+  color: string;
+  icon: string;
+  targetDate?: Date;
+}
+
+export interface Memory {
+  id: string;
+  title: string;
+  description: string;
+  photoUri: string;
+  date: Date;
+  tags?: string[];
 }

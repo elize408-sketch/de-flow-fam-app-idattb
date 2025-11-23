@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal } from '@/types/family';
+import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory } from '@/types/family';
 import { initialFamilyMembers, initialTasks, initialRewards } from '@/data/familyData';
 
 interface FamilyContextType {
@@ -13,10 +13,14 @@ interface FamilyContextType {
   incomes: Income[];
   receipts: Receipt[];
   meals: Meal[];
+  savingsPots: SavingsPot[];
+  memories: Memory[];
   selectedMember: FamilyMember | null;
   currentUser: FamilyMember | null;
+  financePasscode: string | null;
   setSelectedMember: (member: FamilyMember | null) => void;
   setCurrentUser: (user: FamilyMember | null) => void;
+  setFinancePasscode: (passcode: string) => void;
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   completeTask: (taskId: string) => void;
   addCoins: (memberId: string, amount: number) => void;
@@ -40,6 +44,12 @@ interface FamilyContextType {
   addMeal: (meal: Omit<Meal, 'id'>) => void;
   updateMeal: (mealId: string, updates: Partial<Meal>) => void;
   deleteMeal: (mealId: string) => void;
+  addSavingsPot: (pot: Omit<SavingsPot, 'id'>) => void;
+  updateSavingsPot: (potId: string, updates: Partial<SavingsPot>) => void;
+  deleteSavingsPot: (potId: string) => void;
+  addMemory: (memory: Omit<Memory, 'id'>) => void;
+  updateMemory: (memoryId: string, updates: Partial<Memory>) => void;
+  deleteMemory: (memoryId: string) => void;
   getTotalIncome: () => number;
   getTotalFixedExpenses: () => number;
   getTotalVariableExpenses: () => number;
@@ -58,8 +68,11 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [savingsPots, setSavingsPots] = useState<SavingsPot[]>([]);
+  const [memories, setMemories] = useState<Memory[]>([]);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
   const [currentUser, setCurrentUser] = useState<FamilyMember | null>(familyMembers[0]);
+  const [financePasscode, setFinancePasscode] = useState<string | null>(null);
 
   const addFamilyMember = (member: Omit<FamilyMember, 'id'>) => {
     const newMember: FamilyMember = {
@@ -211,7 +224,6 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     };
     setReceipts(prev => [...prev, newReceipt]);
     
-    // Automatically add as variable expense
     addExpense({
       name: 'Bonnetje',
       amount: receipt.amount,
@@ -238,6 +250,42 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const deleteMeal = (mealId: string) => {
     setMeals(prev => prev.filter(meal => meal.id !== mealId));
+  };
+
+  const addSavingsPot = (pot: Omit<SavingsPot, 'id'>) => {
+    const newPot: SavingsPot = {
+      ...pot,
+      id: Date.now().toString(),
+    };
+    setSavingsPots(prev => [...prev, newPot]);
+  };
+
+  const updateSavingsPot = (potId: string, updates: Partial<SavingsPot>) => {
+    setSavingsPots(prev =>
+      prev.map(pot => (pot.id === potId ? { ...pot, ...updates } : pot))
+    );
+  };
+
+  const deleteSavingsPot = (potId: string) => {
+    setSavingsPots(prev => prev.filter(pot => pot.id !== potId));
+  };
+
+  const addMemory = (memory: Omit<Memory, 'id'>) => {
+    const newMemory: Memory = {
+      ...memory,
+      id: Date.now().toString(),
+    };
+    setMemories(prev => [newMemory, ...prev]);
+  };
+
+  const updateMemory = (memoryId: string, updates: Partial<Memory>) => {
+    setMemories(prev =>
+      prev.map(memory => (memory.id === memoryId ? { ...memory, ...updates } : memory))
+    );
+  };
+
+  const deleteMemory = (memoryId: string) => {
+    setMemories(prev => prev.filter(memory => memory.id !== memoryId));
   };
 
   const getTotalIncome = () => {
@@ -272,10 +320,14 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         incomes,
         receipts,
         meals,
+        savingsPots,
+        memories,
         selectedMember,
         currentUser,
+        financePasscode,
         setSelectedMember,
         setCurrentUser,
+        setFinancePasscode,
         addFamilyMember,
         completeTask,
         addCoins,
@@ -299,6 +351,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         addMeal,
         updateMeal,
         deleteMeal,
+        addSavingsPot,
+        updateSavingsPot,
+        deleteSavingsPot,
+        addMemory,
+        updateMemory,
+        deleteMemory,
         getTotalIncome,
         getTotalFixedExpenses,
         getTotalVariableExpenses,

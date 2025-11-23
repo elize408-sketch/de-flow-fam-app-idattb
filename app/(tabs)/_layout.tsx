@@ -25,6 +25,12 @@ export default function TabLayout() {
       label: 'Maaltijden',
     },
     {
+      name: 'memories',
+      route: '/(tabs)/memories',
+      icon: 'photo-library',
+      label: 'Herinneringen',
+    },
+    {
       name: 'profile',
       route: '/(tabs)/profile',
       icon: 'settings',
@@ -47,6 +53,7 @@ export default function TabLayout() {
         <Stack.Screen key="household" name="household" />
         <Stack.Screen key="meals" name="meals" />
         <Stack.Screen key="finances" name="finances" />
+        <Stack.Screen key="memories" name="memories" />
         <Stack.Screen key="profile" name="profile" />
       </Stack>
       <FloatingTabBar tabs={tabs} />

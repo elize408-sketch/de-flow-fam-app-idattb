@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal,
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import IconPicker from '@/components/IconPicker';
 
 export default function HouseholdScreen() {
   const { householdTasks, familyMembers, addHouseholdTask, updateHouseholdTask, deleteHouseholdTask } = useFamily();
@@ -11,6 +12,7 @@ export default function HouseholdScreen() {
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskAssignedTo, setNewTaskAssignedTo] = useState('');
   const [newTaskRepeat, setNewTaskRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('weekly');
+  const [newTaskIcon, setNewTaskIcon] = useState('home');
 
   const handleAddTask = () => {
     if (!newTaskName.trim()) {
@@ -28,12 +30,13 @@ export default function HouseholdScreen() {
       assignedTo: newTaskAssignedTo,
       completed: false,
       repeatType: newTaskRepeat,
-      icon: 'home',
+      icon: newTaskIcon,
     });
 
     setNewTaskName('');
     setNewTaskAssignedTo('');
     setNewTaskRepeat('weekly');
+    setNewTaskIcon('home');
     setShowAddModal(false);
     Alert.alert('Gelukt!', 'Huishoudelijke taak toegevoegd');
   };
@@ -106,6 +109,17 @@ export default function HouseholdScreen() {
                           </View>
                         </TouchableOpacity>
 
+                        {task.icon && (
+                          <View style={styles.taskIconContainer}>
+                            <IconSymbol
+                              ios_icon_name={task.icon}
+                              android_material_icon_name={task.icon as any}
+                              size={24}
+                              color={colors.accent}
+                            />
+                          </View>
+                        )}
+
                         <View style={styles.taskInfo}>
                           <Text style={[styles.taskName, task.completed && styles.taskNameCompleted]}>
                             {task.name}
@@ -156,86 +170,95 @@ export default function HouseholdScreen() {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nieuwe huishoudelijke taak</Text>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Nieuwe huishoudelijke taak</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Taaknaam (bijv. Stofzuigen)"
-              placeholderTextColor={colors.textSecondary}
-              value={newTaskName}
-              onChangeText={setNewTaskName}
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Taaknaam (bijv. Stofzuigen)"
+                placeholderTextColor={colors.textSecondary}
+                value={newTaskName}
+                onChangeText={setNewTaskName}
+              />
 
-            <Text style={styles.inputLabel}>Toewijzen aan:</Text>
-            <View style={styles.memberSelector}>
-              {familyMembers.map((member, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={[
-                      styles.memberOption,
-                      newTaskAssignedTo === member.id && styles.memberOptionActive,
-                    ]}
-                    onPress={() => setNewTaskAssignedTo(member.id)}
-                  >
-                    <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
-                      <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
-                    </View>
-                    <Text style={styles.memberOptionName}>{member.name}</Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
+              <IconPicker
+                selectedIcon={newTaskIcon}
+                onSelectIcon={setNewTaskIcon}
+                type="household"
+              />
 
-            <Text style={styles.inputLabel}>Herhaling:</Text>
-            <View style={styles.repeatSelector}>
-              {[
-                { value: 'daily', label: 'Dagelijks' },
-                { value: 'weekly', label: 'Wekelijks' },
-                { value: 'monthly', label: 'Maandelijks' },
-                { value: 'none', label: 'Eenmalig' },
-              ].map((option, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={[
-                      styles.repeatOption,
-                      newTaskRepeat === option.value && styles.repeatOptionActive,
-                    ]}
-                    onPress={() => setNewTaskRepeat(option.value as any)}
-                  >
-                    <Text
+              <Text style={styles.inputLabel}>Toewijzen aan:</Text>
+              <View style={styles.memberSelector}>
+                {familyMembers.map((member, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
                       style={[
-                        styles.repeatOptionText,
-                        newTaskRepeat === option.value && styles.repeatOptionTextActive,
+                        styles.memberOption,
+                        newTaskAssignedTo === member.id && styles.memberOptionActive,
                       ]}
+                      onPress={() => setNewTaskAssignedTo(member.id)}
                     >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
+                      <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
+                        <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
+                      </View>
+                      <Text style={styles.memberOptionName}>{member.name}</Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => {
-                  setShowAddModal(false);
-                  setNewTaskName('');
-                  setNewTaskAssignedTo('');
-                  setNewTaskRepeat('weekly');
-                }}
-              >
-                <Text style={styles.modalButtonText}>Annuleren</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleAddTask}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
-              </TouchableOpacity>
+              <Text style={styles.inputLabel}>Herhaling:</Text>
+              <View style={styles.repeatSelector}>
+                {[
+                  { value: 'daily', label: 'Dagelijks' },
+                  { value: 'weekly', label: 'Wekelijks' },
+                  { value: 'monthly', label: 'Maandelijks' },
+                  { value: 'none', label: 'Eenmalig' },
+                ].map((option, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.repeatOption,
+                        newTaskRepeat === option.value && styles.repeatOptionActive,
+                      ]}
+                      onPress={() => setNewTaskRepeat(option.value as any)}
+                    >
+                      <Text
+                        style={[
+                          styles.repeatOptionText,
+                          newTaskRepeat === option.value && styles.repeatOptionTextActive,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowAddModal(false);
+                    setNewTaskName('');
+                    setNewTaskAssignedTo('');
+                    setNewTaskRepeat('weekly');
+                    setNewTaskIcon('home');
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleAddTask}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -371,6 +394,15 @@ const styles = StyleSheet.create({
   checkboxChecked: {
     backgroundColor: colors.accent,
   },
+  taskIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   taskInfo: {
     flex: 1,
   },
@@ -397,8 +429,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   modalContent: {
     backgroundColor: colors.card,
@@ -406,6 +441,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '100%',
     maxWidth: 400,
+    alignSelf: 'center',
     boxShadow: `0px 8px 24px ${colors.shadow}`,
     elevation: 5,
   },
