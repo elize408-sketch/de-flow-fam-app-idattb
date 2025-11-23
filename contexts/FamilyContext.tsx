@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory } from '@/types/family';
+import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, DailyScheduleItem, Notification } from '@/types/family';
 import { initialFamilyMembers, initialTasks, initialRewards } from '@/data/familyData';
 
 interface FamilyContextType {
@@ -15,12 +15,18 @@ interface FamilyContextType {
   meals: Meal[];
   savingsPots: SavingsPot[];
   memories: Memory[];
+  shoppingList: ShoppingItem[];
+  familyNotes: FamilyNote[];
+  dailySchedule: DailyScheduleItem[];
+  notifications: Notification[];
   selectedMember: FamilyMember | null;
   currentUser: FamilyMember | null;
   financePasscode: string | null;
+  financeOnboardingComplete: boolean;
   setSelectedMember: (member: FamilyMember | null) => void;
   setCurrentUser: (user: FamilyMember | null) => void;
   setFinancePasscode: (passcode: string) => void;
+  setFinanceOnboardingComplete: (complete: boolean) => void;
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   updateFamilyMember: (memberId: string, updates: Partial<FamilyMember>) => void;
   completeTask: (taskId: string) => void;
@@ -51,6 +57,17 @@ interface FamilyContextType {
   addMemory: (memory: Omit<Memory, 'id'>) => void;
   updateMemory: (memoryId: string, updates: Partial<Memory>) => void;
   deleteMemory: (memoryId: string) => void;
+  addShoppingItem: (item: Omit<ShoppingItem, 'id' | 'addedAt'>) => void;
+  toggleShoppingItem: (itemId: string) => void;
+  deleteShoppingItem: (itemId: string) => void;
+  addFamilyNote: (note: Omit<FamilyNote, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateFamilyNote: (noteId: string, updates: Partial<FamilyNote>) => void;
+  deleteFamilyNote: (noteId: string) => void;
+  addDailyScheduleItem: (item: Omit<DailyScheduleItem, 'id'>) => void;
+  updateDailyScheduleItem: (itemId: string, updates: Partial<DailyScheduleItem>) => void;
+  deleteDailyScheduleItem: (itemId: string) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => void;
+  markNotificationRead: (notificationId: string) => void;
   getTotalIncome: () => number;
   getTotalFixedExpenses: () => number;
   getTotalVariableExpenses: () => number;
@@ -72,9 +89,14 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [savingsPots, setSavingsPots] = useState<SavingsPot[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
+  const [familyNotes, setFamilyNotes] = useState<FamilyNote[]>([]);
+  const [dailySchedule, setDailySchedule] = useState<DailyScheduleItem[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
   const [currentUser, setCurrentUser] = useState<FamilyMember | null>(familyMembers[0]);
   const [financePasscode, setFinancePasscode] = useState<string | null>(null);
+  const [financeOnboardingComplete, setFinanceOnboardingComplete] = useState(false);
 
   const addFamilyMember = (member: Omit<FamilyMember, 'id'>) => {
     const newMember: FamilyMember = {
@@ -141,6 +163,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       completedCount: 0,
     };
     setTasks(prevTasks => [...prevTasks, newTask]);
+    
+    addNotification({
+      type: 'task',
+      title: 'Nieuwe taak toegevoegd',
+      message: `${task.name} is toegevoegd`,
+      createdBy: currentUser?.id || '',
+    });
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
@@ -161,6 +190,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       id: Date.now().toString(),
     };
     setAppointments(prev => [...prev, newAppointment]);
+    
+    addNotification({
+      type: 'appointment',
+      title: 'Nieuwe afspraak',
+      message: `${appointment.title} is toegevoegd`,
+      createdBy: currentUser?.id || '',
+    });
   };
 
   const updateAppointment = (appointmentId: string, updates: Partial<Appointment>) => {
@@ -197,6 +233,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       id: Date.now().toString(),
     };
     setExpenses(prev => [...prev, newExpense]);
+    
+    addNotification({
+      type: 'finance',
+      title: 'Nieuwe uitgave',
+      message: `${expense.name} - €${expense.amount.toFixed(2)}`,
+      createdBy: currentUser?.id || '',
+    });
   };
 
   const updateExpense = (expenseId: string, updates: Partial<Expense>) => {
@@ -215,6 +258,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       id: Date.now().toString(),
     };
     setIncomes(prev => [...prev, newIncome]);
+    
+    addNotification({
+      type: 'finance',
+      title: 'Nieuw inkomen',
+      message: `${income.name} - €${income.amount.toFixed(2)}`,
+      createdBy: currentUser?.id || '',
+    });
   };
 
   const updateIncome = (incomeId: string, updates: Partial<Income>) => {
@@ -299,6 +349,99 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     setMemories(prev => prev.filter(memory => memory.id !== memoryId));
   };
 
+  const addShoppingItem = (item: Omit<ShoppingItem, 'id' | 'addedAt'>) => {
+    const newItem: ShoppingItem = {
+      ...item,
+      id: Date.now().toString(),
+      addedAt: new Date(),
+    };
+    setShoppingList(prev => [...prev, newItem]);
+    
+    addNotification({
+      type: 'shopping',
+      title: 'Nieuw boodschappenlijstje item',
+      message: `${item.name} is toegevoegd`,
+      createdBy: currentUser?.id || '',
+    });
+  };
+
+  const toggleShoppingItem = (itemId: string) => {
+    setShoppingList(prev =>
+      prev.map(item =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item
+      )
+    );
+  };
+
+  const deleteShoppingItem = (itemId: string) => {
+    setShoppingList(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addFamilyNote = (note: Omit<FamilyNote, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newNote: FamilyNote = {
+      ...note,
+      id: Date.now().toString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setFamilyNotes(prev => [newNote, ...prev]);
+    
+    addNotification({
+      type: 'note',
+      title: 'Nieuwe notitie',
+      message: `${note.title} is toegevoegd`,
+      createdBy: currentUser?.id || '',
+    });
+  };
+
+  const updateFamilyNote = (noteId: string, updates: Partial<FamilyNote>) => {
+    setFamilyNotes(prev =>
+      prev.map(note =>
+        note.id === noteId ? { ...note, ...updates, updatedAt: new Date() } : note
+      )
+    );
+  };
+
+  const deleteFamilyNote = (noteId: string) => {
+    setFamilyNotes(prev => prev.filter(note => note.id !== noteId));
+  };
+
+  const addDailyScheduleItem = (item: Omit<DailyScheduleItem, 'id'>) => {
+    const newItem: DailyScheduleItem = {
+      ...item,
+      id: Date.now().toString(),
+    };
+    setDailySchedule(prev => [...prev, newItem]);
+  };
+
+  const updateDailyScheduleItem = (itemId: string, updates: Partial<DailyScheduleItem>) => {
+    setDailySchedule(prev =>
+      prev.map(item => (item.id === itemId ? { ...item, ...updates } : item))
+    );
+  };
+
+  const deleteDailyScheduleItem = (itemId: string) => {
+    setDailySchedule(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addNotification = (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: Date.now().toString(),
+      createdAt: new Date(),
+      read: false,
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
+  const markNotificationRead = (notificationId: string) => {
+    setNotifications(prev =>
+      prev.map(notif =>
+        notif.id === notificationId ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
   const getTotalIncome = () => {
     return incomes.reduce((sum, income) => sum + income.amount, 0);
   };
@@ -342,12 +485,18 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         meals,
         savingsPots,
         memories,
+        shoppingList,
+        familyNotes,
+        dailySchedule,
+        notifications,
         selectedMember,
         currentUser,
         financePasscode,
+        financeOnboardingComplete,
         setSelectedMember,
         setCurrentUser,
         setFinancePasscode,
+        setFinanceOnboardingComplete,
         addFamilyMember,
         updateFamilyMember,
         completeTask,
@@ -378,6 +527,17 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         addMemory,
         updateMemory,
         deleteMemory,
+        addShoppingItem,
+        toggleShoppingItem,
+        deleteShoppingItem,
+        addFamilyNote,
+        updateFamilyNote,
+        deleteFamilyNote,
+        addDailyScheduleItem,
+        updateDailyScheduleItem,
+        deleteDailyScheduleItem,
+        addNotification,
+        markNotificationRead,
         getTotalIncome,
         getTotalFixedExpenses,
         getTotalVariableExpenses,

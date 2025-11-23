@@ -42,7 +42,7 @@ interface FloatingTabBarProps {
 export default function FloatingTabBar({
   tabs,
   containerWidth = screenWidth * 0.95,
-  borderRadius = 35,
+  borderRadius = 20,
   bottomMargin
 }: FloatingTabBarProps) {
   const router = useRouter();
@@ -111,7 +111,7 @@ export default function FloatingTabBar({
     blurContainer: {
       ...styles.blurContainer,
       borderWidth: 2,
-      borderColor: colors.vibrantPink,
+      borderColor: colors.vibrantOrange,
       ...Platform.select({
         ios: {
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -130,7 +130,7 @@ export default function FloatingTabBar({
     },
     indicator: {
       ...styles.indicator,
-      backgroundColor: colors.vibrantPink,
+      backgroundColor: colors.vibrantOrange,
       width: `${tabWidthPercent}%` as `${number}%`,
     },
   };
@@ -174,6 +174,7 @@ export default function FloatingTabBar({
                           { color: colors.text },
                           isActive && { color: colors.card, fontWeight: '700' },
                         ]}
+                        numberOfLines={1}
                       >
                         {tab.label}
                       </Text>
@@ -213,7 +214,7 @@ const styles = StyleSheet.create({
     top: 4,
     left: 2,
     bottom: 4,
-    borderRadius: 27,
+    borderRadius: 16,
     width: `${(100 / 2) - 1}%`,
   },
   tabsContainer: {

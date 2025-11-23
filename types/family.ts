@@ -16,7 +16,8 @@ export interface Task {
   coins: number;
   assignedTo: string;
   completed: boolean;
-  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
+  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none' | 'weekdays';
+  weekdays?: number[];
   completedCount: number;
   createdBy?: string;
 }
@@ -34,9 +35,11 @@ export interface Appointment {
   title: string;
   date: Date;
   time: string;
+  endTime?: string;
   assignedTo: string[];
   color: string;
-  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
+  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none' | 'weekdays';
+  weekdays?: number[];
   description?: string;
 }
 
@@ -118,4 +121,40 @@ export interface PhotoBookOrder {
   size: 'small' | 'medium' | 'large';
   price: number;
   memories: Memory[];
+}
+
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  completed: boolean;
+  addedBy: string;
+  addedAt: Date;
+}
+
+export interface FamilyNote {
+  id: string;
+  title: string;
+  content: string;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DailyScheduleItem {
+  id: string;
+  childId: string;
+  icon: string;
+  label: string;
+  time?: string;
+  date: Date;
+}
+
+export interface Notification {
+  id: string;
+  type: 'task' | 'shopping' | 'note' | 'appointment' | 'finance';
+  title: string;
+  message: string;
+  createdBy: string;
+  createdAt: Date;
+  read: boolean;
 }

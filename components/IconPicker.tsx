@@ -28,7 +28,7 @@ const TASK_ICONS: IconOption[] = [
   { ios: 'bicycle', android: 'directions-bike', label: 'Fiets' },
   { ios: 'football', android: 'sports-soccer', label: 'Voetbal' },
   { ios: 'music-note', android: 'music-note', label: 'Muziek' },
-  { ios: 'paintbrush', android: 'brush', label: 'Tekenen' },
+  { ios: 'paintbrush', android: 'palette', label: 'Tekenen' },
   { ios: 'leaf', android: 'eco', label: 'Natuur' },
   { ios: 'sun', android: 'wb-sunny', label: 'Zon' },
   { ios: 'moon', android: 'nightlight', label: 'Slapen' },
@@ -62,21 +62,32 @@ const HOUSEHOLD_ICONS: IconOption[] = [
   { ios: 'vacuum', android: 'vacuum', label: 'Stofzuigen' },
 ];
 
+const SCHEDULE_ICONS: IconOption[] = [
+  { ios: 'book', android: 'school', label: 'School' },
+  { ios: 'toys', android: 'toys', label: 'BSO' },
+  { ios: 'water', android: 'pool', label: 'Zwemles' },
+  { ios: 'football', android: 'sports-soccer', label: 'Voetbal' },
+  { ios: 'music-note', android: 'music-note', label: 'Muziekles' },
+  { ios: 'bicycle', android: 'directions-bike', label: 'Fietsen' },
+  { ios: 'paintbrush', android: 'palette', label: 'Tekenen' },
+  { ios: 'basketball', android: 'sports-basketball', label: 'Sport' },
+  { ios: 'book-open', android: 'menu-book', label: 'Lezen' },
+  { ios: 'house', android: 'home', label: 'Thuis' },
+  { ios: 'person', android: 'person', label: 'Afspraak' },
+  { ios: 'gift', android: 'cake', label: 'Feestje' },
+];
+
 interface IconPickerProps {
   selectedIcon: string;
   onSelectIcon: (icon: string) => void;
-  type?: 'task' | 'household';
+  type?: 'task' | 'household' | 'schedule';
   taskName?: string;
 }
 
-// Function to suggest icon based on task name
-const suggestIcon = (taskName: string, type: 'task' | 'household'): string => {
+const suggestIcon = (taskName: string, type: 'task' | 'household' | 'schedule'): string => {
   const name = taskName.toLowerCase();
-  const icons = type === 'household' ? HOUSEHOLD_ICONS : TASK_ICONS;
   
-  // Common keywords mapping
   const keywords: { [key: string]: string } = {
-    // Task keywords
     'tanden': 'brush',
     'poetsen': 'brush',
     'tandenborstel': 'brush',
@@ -97,8 +108,6 @@ const suggestIcon = (taskName: string, type: 'task' | 'household'): string => {
     'speelgoed': 'toys',
     'eten': 'restaurant',
     'maaltijd': 'restaurant',
-    
-    // Household keywords
     'dweilen': 'cleaning-services',
     'dweil': 'cleaning-services',
     'stofzuigen': 'vacuum',
@@ -115,23 +124,29 @@ const suggestIcon = (taskName: string, type: 'task' | 'household'): string => {
     'klussen': 'build',
     'repareren': 'handyman',
     'ophangen': 'construction',
+    'bso': 'toys',
+    'zwemles': 'pool',
+    'zwemmen': 'pool',
+    'voetbal': 'sports-soccer',
+    'muziek': 'music-note',
   };
   
-  // Check for keyword matches
   for (const [keyword, iconName] of Object.entries(keywords)) {
     if (name.includes(keyword)) {
       return iconName;
     }
   }
   
-  // Default icons
-  return type === 'household' ? 'home' : 'check';
+  if (type === 'schedule') return 'school';
+  if (type === 'household') return 'home';
+  return 'check';
 };
 
 export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', taskName = '' }: IconPickerProps) {
-  const icons = type === 'household' ? HOUSEHOLD_ICONS : TASK_ICONS;
+  let icons = TASK_ICONS;
+  if (type === 'household') icons = HOUSEHOLD_ICONS;
+  if (type === 'schedule') icons = SCHEDULE_ICONS;
   
-  // Suggest icon when task name changes
   React.useEffect(() => {
     if (taskName && taskName.trim().length > 2) {
       const suggested = suggestIcon(taskName, type);
@@ -161,13 +176,16 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
               <IconSymbol
                 ios_icon_name={icon.ios}
                 android_material_icon_name={icon.android as any}
-                size={28}
+                size={24}
                 color={selectedIcon === icon.android ? colors.card : colors.text}
               />
-              <Text style={[
-                styles.iconLabel,
-                selectedIcon === icon.android && styles.iconLabelSelected,
-              ]}>
+              <Text 
+                style={[
+                  styles.iconLabel,
+                  selectedIcon === icon.android && styles.iconLabelSelected,
+                ]}
+                numberOfLines={2}
+              >
                 {icon.label}
               </Text>
             </TouchableOpacity>
@@ -194,7 +212,7 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     width: 70,
-    height: 70,
+    height: 80,
     borderRadius: 15,
     backgroundColor: colors.background,
     justifyContent: 'center',
@@ -202,9 +220,10 @@ const styles = StyleSheet.create({
     marginRight: 10,
     borderWidth: 2,
     borderColor: 'transparent',
+    paddingHorizontal: 4,
   },
   iconButtonSelected: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.vibrantOrange,
     borderColor: colors.highlight,
   },
   iconLabel: {
@@ -213,6 +232,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
     fontFamily: 'Nunito_400Regular',
+    lineHeight: 11,
   },
   iconLabelSelected: {
     color: colors.card,
