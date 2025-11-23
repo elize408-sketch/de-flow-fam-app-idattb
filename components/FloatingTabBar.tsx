@@ -140,7 +140,7 @@ export default function FloatingTabBar({
       ...styles.indicator,
       backgroundColor: colors.vibrantOrange,
       width: `${tabWidthPercent}%` as `${number}%`,
-      borderRadius: 20,
+      borderRadius: 30,
     },
   };
 
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tabGridActive: {
-    backgroundColor: 'rgba(213, 160, 147, 0.2)',
+    backgroundColor: 'rgba(245, 166, 35, 0.15)',
   },
   tabContent: {
     alignItems: 'center',

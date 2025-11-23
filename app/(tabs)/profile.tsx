@@ -21,10 +21,12 @@ const AVAILABLE_COLORS = [
 ];
 
 export default function ProfileScreen() {
-  const { familyMembers, addFamilyMember, updateFamilyMember, currentUser, tasks, deleteTask, updateTask } = useFamily();
+  const { familyMembers, addFamilyMember, updateFamilyMember, currentUser, tasks, deleteTask, updateTask, appointments, addAppointment, updateAppointment, deleteAppointment } = useFamily();
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showManageChildTasksModal, setShowManageChildTasksModal] = useState(false);
+  const [showManageChildPlanningModal, setShowManageChildPlanningModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
+  const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<'parent' | 'child'>('child');
@@ -34,6 +36,10 @@ export default function ProfileScreen() {
   const [editTaskCoins, setEditTaskCoins] = useState('');
   const [editTaskIcon, setEditTaskIcon] = useState('check');
   const [editTaskRepeat, setEditTaskRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
+  const [selectedChildForPlanning, setSelectedChildForPlanning] = useState<string>('');
+  const [newAppointmentTitle, setNewAppointmentTitle] = useState('');
+  const [newAppointmentDate, setNewAppointmentDate] = useState(new Date());
+  const [newAppointmentTime, setNewAppointmentTime] = useState('09:00');
 
   const isParent = currentUser?.role === 'parent';
 
@@ -155,8 +161,57 @@ export default function ProfileScreen() {
     Alert.alert('Gelukt!', 'Taak bijgewerkt');
   };
 
+  const handleAddAppointment = () => {
+    if (!newAppointmentTitle.trim()) {
+      Alert.alert('Fout', 'Vul een titel in');
+      return;
+    }
+
+    if (!selectedChildForPlanning) {
+      Alert.alert('Fout', 'Selecteer een kind');
+      return;
+    }
+
+    const child = children.find(c => c.id === selectedChildForPlanning);
+    
+    addAppointment({
+      title: newAppointmentTitle.trim(),
+      date: newAppointmentDate,
+      time: newAppointmentTime,
+      assignedTo: [selectedChildForPlanning],
+      color: child?.color || colors.accent,
+      repeatType: 'none',
+    });
+
+    setNewAppointmentTitle('');
+    setNewAppointmentDate(new Date());
+    setNewAppointmentTime('09:00');
+    Alert.alert('Gelukt!', 'Afspraak toegevoegd');
+  };
+
+  const handleDeleteAppointment = (appointmentId: string, title: string) => {
+    Alert.alert(
+      'Afspraak verwijderen',
+      `Weet je zeker dat je "${title}" wilt verwijderen?`,
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Verwijderen',
+          style: 'destructive',
+          onPress: () => {
+            deleteAppointment(appointmentId);
+            Alert.alert('Gelukt!', 'Afspraak verwijderd');
+          },
+        },
+      ]
+    );
+  };
+
   const children = familyMembers.filter(m => m.role === 'child');
   const childTasks = tasks.filter(t => children.some(c => c.id === t.assignedTo));
+  const childAppointments = appointments.filter(apt => 
+    apt.assignedTo.some(id => children.some(c => c.id === id))
+  );
 
   return (
     <View style={styles.container}>
@@ -226,8 +281,10 @@ export default function ProfileScreen() {
 
         {isParent && (
           <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Kinderen beheren</Text>
+            
             <TouchableOpacity
-              style={styles.manageTasksButton}
+              style={styles.manageButton}
               onPress={() => setShowManageChildTasksModal(true)}
             >
               <IconSymbol
@@ -236,7 +293,20 @@ export default function ProfileScreen() {
                 size={24}
                 color={colors.card}
               />
-              <Text style={styles.manageTasksButtonText}>Taken van kinderen beheren</Text>
+              <Text style={styles.manageButtonText}>Taken van kinderen beheren</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.manageButton, { backgroundColor: colors.vibrantBlue }]}
+              onPress={() => setShowManageChildPlanningModal(true)}
+            >
+              <IconSymbol
+                ios_icon_name="calendar"
+                android_material_icon_name="calendar-today"
+                size={24}
+                color={colors.card}
+              />
+              <Text style={styles.manageButtonText}>Planning van kinderen beheren</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -455,6 +525,125 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
+      {/* Manage Child Planning Modal */}
+      <Modal
+        visible={showManageChildPlanningModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowManageChildPlanningModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Planning van kinderen beheren</Text>
+              
+              <Text style={styles.inputLabel}>Selecteer kind:</Text>
+              <View style={styles.childSelector}>
+                {children.map((child, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.childOption,
+                        selectedChildForPlanning === child.id && styles.childOptionActive,
+                      ]}
+                      onPress={() => setSelectedChildForPlanning(child.id)}
+                    >
+                      <View style={[styles.childOptionAvatar, { backgroundColor: child.color }]}>
+                        {child.photoUri ? (
+                          <Image source={{ uri: child.photoUri }} style={styles.childOptionPhoto} />
+                        ) : (
+                          <Text style={styles.childOptionAvatarText}>{child.name.charAt(0)}</Text>
+                        )}
+                      </View>
+                      <Text style={styles.childOptionName}>{child.name}</Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              {selectedChildForPlanning && (
+                <>
+                  <View style={styles.divider} />
+                  
+                  <Text style={styles.sectionSubtitle}>Afspraken toevoegen</Text>
+                  
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Titel afspraak"
+                    placeholderTextColor={colors.textSecondary}
+                    value={newAppointmentTitle}
+                    onChangeText={setNewAppointmentTitle}
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Tijd (bijv. 09:00)"
+                    placeholderTextColor={colors.textSecondary}
+                    value={newAppointmentTime}
+                    onChangeText={setNewAppointmentTime}
+                  />
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 20 }]}
+                    onPress={handleAddAppointment}
+                  >
+                    <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Afspraak toevoegen</Text>
+                  </TouchableOpacity>
+
+                  <Text style={styles.sectionSubtitle}>Huidige afspraken</Text>
+                  
+                  <ScrollView style={styles.appointmentsList}>
+                    {childAppointments.filter(apt => apt.assignedTo.includes(selectedChildForPlanning)).length === 0 ? (
+                      <View style={styles.emptyTasks}>
+                        <Text style={styles.emptyTasksText}>Nog geen afspraken</Text>
+                      </View>
+                    ) : (
+                      childAppointments
+                        .filter(apt => apt.assignedTo.includes(selectedChildForPlanning))
+                        .map((apt, index) => (
+                          <React.Fragment key={index}>
+                            <View style={styles.appointmentCard}>
+                              <View style={styles.appointmentInfo}>
+                                <Text style={styles.appointmentTitle}>{apt.title}</Text>
+                                <Text style={styles.appointmentMeta}>
+                                  {apt.time} • {apt.date.toLocaleDateString('nl-NL')}
+                                </Text>
+                              </View>
+                              <TouchableOpacity
+                                style={styles.deleteTaskButton}
+                                onPress={() => handleDeleteAppointment(apt.id, apt.title)}
+                              >
+                                <IconSymbol
+                                  ios_icon_name="trash"
+                                  android_material_icon_name="delete"
+                                  size={20}
+                                  color={colors.card}
+                                />
+                              </TouchableOpacity>
+                            </View>
+                          </React.Fragment>
+                        ))
+                    )}
+                  </ScrollView>
+                </>
+              )}
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel, { marginTop: 20 }]}
+                onPress={() => {
+                  setShowManageChildPlanningModal(false);
+                  setSelectedChildForPlanning('');
+                  setNewAppointmentTitle('');
+                  setNewAppointmentTime('09:00');
+                }}
+              >
+                <Text style={styles.modalButtonText}>Sluiten</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
       {/* Edit Task Modal */}
       <Modal
         visible={showEditTaskModal}
@@ -589,6 +778,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 15,
+  },
+  sectionSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 10,
+    marginTop: 10,
   },
   addButton: {
     backgroundColor: colors.accent,
@@ -673,7 +871,7 @@ const styles = StyleSheet.create({
   coinEmoji: {
     fontSize: 16,
   },
-  manageTasksButton: {
+  manageButton: {
     backgroundColor: colors.secondary,
     borderRadius: 20,
     padding: 15,
@@ -682,8 +880,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
+    marginBottom: 12,
   },
-  manageTasksButtonText: {
+  manageButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.card,
@@ -996,5 +1195,82 @@ const styles = StyleSheet.create({
   },
   repeatOptionTextActive: {
     color: colors.text,
+  },
+  childSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  childOption: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 10,
+    alignItems: 'center',
+    minWidth: 80,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  childOptionActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.primary,
+  },
+  childOptionAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
+    overflow: 'hidden',
+  },
+  childOptionPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+  },
+  childOptionAvatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  childOptionName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.textSecondary,
+    opacity: 0.2,
+    marginVertical: 20,
+  },
+  appointmentsList: {
+    maxHeight: 200,
+  },
+  appointmentCard: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  appointmentInfo: {
+    flex: 1,
+  },
+  appointmentTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  appointmentMeta: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
   },
 });
