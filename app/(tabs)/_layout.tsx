@@ -8,7 +8,7 @@ export default function TabLayout() {
   const { currentUser } = useFamily();
   const isParent = currentUser?.role === 'parent';
 
-  // Parent tabs - full menu with all options including tasks
+  // Parent tabs - removed Huishouden, household tasks now in Taken
   const parentTabs: TabBarItem[] = [
     {
       name: '(home)',
@@ -27,12 +27,6 @@ export default function TabLayout() {
       route: '/(tabs)/tasks',
       icon: 'check-circle',
       label: 'Taken',
-    },
-    {
-      name: 'household',
-      route: '/(tabs)/household',
-      icon: 'home-repair-service',
-      label: 'Huishouden',
     },
     {
       name: 'meals',

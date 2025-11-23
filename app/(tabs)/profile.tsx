@@ -297,7 +297,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.manageButton, { backgroundColor: colors.vibrantBlue }]}
+              style={[styles.manageButton, { backgroundColor: colors.vibrantOrange }]}
               onPress={() => setShowManageChildPlanningModal(true)}
             >
               <IconSymbol
@@ -584,10 +584,16 @@ export default function ProfileScreen() {
                   />
 
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 20 }]}
+                    style={[styles.addAppointmentButton]}
                     onPress={handleAddAppointment}
                   >
-                    <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Afspraak toevoegen</Text>
+                    <IconSymbol
+                      ios_icon_name="plus"
+                      android_material_icon_name="add"
+                      size={20}
+                      color={colors.card}
+                    />
+                    <Text style={styles.addAppointmentButtonText}>Afspraak toevoegen</Text>
                   </TouchableOpacity>
 
                   <Text style={styles.sectionSubtitle}>Huidige afspraken</Text>
@@ -1212,7 +1218,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   childOptionActive: {
-    borderColor: colors.accent,
+    borderColor: colors.vibrantOrange,
     backgroundColor: colors.primary,
   },
   childOptionAvatar: {
@@ -1246,6 +1252,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.textSecondary,
     opacity: 0.2,
     marginVertical: 20,
+  },
+  addAppointmentButton: {
+    backgroundColor: colors.vibrantOrange,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  addAppointmentButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.card,
+    marginLeft: 10,
+    fontFamily: 'Poppins_600SemiBold',
   },
   appointmentsList: {
     maxHeight: 200,

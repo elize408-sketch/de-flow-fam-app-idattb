@@ -93,12 +93,11 @@ export default function FloatingTabBar({
 
   // Determine layout based on number of tabs
   const needsGridLayout = tabs.length > 5;
-  const tabsPerRow = needsGridLayout ? 3 : tabs.length; // 3 items per row for grid
+  const tabsPerRow = needsGridLayout ? 3 : tabs.length;
   const tabWidthPercent = needsGridLayout ? 33.33 : ((100 / tabs.length) - 1);
 
   const indicatorStyle = useAnimatedStyle(() => {
     if (needsGridLayout) {
-      // For grid layout, don't show sliding indicator
       return { opacity: 0 };
     }
     const tabWidth = (containerWidth - 8) / tabs.length;
@@ -140,7 +139,8 @@ export default function FloatingTabBar({
       ...styles.indicator,
       backgroundColor: colors.vibrantOrange,
       width: `${tabWidthPercent}%` as `${number}%`,
-      borderRadius: 30,
+      borderRadius: 50,
+      height: 52,
     },
   };
 
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   tabGrid: {
     flex: 0,
     width: '30%',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 8,
     marginBottom: 8,
     alignItems: 'center',

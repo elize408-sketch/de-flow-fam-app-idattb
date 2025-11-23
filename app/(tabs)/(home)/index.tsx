@@ -58,7 +58,7 @@ export default function HomeScreen() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Parent view - show their own tasks, appointments, shopping, and notes
+  // Parent view - show their own tasks and appointments
   if (isParent) {
     const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
     const myAppointments = appointments.filter(apt => {
@@ -72,35 +72,29 @@ export default function HomeScreen() {
     return (
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.contentContainer}>
+          {/* Header with user name on left, Flow Fam in center, weather on right */}
           <View style={styles.header}>
-            <Text style={styles.title}>Flow Fam</Text>
-            <Text style={styles.tagline}>Rust, overzicht en liefde in één gezinsapp</Text>
-          </View>
-
-          <TouchableOpacity 
-            style={[styles.memberSelector, { borderColor: memberColor }]}
-            onPress={() => setShowMemberPicker(true)}
-          >
-            <View style={styles.memberSelectorContent}>
-              <View style={[styles.memberAvatar, { backgroundColor: memberColor }]}>
+            <TouchableOpacity 
+              style={styles.userNameButton}
+              onPress={() => setShowMemberPicker(true)}
+            >
+              <View style={[styles.smallAvatar, { backgroundColor: memberColor }]}>
                 {currentUser.photoUri ? (
-                  <Image source={{ uri: currentUser.photoUri }} style={styles.memberAvatarPhoto} />
+                  <Image source={{ uri: currentUser.photoUri }} style={styles.smallAvatarPhoto} />
                 ) : (
-                  <Text style={styles.memberAvatarText}>{currentUser.name.charAt(0)}</Text>
+                  <Text style={styles.smallAvatarText}>{currentUser.name.charAt(0)}</Text>
                 )}
               </View>
-              <Text style={styles.memberSelectorName}>{currentUser.name}</Text>
-              <IconSymbol 
-                ios_icon_name="chevron.down" 
-                android_material_icon_name="arrow-drop-down" 
-                size={24} 
-                color={colors.text} 
-              />
-            </View>
-          </TouchableOpacity>
+              <Text style={styles.userName}>{currentUser.name}</Text>
+            </TouchableOpacity>
 
-          {/* Weather Widget */}
-          <WeatherWidget />
+            <View style={styles.centerHeader}>
+              <Text style={styles.title}>Flow Fam</Text>
+              <Text style={styles.tagline}>Rust, overzicht en liefde in één gezinsapp</Text>
+            </View>
+
+            <WeatherWidget compact onPress={() => router.push('/(tabs)/agenda')} />
+          </View>
 
           {/* My appointments today */}
           {myAppointments.length > 0 && (
@@ -250,7 +244,7 @@ export default function HomeScreen() {
     );
   }
 
-  // Child view - show their own tasks and appointments for the day
+  // Child view - separate appointments and tasks
   const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
   const myAppointments = appointments.filter(apt => {
     const aptDate = new Date(apt.date);
@@ -258,55 +252,31 @@ export default function HomeScreen() {
     return apt.assignedTo.includes(currentUser.id) && aptDate.getTime() === today.getTime();
   });
 
-  // Combine tasks and appointments into a daily overview
-  const dailyOverview = [
-    ...myAppointments.map(apt => ({
-      type: 'appointment' as const,
-      time: apt.time,
-      endTime: apt.endTime,
-      title: apt.title,
-      icon: 'event',
-    })),
-    ...myTasks.map(task => ({
-      type: 'task' as const,
-      title: task.name,
-      icon: task.icon,
-      coins: task.coins,
-    })),
-  ];
-
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
+        {/* Header with user name on left, Flow Fam in center, weather on right */}
         <View style={styles.header}>
-          <Text style={styles.title}>Hallo {currentUser.name}! 👋</Text>
-          <Text style={styles.subtitle}>Wat ga je vandaag doen?</Text>
-        </View>
-
-        <TouchableOpacity 
-          style={[styles.memberSelector, { borderColor: memberColor }]}
-          onPress={() => setShowMemberPicker(true)}
-        >
-          <View style={styles.memberSelectorContent}>
-            <View style={[styles.memberAvatar, { backgroundColor: memberColor }]}>
+          <TouchableOpacity 
+            style={styles.userNameButton}
+            onPress={() => setShowMemberPicker(true)}
+          >
+            <View style={[styles.smallAvatar, { backgroundColor: memberColor }]}>
               {currentUser.photoUri ? (
-                <Image source={{ uri: currentUser.photoUri }} style={styles.memberAvatarPhoto} />
+                <Image source={{ uri: currentUser.photoUri }} style={styles.smallAvatarPhoto} />
               ) : (
-                <Text style={styles.memberAvatarText}>{currentUser.name.charAt(0)}</Text>
+                <Text style={styles.smallAvatarText}>{currentUser.name.charAt(0)}</Text>
               )}
             </View>
-            <Text style={styles.memberSelectorName}>{currentUser.name}</Text>
-            <IconSymbol 
-              ios_icon_name="chevron.down" 
-              android_material_icon_name="arrow-drop-down" 
-              size={24} 
-              color={colors.text} 
-            />
-          </View>
-        </TouchableOpacity>
+            <Text style={styles.userName}>{currentUser.name}</Text>
+          </TouchableOpacity>
 
-        {/* Weather Widget for children */}
-        <WeatherWidget />
+          <View style={styles.centerHeader}>
+            <Text style={styles.title}>Flow Fam</Text>
+          </View>
+
+          <WeatherWidget compact onPress={() => router.push('/(tabs)/agenda')} />
+        </View>
 
         {/* Coins display */}
         <View style={[styles.coinsCard, { borderColor: memberColor }]}>
@@ -317,56 +287,10 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Daily overview - What's happening today */}
-        {dailyOverview.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📋 Wat staat mij vandaag te wachten?</Text>
-            <View style={styles.dailyOverviewCard}>
-              {dailyOverview.map((item, index) => (
-                <React.Fragment key={index}>
-                  <View style={styles.dailyOverviewItem}>
-                    <View style={[styles.dailyOverviewIcon, { backgroundColor: memberColor }]}>
-                      {item.type === 'appointment' ? (
-                        <IconSymbol
-                          ios_icon_name="calendar"
-                          android_material_icon_name="event"
-                          size={20}
-                          color={colors.card}
-                        />
-                      ) : (
-                        <Image
-                          source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
-                          style={[
-                            styles.dailyOverviewCustomIcon,
-                            { tintColor: colors.card }
-                          ]}
-                          resizeMode="contain"
-                        />
-                      )}
-                    </View>
-                    <View style={styles.dailyOverviewContent}>
-                      {item.type === 'appointment' && item.time && (
-                        <Text style={styles.dailyOverviewTime}>
-                          {item.time}{item.endTime ? ` - ${item.endTime}` : ''}
-                        </Text>
-                      )}
-                      <Text style={styles.dailyOverviewTitle}>{item.title}</Text>
-                      {item.type === 'task' && item.coins && (
-                        <Text style={styles.dailyOverviewCoins}>🪙 {item.coins} muntjes</Text>
-                      )}
-                    </View>
-                  </View>
-                  {index < dailyOverview.length - 1 && <View style={styles.dailyOverviewDivider} />}
-                </React.Fragment>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Today's appointments */}
+        {/* What's waiting for me - Appointments only */}
         {myAppointments.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📅 Mijn afspraken vandaag</Text>
+            <Text style={styles.sectionTitle}>📅 Wat staat mij te wachten</Text>
             {myAppointments.map((apt, index) => (
               <React.Fragment key={index}>
                 <View style={[styles.appointmentCard, { borderLeftColor: memberColor }]}>
@@ -380,7 +304,7 @@ export default function HomeScreen() {
 
         {/* My tasks */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>✅ Mijn taken</Text>
+          <Text style={styles.sectionTitle}>✅ Taken</Text>
           {myTasks.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyEmoji}>✨</Text>
@@ -559,67 +483,57 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
+  userNameButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  smallAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  smallAvatarPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
+  smallAvatarText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  userName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  centerHeader: {
+    alignItems: 'center',
+    flex: 2,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
   tagline: {
-    fontSize: 14,
+    fontSize: 10,
     color: colors.textSecondary,
-    marginTop: 5,
     fontStyle: 'italic',
     fontFamily: 'Nunito_400Regular',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-  },
-  memberSelector: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 15,
-    marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-    borderWidth: 2,
-  },
-  memberSelectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-    overflow: 'hidden',
-  },
-  memberAvatarPhoto: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 25,
-  },
-  memberAvatarText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  memberSelectorName: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
   },
   coinsCard: {
     backgroundColor: colors.card,
@@ -668,57 +582,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.vibrantOrange,
     fontFamily: 'Poppins_600SemiBold',
-  },
-  dailyOverviewCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  dailyOverviewItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-  },
-  dailyOverviewIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  dailyOverviewCustomIcon: {
-    width: 20,
-    height: 20,
-  },
-  dailyOverviewContent: {
-    flex: 1,
-  },
-  dailyOverviewTime: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.accent,
-    marginBottom: 4,
-    fontFamily: 'Poppins_700Bold',
-  },
-  dailyOverviewTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  dailyOverviewCoins: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  dailyOverviewDivider: {
-    height: 1,
-    backgroundColor: colors.background,
-    marginVertical: 8,
   },
   appointmentCard: {
     backgroundColor: colors.card,
