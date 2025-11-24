@@ -93,23 +93,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        {/* Header with Flow Fam in center, logo on right, settings on left */}
+        {/* Header with Flow Fam centered */}
         <View style={styles.header}>
-          <View style={styles.placeholder} />
-
           <View style={styles.centerHeader}>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>Flow Fam</Text>
-              <Image
-                source={require('@/assets/images/ddb023ae-01a4-4b40-aa63-c769180048ad.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
+            <Text style={styles.title}>Flow Fam</Text>
             <Text style={styles.tagline}>Rust, overzicht en liefde</Text>
           </View>
-
-          <View style={styles.placeholder} />
         </View>
 
         {/* User greeting with welcome message in same white block */}
@@ -376,22 +365,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 20,
-  },
-  placeholder: {
-    width: 40,
   },
   centerHeader: {
     alignItems: 'center',
-    flex: 1,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
   },
   title: {
     fontSize: 28,
@@ -399,11 +377,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: 0.5,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-    tintColor: colors.text,
   },
   tagline: {
     fontSize: 10,

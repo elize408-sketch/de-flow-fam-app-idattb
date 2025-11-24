@@ -109,7 +109,7 @@ export default function NotesScreen() {
           </TouchableOpacity>
           
           <View style={styles.header}>
-            <Text style={styles.title}>📝 Notities</Text>
+            <Text style={styles.title}>Notities</Text>
             <Text style={styles.subtitle}>Deel belangrijke informatie</Text>
           </View>
           
