@@ -110,7 +110,7 @@ export default function HomeScreen() {
             <Text style={styles.userName}>{currentUser.name}</Text>
             <IconSymbol 
               ios_icon_name="chevron.down" 
-              android_material_icon_name="arrow_drop_down" 
+              android_material_icon_name="expand_more" 
               size={20} 
               color={colors.text} 
             />

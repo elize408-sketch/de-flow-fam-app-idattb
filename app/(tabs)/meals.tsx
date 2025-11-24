@@ -713,10 +713,29 @@ export default function MealsScreen() {
         visible={showSpinnerModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowSpinnerModal(false)}
+        onRequestClose={() => {
+          setShowSpinnerModal(false);
+          setSelectedMeal(null);
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.spinnerModal}>
+            <TouchableOpacity 
+              style={styles.modalCloseButton}
+              onPress={() => {
+                setShowSpinnerModal(false);
+                setSelectedMeal(null);
+                router.push('/(tabs)/(home)');
+              }}
+            >
+              <IconSymbol
+                ios_icon_name="xmark"
+                android_material_icon_name="close"
+                size={24}
+                color={colors.text}
+              />
+            </TouchableOpacity>
+
             <Text style={styles.modalTitle}>Maaltijd rad</Text>
             <Text style={styles.spinnerSubtitle}>Draai aan het rad voor een willekeurig recept!</Text>
 
@@ -771,9 +790,10 @@ export default function MealsScreen() {
               onPress={() => {
                 setShowSpinnerModal(false);
                 setSelectedMeal(null);
+                router.push('/(tabs)/(home)');
               }}
             >
-              <Text style={styles.closeButtonText}>Sluiten</Text>
+              <Text style={styles.closeButtonText}>Terug naar home</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1009,6 +1029,18 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   input: {
     backgroundColor: colors.background,
