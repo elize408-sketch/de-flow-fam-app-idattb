@@ -85,7 +85,7 @@ export default function HomeScreen() {
     { icon: 'custom-euro', label: 'Financiën', route: '/(tabs)/finances', color: colors.vibrantGreen },
     { icon: 'notifications', label: 'Herinneringen', route: '/(tabs)/reminders', color: colors.vibrantPurple },
     { icon: 'restaurant', label: 'Maaltijden', route: '/(tabs)/meals', color: colors.vibrantPink },
-    { icon: 'folder', label: 'Notities', route: '/(tabs)/notes', color: colors.vibrantPurple },
+    { icon: 'folder', label: 'Notities', route: '/(tabs)/notes', color: colors.vibrantOrange },
     { icon: 'shopping-bag', label: 'Shop', route: '/(tabs)/shop', color: colors.vibrantTeal },
   ];
 
@@ -130,6 +130,15 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Welcome message for parents */}
+        {isParent && (
+          <View style={styles.welcomeMessageCard}>
+            <Text style={styles.welcomeMessageText}>
+              Welkom terug! Ik wens je een fijne dag en succes met je taken en afspraken 🧡
+            </Text>
+          </View>
+        )}
 
         {/* Slider with 2 slides */}
         <View style={styles.sliderContainer}>
@@ -412,7 +421,7 @@ const styles = StyleSheet.create({
     padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
@@ -449,6 +458,21 @@ const styles = StyleSheet.create({
   greetingSubtext: {
     fontSize: 14,
     color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  welcomeMessageCard: {
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  welcomeMessageText: {
+    fontSize: 16,
+    color: colors.text,
+    textAlign: 'center',
+    lineHeight: 24,
     fontFamily: 'Nunito_400Regular',
   },
   sliderContainer: {

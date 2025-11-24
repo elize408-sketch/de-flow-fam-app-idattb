@@ -20,6 +20,7 @@ export default function MemoriesScreen() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showPhotoBookModal, setShowPhotoBookModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('small');
+  const [selectedMemberForPhotoBook, setSelectedMemberForPhotoBook] = useState<string>('');
 
   const photoBookPrices = {
     small: 25,
@@ -77,40 +78,51 @@ export default function MemoriesScreen() {
   };
 
   const handleOrderPhotoBook = async () => {
-    if (memories.length === 0) {
-      Alert.alert('Geen herinneringen', 'Je hebt nog geen herinneringen om een fotoboek van te maken');
+    if (!selectedMemberForPhotoBook) {
+      Alert.alert('Fout', 'Selecteer een gezinslid voor het fotoboek');
       return;
     }
 
-    // Create email content with all memories
-    const memoriesText = memories.map((memory, index) => {
+    const memberMemories = memories.filter(m => m.assignedTo === selectedMemberForPhotoBook);
+    
+    if (memberMemories.length === 0) {
+      Alert.alert('Geen herinneringen', 'Er zijn nog geen herinneringen voor dit gezinslid');
+      return;
+    }
+
+    if (memberMemories.length > 75) {
+      Alert.alert('Te veel foto&apos;s', `Je hebt ${memberMemories.length} foto's, maar het maximum is 75 foto's per fotoboek`);
+      return;
+    }
+
+    const member = familyMembers.find(m => m.id === selectedMemberForPhotoBook);
+    const memberName = member?.name || 'Onbekend';
+
+    const memoriesText = memberMemories.map((memory, index) => {
       const date = new Date(memory.date).toLocaleDateString('nl-NL', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       });
-      const assignedName = memory.assignedTo 
-        ? familyMembers.find(m => m.id === memory.assignedTo)?.name || 'Gezin'
-        : 'Gezin';
       
       return `
 ${index + 1}. ${memory.title}
 Datum: ${date}
-Voor: ${assignedName}
 ${memory.description ? `Beschrijving: ${memory.description}` : ''}
 -------------------`;
     }).join('\n');
 
-    const emailSubject = 'Fotoboek Bestelling - Flow Fam App';
+    const emailSubject = `Fotoboek Bestelling - Fotoboek van ${memberName}`;
     const emailBody = `
 Beste Flow Fam team,
 
 Ik wil graag een fotoboek bestellen met de volgende specificaties:
 
+Titel: Fotoboek van ${memberName}
 Formaat: ${selectedSize === 'small' ? 'Klein' : selectedSize === 'medium' ? 'Middel' : 'Groot'}
 Prijs: €${photoBookPrices[selectedSize]} (excl. verzendkosten)
-Aantal herinneringen: ${memories.length}
+Aantal herinneringen: ${memberMemories.length}
 
 HERINNERINGEN:
 ${memoriesText}
@@ -119,12 +131,12 @@ Met vriendelijke groet,
 Een Flow Fam gebruiker
     `;
 
-    // Send email silently in the background
     try {
       const mailto = `mailto:info@flowfam.nl?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
       await Linking.openURL(mailto);
       
       setShowPhotoBookModal(false);
+      setSelectedMemberForPhotoBook('');
       Alert.alert(
         'Bestelling verzonden! 📧',
         'Je fotoboek bestelling is verzonden naar info@flowfam.nl. Je ontvangt binnenkort een bevestiging.',
@@ -394,68 +406,107 @@ Een Flow Fam gebruiker
         onRequestClose={() => setShowPhotoBookModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Fotoboek bestellen</Text>
-            <Text style={styles.modalSubtitle}>
-              Kies het formaat van je fotoboek
-            </Text>
-
-            <View style={styles.sizeSelector}>
-              {[
-                { size: 'small', label: 'Klein', price: 25 },
-                { size: 'medium', label: 'Middel', price: 40 },
-                { size: 'large', label: 'Groot', price: 65 },
-              ].map((option, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={[
-                      styles.sizeOption,
-                      selectedSize === option.size && styles.sizeOptionActive,
-                    ]}
-                    onPress={() => setSelectedSize(option.size as any)}
-                  >
-                    <Text style={[
-                      styles.sizeOptionLabel,
-                      selectedSize === option.size && styles.sizeOptionLabelActive,
-                    ]}>
-                      {option.label}
-                    </Text>
-                    <Text style={[
-                      styles.sizeOptionPrice,
-                      selectedSize === option.size && styles.sizeOptionPriceActive,
-                    ]}>
-                      €{option.price}
-                    </Text>
-                    <Text style={styles.sizeOptionNote}>excl. verzendkosten</Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
-
-            <View style={styles.orderSummary}>
-              <Text style={styles.orderSummaryText}>
-                📚 {memories.length} herinneringen
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Fotoboek bestellen</Text>
+              <Text style={styles.modalSubtitle}>
+                Selecteer voor wie het fotoboek is
               </Text>
-              <Text style={styles.orderSummaryText}>
-                💰 Totaal: €{photoBookPrices[selectedSize]} (excl. verzendkosten)
-              </Text>
-            </View>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => setShowPhotoBookModal(false)}
-              >
-                <Text style={styles.modalButtonText}>Annuleren</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleOrderPhotoBook}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Bestellen</Text>
-              </TouchableOpacity>
+              <View style={styles.memberSelector}>
+                {familyMembers.map((member, index) => {
+                  const memberMemories = memories.filter(m => m.assignedTo === member.id);
+                  return (
+                    <React.Fragment key={index}>
+                      <TouchableOpacity
+                        style={[
+                          styles.photoBookMemberOption,
+                          selectedMemberForPhotoBook === member.id && styles.photoBookMemberOptionActive,
+                        ]}
+                        onPress={() => setSelectedMemberForPhotoBook(member.id)}
+                      >
+                        <View style={[styles.photoBookMemberAvatar, { backgroundColor: member.color || colors.accent }]}>
+                          <Text style={styles.photoBookMemberAvatarText}>{member.name.charAt(0)}</Text>
+                        </View>
+                        <Text style={styles.photoBookMemberName}>{member.name}</Text>
+                        <Text style={styles.photoBookMemberCount}>
+                          {memberMemories.length} foto{memberMemories.length !== 1 ? '&apos;s' : ''}
+                        </Text>
+                      </TouchableOpacity>
+                    </React.Fragment>
+                  );
+                })}
+              </View>
+
+              {selectedMemberForPhotoBook && (
+                <>
+                  <Text style={styles.inputLabel}>Kies het formaat:</Text>
+                  <View style={styles.sizeSelector}>
+                    {[
+                      { size: 'small', label: 'Klein', price: 25 },
+                      { size: 'medium', label: 'Middel', price: 40 },
+                      { size: 'large', label: 'Groot', price: 65 },
+                    ].map((option, index) => (
+                      <React.Fragment key={index}>
+                        <TouchableOpacity
+                          style={[
+                            styles.sizeOption,
+                            selectedSize === option.size && styles.sizeOptionActive,
+                          ]}
+                          onPress={() => setSelectedSize(option.size as any)}
+                        >
+                          <Text style={[
+                            styles.sizeOptionLabel,
+                            selectedSize === option.size && styles.sizeOptionLabelActive,
+                          ]}>
+                            {option.label}
+                          </Text>
+                          <Text style={[
+                            styles.sizeOptionPrice,
+                            selectedSize === option.size && styles.sizeOptionPriceActive,
+                          ]}>
+                            €{option.price}
+                          </Text>
+                          <Text style={styles.sizeOptionNote}>excl. verzendkosten</Text>
+                        </TouchableOpacity>
+                      </React.Fragment>
+                    ))}
+                  </View>
+
+                  <View style={styles.orderSummary}>
+                    <Text style={styles.orderSummaryText}>
+                      📚 {memories.filter(m => m.assignedTo === selectedMemberForPhotoBook).length} herinneringen
+                    </Text>
+                    <Text style={styles.orderSummaryText}>
+                      💰 Totaal: €{photoBookPrices[selectedSize]} (excl. verzendkosten)
+                    </Text>
+                    <Text style={styles.orderSummaryNote}>
+                      💡 Maximaal 75 foto&apos;s per fotoboek
+                    </Text>
+                  </View>
+                </>
+              )}
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowPhotoBookModal(false);
+                    setSelectedMemberForPhotoBook('');
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleOrderPhotoBook}
+                  disabled={!selectedMemberForPhotoBook}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Bestellen</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -812,6 +863,51 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontFamily: 'Nunito_400Regular',
   },
+  memberSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  photoBookMemberOption: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    minWidth: '45%',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  photoBookMemberOptionActive: {
+    borderColor: colors.highlight,
+    backgroundColor: colors.primary,
+  },
+  photoBookMemberAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  photoBookMemberAvatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  photoBookMemberName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 5,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  photoBookMemberCount: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
   sizeSelector: {
     flexDirection: 'row',
     gap: 10,
@@ -865,6 +961,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text,
     marginBottom: 5,
+    fontFamily: 'Nunito_400Regular',
+  },
+  orderSummaryNote: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 5,
     fontFamily: 'Nunito_400Regular',
   },
   modalButtons: {

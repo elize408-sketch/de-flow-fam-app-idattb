@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function AgendaScreen() {
   const router = useRouter();
@@ -19,6 +18,8 @@ export default function AgendaScreen() {
   const [newAppointmentRepeat, setNewAppointmentRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const toggleMemberSelection = (memberId: string) => {
     setNewAppointmentAssignedTo(prev => {
@@ -41,7 +42,6 @@ export default function AgendaScreen() {
       return;
     }
 
-    // Use the first selected member's color, or mix colors if multiple
     const firstMember = familyMembers.find(m => m.id === newAppointmentAssignedTo[0]);
     const appointmentColor = firstMember?.color || colors.accent;
 
@@ -97,6 +97,68 @@ export default function AgendaScreen() {
 
   const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
   const dayNames = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+
+  const changeMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (selectedMonth === 0) {
+        setSelectedMonth(11);
+        setSelectedYear(selectedYear - 1);
+      } else {
+        setSelectedMonth(selectedMonth - 1);
+      }
+    } else {
+      if (selectedMonth === 11) {
+        setSelectedMonth(0);
+        setSelectedYear(selectedYear + 1);
+      } else {
+        setSelectedMonth(selectedMonth + 1);
+      }
+    }
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
+    const days = [];
+
+    for (let i = 0; i < firstDay; i++) {
+      days.push(
+        <View key={`empty-${i}`} style={styles.calendarDay} />
+      );
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(selectedYear, selectedMonth, day);
+      const isSelected = 
+        newAppointmentDate.getDate() === day &&
+        newAppointmentDate.getMonth() === selectedMonth &&
+        newAppointmentDate.getFullYear() === selectedYear;
+
+      days.push(
+        <TouchableOpacity
+          key={day}
+          style={[
+            styles.calendarDay,
+            styles.calendarDayActive,
+            isSelected && styles.calendarDaySelected
+          ]}
+          onPress={() => {
+            setNewAppointmentDate(date);
+            setShowDatePicker(false);
+          }}
+        >
+          <Text style={[
+            styles.calendarDayText,
+            isSelected && styles.calendarDayTextSelected
+          ]}>
+            {day}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return days;
+  };
 
   return (
     <View style={styles.container}>
@@ -293,26 +355,22 @@ export default function AgendaScreen() {
 
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
+                onPress={() => {
+                  setSelectedMonth(newAppointmentDate.getMonth());
+                  setSelectedYear(newAppointmentDate.getFullYear());
+                  setShowDatePicker(true);
+                }}
               >
                 <Text style={styles.dateButtonText}>
                   📅 {newAppointmentDate.toLocaleDateString('nl-NL')}
                 </Text>
-              </TouchableOpacity>
-
-              {showDatePicker && (
-                <DateTimePicker
-                  value={newAppointmentDate}
-                  mode="date"
-                  display="default"
-                  onChange={(event, selectedDate) => {
-                    setShowDatePicker(false);
-                    if (selectedDate) {
-                      setNewAppointmentDate(selectedDate);
-                    }
-                  }}
+                <IconSymbol
+                  ios_icon_name="chevron.down"
+                  android_material_icon_name="expand_more"
+                  size={20}
+                  color={colors.text}
                 />
-              )}
+              </TouchableOpacity>
 
               <TextInput
                 style={styles.input}
@@ -414,6 +472,63 @@ export default function AgendaScreen() {
             </View>
           </ScrollView>
         </View>
+      </Modal>
+
+      {/* Calendar Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <TouchableOpacity 
+          style={styles.calendarOverlay}
+          activeOpacity={1}
+          onPress={() => setShowDatePicker(false)}
+        >
+          <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
+            <View style={styles.calendarPickerHeader}>
+              <TouchableOpacity onPress={() => changeMonth('prev')} style={styles.calendarNavButton}>
+                <IconSymbol
+                  ios_icon_name="chevron.left"
+                  android_material_icon_name="chevron_left"
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+              <Text style={styles.calendarMonthYear}>
+                {monthNames[selectedMonth]} {selectedYear}
+              </Text>
+              <TouchableOpacity onPress={() => changeMonth('next')} style={styles.calendarNavButton}>
+                <IconSymbol
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="chevron_right"
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.calendarWeekDays}>
+              {['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'].map((day, index) => (
+                <React.Fragment key={index}>
+                  <Text style={styles.calendarWeekDay}>{day}</Text>
+                </React.Fragment>
+              ))}
+            </View>
+
+            <View style={styles.calendarGrid}>
+              {renderCalendar()}
+            </View>
+
+            <TouchableOpacity
+              style={styles.calendarCloseButton}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={styles.calendarCloseButtonText}>Sluiten</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -666,6 +781,9 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 15,
     marginBottom: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   dateButtonText: {
     fontSize: 16,
@@ -783,5 +901,88 @@ const styles = StyleSheet.create({
   },
   modalButtonTextConfirm: {
     color: colors.card,
+  },
+  calendarOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  calendarModal: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 350,
+    boxShadow: `0px 8px 24px ${colors.shadow}`,
+    elevation: 5,
+  },
+  calendarPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  calendarNavButton: {
+    padding: 8,
+  },
+  calendarMonthYear: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  calendarWeekDays: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  calendarWeekDay: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+  },
+  calendarDay: {
+    width: '14.28%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  calendarDayActive: {
+    borderRadius: 8,
+  },
+  calendarDaySelected: {
+    backgroundColor: colors.accent,
+  },
+  calendarDayText: {
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
+  calendarDayTextSelected: {
+    color: colors.card,
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+  },
+  calendarCloseButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+  },
+  calendarCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
