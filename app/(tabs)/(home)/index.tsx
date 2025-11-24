@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
-import WeatherWidget from '@/components/WeatherWidget';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -82,7 +81,7 @@ export default function HomeScreen() {
 
   // Menu sections to display below slider
   const menuSections = [
-    { icon: 'list', label: 'Lijsten', route: '/(tabs)/shopping', color: colors.vibrantOrange },
+    { icon: 'list', label: 'Boodschappen', route: '/(tabs)/shopping', color: colors.vibrantOrange },
     { icon: 'calendar-today', label: 'Kalender', route: '/(tabs)/agenda', color: colors.vibrantBlue },
     { icon: 'custom-euro', label: 'Budget', route: '/(tabs)/finances', color: colors.vibrantGreen },
     { icon: 'folder', label: 'Documenten', route: '/(tabs)/notes', color: colors.vibrantPurple },
@@ -95,7 +94,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        {/* Header with user name on left, Flow Fam in center, weather on right */}
+        {/* Header with user name on left, Flow Fam in center, settings on right */}
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.userNameButton}
@@ -112,7 +111,7 @@ export default function HomeScreen() {
             <IconSymbol 
               ios_icon_name="chevron.down" 
               android_material_icon_name="arrow_drop_down" 
-              size={16} 
+              size={20} 
               color={colors.text} 
             />
           </TouchableOpacity>
@@ -122,7 +121,17 @@ export default function HomeScreen() {
             <Text style={styles.tagline}>Rust, overzicht en liefde</Text>
           </View>
 
-          <WeatherWidget compact onPress={() => {}} />
+          <TouchableOpacity 
+            style={styles.settingsButton}
+            onPress={() => router.push('/(tabs)/profile')}
+          >
+            <IconSymbol 
+              ios_icon_name="gear" 
+              android_material_icon_name="settings" 
+              size={24} 
+              color={colors.text} 
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Slider with 2 slides */}
@@ -454,19 +463,33 @@ const styles = StyleSheet.create({
   },
   centerHeader: {
     alignItems: 'center',
-    flex: 2,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: -1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
+    letterSpacing: 0.5,
   },
   tagline: {
     fontSize: 10,
     color: colors.textSecondary,
     fontStyle: 'italic',
     fontFamily: 'Nunito_400Regular',
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 2,
   },
   sliderContainer: {
     marginBottom: 30,
