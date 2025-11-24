@@ -87,6 +87,7 @@ export default function HomeScreen() {
     { icon: 'restaurant', label: 'Maaltijden', route: '/(tabs)/meals', color: colors.vibrantPink },
     { icon: 'folder', label: 'Notities', route: '/(tabs)/notes', color: colors.vibrantOrange },
     { icon: 'shopping-bag', label: 'Shop', route: '/(tabs)/shop', color: colors.vibrantTeal },
+    { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
   ];
 
   return (
@@ -101,20 +102,10 @@ export default function HomeScreen() {
             <Text style={styles.tagline}>Rust, overzicht en liefde</Text>
           </View>
 
-          <TouchableOpacity 
-            style={styles.settingsButton}
-            onPress={() => router.push('/(tabs)/profile')}
-          >
-            <IconSymbol 
-              ios_icon_name="gear" 
-              android_material_icon_name="settings" 
-              size={24} 
-              color={colors.text} 
-            />
-          </TouchableOpacity>
+          <View style={styles.placeholder} />
         </View>
 
-        {/* User greeting */}
+        {/* User greeting with welcome message in same block */}
         <View style={styles.greetingCard}>
           <View style={[styles.greetingAvatar, { backgroundColor: memberColor }]}>
             {currentUser.photoUri ? (
@@ -404,16 +395,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontStyle: 'italic',
     fontFamily: 'Nunito_400Regular',
-  },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
   },
   greetingCard: {
     backgroundColor: colors.card,

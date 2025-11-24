@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -201,12 +201,12 @@ export default function AgendaScreen() {
           <View style={styles.calendarHeader}>
             <TouchableOpacity
               onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+              style={styles.arrowButton}
             >
-              <IconSymbol
-                ios_icon_name="chevron.left"
-                android_material_icon_name="chevron-left"
-                size={24}
-                color={colors.text}
+              <Image
+                source={require('@/assets/images/a48502d9-8f03-4c17-acd5-23b19ef0a828.png')}
+                style={styles.arrowIcon}
+                resizeMode="contain"
               />
             </TouchableOpacity>
             <Text style={styles.calendarTitle}>
@@ -214,12 +214,12 @@ export default function AgendaScreen() {
             </Text>
             <TouchableOpacity
               onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+              style={styles.arrowButton}
             >
-              <IconSymbol
-                ios_icon_name="chevron.right"
-                android_material_icon_name="chevron-right"
-                size={24}
-                color={colors.text}
+              <Image
+                source={require('@/assets/images/d8776866-a3f0-4d6b-a35e-b1f98b27eaee.png')}
+                style={styles.arrowIcon}
+                resizeMode="contain"
               />
             </TouchableOpacity>
           </View>
@@ -489,22 +489,20 @@ export default function AgendaScreen() {
           <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
             <View style={styles.calendarPickerHeader}>
               <TouchableOpacity onPress={() => changeMonth('prev')} style={styles.calendarNavButton}>
-                <IconSymbol
-                  ios_icon_name="chevron.left"
-                  android_material_icon_name="chevron_left"
-                  size={24}
-                  color={colors.text}
+                <Image
+                  source={require('@/assets/images/a48502d9-8f03-4c17-acd5-23b19ef0a828.png')}
+                  style={styles.arrowIconSmall}
+                  resizeMode="contain"
                 />
               </TouchableOpacity>
               <Text style={styles.calendarMonthYear}>
                 {monthNames[selectedMonth]} {selectedYear}
               </Text>
               <TouchableOpacity onPress={() => changeMonth('next')} style={styles.calendarNavButton}>
-                <IconSymbol
-                  ios_icon_name="chevron.right"
-                  android_material_icon_name="chevron_right"
-                  size={24}
-                  color={colors.text}
+                <Image
+                  source={require('@/assets/images/d8776866-a3f0-4d6b-a35e-b1f98b27eaee.png')}
+                  style={styles.arrowIconSmall}
+                  resizeMode="contain"
                 />
               </TouchableOpacity>
             </View>
@@ -542,7 +540,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 140,
+    paddingBottom: 40,
   },
   headerRow: {
     flexDirection: 'row',
@@ -616,6 +614,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  arrowButton: {
+    padding: 8,
+  },
+  arrowIcon: {
+    width: 24,
+    height: 24,
+    tintColor: colors.text,
+  },
+  arrowIconSmall: {
+    width: 20,
+    height: 20,
+    tintColor: colors.text,
   },
   dayNamesRow: {
     flexDirection: 'row',

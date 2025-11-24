@@ -9,11 +9,12 @@ interface IconOption {
   android: string;
   label: string;
   isCustom?: boolean;
+  customImage?: any;
 }
 
 const TASK_ICONS: IconOption[] = [
   { ios: 'bed', android: 'bed', label: 'Bed opmaken' },
-  { ios: 'toothbrush', android: 'brush', label: 'Tanden poetsen', isCustom: true },
+  { ios: 'toothbrush', android: 'brush', label: 'Tanden poetsen', isCustom: true, customImage: require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png') },
   { ios: 'checkmark-shirt', android: 'checkroom', label: 'Kleding klaarleggen' },
   { ios: 'basket', android: 'shopping-basket', label: 'Kleding in wasmand' },
   { ios: 'backpack', android: 'school', label: 'Schooltas pakken' },
@@ -43,7 +44,6 @@ const TASK_ICONS: IconOption[] = [
 ];
 
 const HOUSEHOLD_ICONS: IconOption[] = [
-  { ios: 'house', android: 'home', label: 'Huis' },
   { ios: 'trash', android: 'delete', label: 'Afval' },
   { ios: 'sparkles', android: 'auto-awesome', label: 'Schoonmaken' },
   { ios: 'washer', android: 'local-laundry-service', label: 'Was' },
@@ -60,7 +60,8 @@ const HOUSEHOLD_ICONS: IconOption[] = [
   { ios: 'screwdriver', android: 'construction', label: 'Ophangen' },
   { ios: 'paintbrush', android: 'format-paint', label: 'Schilderen' },
   { ios: 'mop', android: 'cleaning-services', label: 'Dweilen' },
-  { ios: 'vacuum', android: 'cleaning-services', label: 'Stofzuigen' },
+  { ios: 'vacuum', android: 'cleaning-services', label: 'Stofzuigen', isCustom: true, customImage: require('@/assets/images/5909fa62-4c76-4792-b108-111136b86331.png') },
+  { ios: 'toilet', android: 'wc', label: 'WC schoonmaken', isCustom: true, customImage: require('@/assets/images/97bb7a71-d598-4d4d-870c-ec7d07fa8cc0.png') },
 ];
 
 const SCHEDULE_ICONS: IconOption[] = [
@@ -119,6 +120,8 @@ const suggestIcon = (taskName: string, type: 'task' | 'household' | 'schedule'):
     'vuilnis': 'delete',
     'keuken': 'kitchen',
     'badkamer': 'shower',
+    'wc': 'wc',
+    'toilet': 'wc',
     'planten': 'eco',
     'tuin': 'eco',
     'auto': 'directions-car',
@@ -157,13 +160,13 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
     }
   }, [taskName]);
 
-  const renderIcon = (icon: IconOption, isSelected: boolean) => {
-    const iconColor = isSelected ? colors.card : colors.text;
+  const renderIcon = (icon: IconOption, isActive: boolean) => {
+    const iconColor = isActive ? colors.card : colors.text;
     
-    if (icon.isCustom && icon.android === 'brush') {
+    if (icon.isCustom && icon.customImage) {
       return (
         <Image
-          source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
+          source={icon.customImage}
           style={[
             styles.customIconImage,
             { tintColor: iconColor }
@@ -177,7 +180,7 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
       <IconSymbol
         ios_icon_name={icon.ios}
         android_material_icon_name={icon.android as any}
-        size={24}
+        size={28}
         color={iconColor}
       />
     );
@@ -201,15 +204,6 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
               onPress={() => onSelectIcon(icon.android)}
             >
               {renderIcon(icon, selectedIcon === icon.android)}
-              <Text 
-                style={[
-                  styles.iconLabel,
-                  selectedIcon === icon.android && styles.iconLabelSelected,
-                ]}
-                numberOfLines={2}
-              >
-                {icon.label}
-              </Text>
             </TouchableOpacity>
           </React.Fragment>
         ))}
@@ -231,37 +225,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingVertical: 5,
+    gap: 10,
   },
   iconButton: {
-    width: 70,
-    height: 80,
+    width: 60,
+    height: 60,
     borderRadius: 15,
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
     borderWidth: 2,
     borderColor: 'transparent',
-    paddingHorizontal: 4,
   },
   iconButtonSelected: {
     backgroundColor: colors.vibrantOrange,
     borderColor: colors.highlight,
   },
-  iconLabel: {
-    fontSize: 9,
-    color: colors.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
-    fontFamily: 'Nunito_400Regular',
-    lineHeight: 11,
-  },
-  iconLabelSelected: {
-    color: colors.card,
-    fontWeight: '600',
-  },
   customIconImage: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
   },
 });
