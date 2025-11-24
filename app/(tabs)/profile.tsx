@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -21,6 +22,7 @@ const AVAILABLE_COLORS = [
 ];
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { familyMembers, addFamilyMember, updateFamilyMember, currentUser, tasks, deleteTask, updateTask, appointments, addAppointment, updateAppointment, deleteAppointment } = useFamily();
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showManageChildTasksModal, setShowManageChildTasksModal] = useState(false);
@@ -216,9 +218,25 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Instellingen</Text>
-          <Text style={styles.subtitle}>Beheer je gezin</Text>
+        <View style={styles.headerRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.push('/(tabs)/(home)')}
+          >
+            <IconSymbol
+              ios_icon_name="chevron.left"
+              android_material_icon_name="arrow_back"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+          
+          <View style={styles.header}>
+            <Text style={styles.title}>Instellingen</Text>
+            <Text style={styles.subtitle}>Beheer je gezin</Text>
+          </View>
+          
+          <View style={styles.placeholder} />
         </View>
 
         <View style={styles.section}>
@@ -754,9 +772,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 140,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 2,
+  },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    flex: 1,
+  },
+  placeholder: {
+    width: 40,
   },
   title: {
     fontSize: 32,
