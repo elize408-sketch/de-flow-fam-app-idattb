@@ -598,22 +598,20 @@ export default function RemindersScreen() {
           <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
             <View style={styles.calendarHeader}>
               <TouchableOpacity onPress={() => changeMonth('prev')} style={styles.calendarNavButton}>
-                <IconSymbol
-                  ios_icon_name="chevron.left"
-                  android_material_icon_name="chevron_left"
-                  size={24}
-                  color={colors.text}
+                <Image
+                  source={require('@/assets/images/a48502d9-8f03-4c17-acd5-23b19ef0a828.png')}
+                  style={styles.arrowIconSmall}
+                  resizeMode="contain"
                 />
               </TouchableOpacity>
               <Text style={styles.calendarMonthYear}>
                 {monthNames[selectedMonth]} {selectedYear}
               </Text>
               <TouchableOpacity onPress={() => changeMonth('next')} style={styles.calendarNavButton}>
-                <IconSymbol
-                  ios_icon_name="chevron.right"
-                  android_material_icon_name="chevron_right"
-                  size={24}
-                  color={colors.text}
+                <Image
+                  source={require('@/assets/images/d8776866-a3f0-4d6b-a35e-b1f98b27eaee.png')}
+                  style={styles.arrowIconSmall}
+                  resizeMode="contain"
                 />
               </TouchableOpacity>
             </View>
@@ -1069,6 +1067,11 @@ const styles = StyleSheet.create({
   },
   calendarNavButton: {
     padding: 8,
+  },
+  arrowIconSmall: {
+    width: 20,
+    height: 20,
+    tintColor: colors.text,
   },
   calendarMonthYear: {
     fontSize: 18,

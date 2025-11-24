@@ -123,9 +123,11 @@ export default function HomeScreen() {
           </View>
           <View style={styles.greetingInfo}>
             <Text style={styles.greetingText}>Hallo, {currentUser.name}! 👋</Text>
-            <Text style={styles.greetingSubtext}>
-              {isParent ? 'Welkom terug' : `Je hebt ${currentUser.coins} muntjes 🪙`}
-            </Text>
+            {!isParent && (
+              <Text style={styles.greetingSubtext}>
+                Je hebt {currentUser.coins} muntjes 🪙
+              </Text>
+            )}
             {isParent && (
               <Text style={styles.welcomeMessage}>
                 Welkom terug! Ik wens je een fijne dag en succes met je taken en afspraken 🧡
@@ -453,7 +455,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
-    marginBottom: 4,
   },
   welcomeMessage: {
     fontSize: 14,
