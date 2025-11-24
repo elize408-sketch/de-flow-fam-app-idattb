@@ -1,16 +1,20 @@
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import WeatherWidget from '@/components/WeatherWidget';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 export default function HomeScreen() {
   const router = useRouter();
-  const { familyMembers, currentUser, setCurrentUser, tasks, appointments, shoppingList, familyNotes } = useFamily();
+  const { familyMembers, currentUser, setCurrentUser, tasks, appointments } = useFamily();
   const [showMemberPicker, setShowMemberPicker] = useState(!currentUser);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // If no user selected, force selection
   if (!currentUser) {
@@ -58,199 +62,35 @@ export default function HomeScreen() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Parent view - show their own tasks and appointments
-  if (isParent) {
-    const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
-    const myAppointments = appointments.filter(apt => {
-      const aptDate = new Date(apt.date);
-      aptDate.setHours(0, 0, 0, 0);
-      return apt.assignedTo.includes(currentUser.id) && aptDate.getTime() === today.getTime();
-    });
-    const activeShoppingItems = shoppingList.filter(item => !item.completed).slice(0, 5);
-    const recentNotes = familyNotes.slice(0, 3);
-
-    return (
-      <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.contentContainer}>
-          {/* Header with user name on left, Flow Fam in center, weather on right */}
-          <View style={styles.header}>
-            <TouchableOpacity 
-              style={styles.userNameButton}
-              onPress={() => setShowMemberPicker(true)}
-            >
-              <View style={[styles.smallAvatar, { backgroundColor: memberColor }]}>
-                {currentUser.photoUri ? (
-                  <Image source={{ uri: currentUser.photoUri }} style={styles.smallAvatarPhoto} />
-                ) : (
-                  <Text style={styles.smallAvatarText}>{currentUser.name.charAt(0)}</Text>
-                )}
-              </View>
-              <Text style={styles.userName}>{currentUser.name}</Text>
-            </TouchableOpacity>
-
-            <View style={styles.centerHeader}>
-              <Text style={styles.title}>Flow Fam</Text>
-              <Text style={styles.tagline}>Rust, overzicht en liefde in één gezinsapp</Text>
-            </View>
-
-            <WeatherWidget compact onPress={() => router.push('/(tabs)/agenda')} />
-          </View>
-
-          {/* My appointments today */}
-          {myAppointments.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>📅 Mijn afspraken vandaag</Text>
-              {myAppointments.map((apt, index) => (
-                <React.Fragment key={index}>
-                  <View style={[styles.appointmentCard, { borderLeftColor: memberColor }]}>
-                    <Text style={styles.appointmentTime}>{apt.time}{apt.endTime ? ` - ${apt.endTime}` : ''}</Text>
-                    <Text style={styles.appointmentTitle}>{apt.title}</Text>
-                  </View>
-                </React.Fragment>
-              ))}
-            </View>
-          )}
-
-          {/* My tasks */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>✅ Mijn taken</Text>
-            {myTasks.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyEmoji}>✨</Text>
-                <Text style={styles.emptyText}>Wat goed! Je hebt al je taken afgerond!</Text>
-              </View>
-            ) : (
-              myTasks.map((task, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={styles.taskCard}
-                    onPress={() => router.push('/(tabs)/tasks')}
-                  >
-                    <View style={[styles.taskIcon, { backgroundColor: memberColor }]}>
-                      <IconSymbol
-                        ios_icon_name={task.icon}
-                        android_material_icon_name={task.icon as any}
-                        size={24}
-                        color={colors.card}
-                      />
-                    </View>
-                    <Text style={styles.taskName}>{task.name}</Text>
-                    <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
-                      <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
-                    </View>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))
-            )}
-          </View>
-
-          {/* Shopping list preview */}
-          {activeShoppingItems.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>🛒 Boodschappen</Text>
-                <TouchableOpacity onPress={() => router.push('/(tabs)/shopping')}>
-                  <Text style={styles.seeAllText}>Alles →</Text>
-                </TouchableOpacity>
-              </View>
-              {activeShoppingItems.map((item, index) => (
-                <React.Fragment key={index}>
-                  <View style={styles.quickItem}>
-                    <Text style={styles.quickItemText}>• {item.name}</Text>
-                  </View>
-                </React.Fragment>
-              ))}
-            </View>
-          )}
-
-          {/* Notes preview */}
-          {recentNotes.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>📝 Notities</Text>
-                <TouchableOpacity onPress={() => router.push('/(tabs)/notes')}>
-                  <Text style={styles.seeAllText}>Alles →</Text>
-                </TouchableOpacity>
-              </View>
-              {recentNotes.map((note, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={styles.notePreviewCard}
-                    onPress={() => router.push('/(tabs)/notes')}
-                  >
-                    <Text style={styles.notePreviewTitle}>{note.title}</Text>
-                    {note.content && (
-                      <Text style={styles.notePreviewContent} numberOfLines={2}>
-                        {note.content}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
-          )}
-        </ScrollView>
-
-        <Modal
-          visible={showMemberPicker}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowMemberPicker(false)}
-        >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowMemberPicker(false)}
-          >
-            <View style={styles.memberPickerModal}>
-              <Text style={styles.modalTitle}>Wissel van profiel</Text>
-              {familyMembers.map((member, index) => (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={styles.memberOption}
-                    onPress={() => {
-                      setCurrentUser(member);
-                      setShowMemberPicker(false);
-                    }}
-                  >
-                    <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
-                      {member.photoUri ? (
-                        <Image source={{ uri: member.photoUri }} style={styles.memberOptionPhoto} />
-                      ) : (
-                        <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
-                      )}
-                    </View>
-                    <View style={styles.memberOptionInfo}>
-                      <Text style={styles.memberOptionName}>{member.name}</Text>
-                      <Text style={styles.memberOptionRole}>
-                        {member.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
-                      </Text>
-                    </View>
-                    {currentUser.id === member.id && (
-                      <IconSymbol 
-                        ios_icon_name="checkmark" 
-                        android_material_icon_name="check" 
-                        size={24} 
-                        color={colors.accent} 
-                      />
-                    )}
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      </View>
-    );
-  }
-
-  // Child view - separate appointments and tasks
+  // Get today's tasks (max 2 for slider)
   const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
+  const todayTasks = myTasks.slice(0, 2);
+  const totalTasksCount = myTasks.length;
+
+  // Get today's appointments
   const myAppointments = appointments.filter(apt => {
     const aptDate = new Date(apt.date);
     aptDate.setHours(0, 0, 0, 0);
     return apt.assignedTo.includes(currentUser.id) && aptDate.getTime() === today.getTime();
   });
+
+  const handleScroll = (event: any) => {
+    const slideSize = event.nativeEvent.layoutMeasurement.width;
+    const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+    setCurrentSlide(index);
+  };
+
+  // Menu sections to display below slider
+  const menuSections = [
+    { icon: 'list', label: 'Lijsten', route: '/(tabs)/shopping', color: colors.vibrantOrange },
+    { icon: 'calendar-today', label: 'Kalender', route: '/(tabs)/agenda', color: colors.vibrantBlue },
+    { icon: 'custom-euro', label: 'Budget', route: '/(tabs)/finances', color: colors.vibrantGreen },
+    { icon: 'folder', label: 'Documenten', route: '/(tabs)/notes', color: colors.vibrantPurple },
+    { icon: 'restaurant', label: 'Maaltijdplanner', route: '/(tabs)/meals', color: colors.vibrantPink },
+    { icon: 'schedule', label: 'Rooster', route: '/(tabs)/profile', color: colors.vibrantTeal },
+    { icon: 'book', label: 'Recepten', route: '/(tabs)/meals', color: colors.vibrantOrange },
+    { icon: 'map', label: 'Kaart', route: '/(tabs)/profile', color: colors.vibrantBlue },
+  ];
 
   return (
     <View style={styles.container}>
@@ -269,81 +109,173 @@ export default function HomeScreen() {
               )}
             </View>
             <Text style={styles.userName}>{currentUser.name}</Text>
+            <IconSymbol 
+              ios_icon_name="chevron.down" 
+              android_material_icon_name="arrow_drop_down" 
+              size={16} 
+              color={colors.text} 
+            />
           </TouchableOpacity>
 
           <View style={styles.centerHeader}>
             <Text style={styles.title}>Flow Fam</Text>
+            <Text style={styles.tagline}>Rust, overzicht en liefde</Text>
           </View>
 
-          <WeatherWidget compact onPress={() => router.push('/(tabs)/agenda')} />
+          <WeatherWidget compact onPress={() => {}} />
         </View>
 
-        {/* Coins display */}
-        <View style={[styles.coinsCard, { borderColor: memberColor }]}>
-          <Text style={styles.coinsEmoji}>🪙</Text>
-          <View>
-            <Text style={styles.coinsLabel}>Mijn muntjes</Text>
-            <Text style={[styles.coinsAmount, { color: memberColor }]}>{currentUser.coins}</Text>
-          </View>
-        </View>
-
-        {/* What's waiting for me - Appointments only */}
-        {myAppointments.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📅 Wat staat mij te wachten</Text>
-            {myAppointments.map((apt, index) => (
-              <React.Fragment key={index}>
-                <View style={[styles.appointmentCard, { borderLeftColor: memberColor }]}>
-                  <Text style={styles.appointmentTime}>{apt.time}{apt.endTime ? ` - ${apt.endTime}` : ''}</Text>
-                  <Text style={styles.appointmentTitle}>{apt.title}</Text>
+        {/* Slider with 2 slides */}
+        <View style={styles.sliderContainer}>
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            style={styles.slider}
+          >
+            {/* Slide 1: Tasks */}
+            <View style={[styles.slide, { width: screenWidth - 40 }]}>
+              <View style={styles.slideCard}>
+                <View style={styles.slideHeader}>
+                  <Text style={styles.slideTitle}>✅ Taken vandaag</Text>
+                  <View style={styles.taskBadge}>
+                    <Text style={styles.taskBadgeText}>{totalTasksCount}</Text>
+                  </View>
                 </View>
+                
+                {todayTasks.length === 0 ? (
+                  <View style={styles.emptySlide}>
+                    <Text style={styles.emptyEmoji}>✨</Text>
+                    <Text style={styles.emptyText}>Geen taken voor vandaag!</Text>
+                  </View>
+                ) : (
+                  <>
+                    {todayTasks.map((task, index) => (
+                      <React.Fragment key={index}>
+                        <View style={styles.taskItem}>
+                          <View style={[styles.taskIcon, { backgroundColor: memberColor }]}>
+                            {task.icon === 'brush' ? (
+                              <Image
+                                source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
+                                style={[styles.taskCustomIcon, { tintColor: colors.card }]}
+                                resizeMode="contain"
+                              />
+                            ) : (
+                              <IconSymbol
+                                ios_icon_name={task.icon}
+                                android_material_icon_name={task.icon as any}
+                                size={20}
+                                color={colors.card}
+                              />
+                            )}
+                          </View>
+                          <Text style={styles.taskItemName}>{task.name}</Text>
+                          <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
+                            <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
+                          </View>
+                        </View>
+                      </React.Fragment>
+                    ))}
+                    
+                    <TouchableOpacity
+                      style={[styles.slideButton, { backgroundColor: memberColor }]}
+                      onPress={() => router.push('/(tabs)/tasks')}
+                    >
+                      <Text style={styles.slideButtonText}>Zie de rest van je taken</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </View>
+
+            {/* Slide 2: Agenda */}
+            <View style={[styles.slide, { width: screenWidth - 40 }]}>
+              <View style={styles.slideCard}>
+                <View style={styles.slideHeader}>
+                  <Text style={styles.slideTitle}>📅 Agenda vandaag</Text>
+                  <View style={styles.taskBadge}>
+                    <Text style={styles.taskBadgeText}>{myAppointments.length}</Text>
+                  </View>
+                </View>
+                
+                {myAppointments.length === 0 ? (
+                  <View style={styles.emptySlide}>
+                    <Text style={styles.emptyEmoji}>📅</Text>
+                    <Text style={styles.emptyText}>Geen afspraken vandaag!</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={styles.appointmentSummary}>
+                      Je hebt {myAppointments.length} afspraak{myAppointments.length !== 1 ? 'en' : ''} vandaag
+                    </Text>
+                    
+                    {myAppointments.slice(0, 2).map((apt, index) => (
+                      <React.Fragment key={index}>
+                        <View style={[styles.appointmentItem, { borderLeftColor: memberColor }]}>
+                          <Text style={styles.appointmentTime}>{apt.time}</Text>
+                          <Text style={styles.appointmentTitle}>{apt.title}</Text>
+                        </View>
+                      </React.Fragment>
+                    ))}
+                    
+                    <TouchableOpacity
+                      style={[styles.slideButton, { backgroundColor: memberColor }]}
+                      onPress={() => router.push('/(tabs)/agenda')}
+                    >
+                      <Text style={styles.slideButtonText}>Ga naar agenda</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Slide indicators */}
+          <View style={styles.slideIndicators}>
+            {[0, 1].map((index) => (
+              <React.Fragment key={index}>
+                <View
+                  style={[
+                    styles.slideIndicator,
+                    currentSlide === index && styles.slideIndicatorActive,
+                  ]}
+                />
               </React.Fragment>
             ))}
           </View>
-        )}
+        </View>
 
-        {/* My tasks */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>✅ Taken</Text>
-          {myTasks.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyEmoji}>✨</Text>
-              <Text style={styles.emptyText}>Wat goed! Je hebt al je taken afgerond!</Text>
-            </View>
-          ) : (
-            myTasks.map((task, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
-                  style={styles.taskCard}
-                  onPress={() => router.push('/(tabs)/tasks')}
-                >
-                  <View style={[styles.taskIcon, { backgroundColor: memberColor }]}>
-                    {task.icon === 'brush' ? (
-                      <Image
-                        source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
-                        style={[
-                          styles.taskCustomIcon,
-                          { tintColor: colors.card }
-                        ]}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <IconSymbol
-                        ios_icon_name={task.icon}
-                        android_material_icon_name={task.icon as any}
-                        size={24}
-                        color={colors.card}
-                      />
-                    )}
-                  </View>
-                  <Text style={styles.taskName}>{task.name}</Text>
-                  <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
-                    <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
-                  </View>
-                </TouchableOpacity>
-              </React.Fragment>
-            ))
-          )}
+        {/* Menu sections below slider */}
+        <View style={styles.menuGrid}>
+          {menuSections.map((section, index) => (
+            <React.Fragment key={index}>
+              <TouchableOpacity
+                style={styles.menuCard}
+                onPress={() => router.push(section.route as any)}
+              >
+                <View style={[styles.menuIcon, { backgroundColor: section.color }]}>
+                  {section.icon === 'custom-euro' ? (
+                    <Image
+                      source={require('@/assets/images/ef024723-5af7-4fad-8bd5-12b97c4294d7.png')}
+                      style={[styles.menuCustomIcon, { tintColor: colors.card }]}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <IconSymbol
+                      ios_icon_name={section.icon}
+                      android_material_icon_name={section.icon as any}
+                      size={28}
+                      color={colors.card}
+                    />
+                  )}
+                </View>
+                <Text style={styles.menuLabel}>{section.label}</Text>
+              </TouchableOpacity>
+            </React.Fragment>
+          ))}
         </View>
       </ScrollView>
 
@@ -408,7 +340,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 140,
+    paddingBottom: 40,
   },
   selectionContainer: {
     flex: 1,
@@ -492,6 +424,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    gap: 4,
   },
   smallAvatar: {
     width: 32,
@@ -535,82 +468,52 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontFamily: 'Nunito_400Regular',
   },
-  coinsCard: {
+  sliderContainer: {
+    marginBottom: 30,
+  },
+  slider: {
+    marginBottom: 15,
+  },
+  slide: {
+    paddingHorizontal: 10,
+  },
+  slideCard: {
     backgroundColor: colors.card,
     borderRadius: 20,
     padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
-    borderWidth: 2,
+    minHeight: 200,
   },
-  coinsEmoji: {
-    fontSize: 48,
-    marginRight: 15,
-  },
-  coinsLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 5,
-    fontFamily: 'Nunito_400Regular',
-  },
-  coinsAmount: {
-    fontSize: 32,
-    fontWeight: '700',
-    fontFamily: 'Poppins_700Bold',
-  },
-  section: {
-    marginBottom: 30,
-  },
-  sectionHeader: {
+  slideHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 20,
   },
-  sectionTitle: {
+  slideTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 15,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.vibrantOrange,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  appointmentCard: {
-    backgroundColor: colors.card,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  appointmentTime: {
-    fontSize: 14,
     fontWeight: '700',
-    color: colors.accent,
-    marginBottom: 5,
+    color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
-  appointmentTitle: {
-    fontSize: 16,
-    color: colors.text,
-    fontFamily: 'Nunito_400Regular',
-  },
-  emptyCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 30,
+  taskBadge: {
+    backgroundColor: colors.vibrantOrange,
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 30,
     alignItems: 'center',
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
+  },
+  taskBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  emptySlide: {
+    alignItems: 'center',
+    paddingVertical: 30,
   },
   emptyEmoji: {
     fontSize: 48,
@@ -620,80 +523,133 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
   },
-  taskCard: {
-    backgroundColor: colors.card,
-    borderRadius: 15,
-    padding: 15,
+  taskItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
     marginBottom: 10,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
   },
   taskIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: 12,
   },
   taskCustomIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
   },
-  taskName: {
+  taskItemName: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
   taskCoins: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   taskCoinsText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
   },
-  quickItem: {
-    backgroundColor: colors.card,
+  appointmentSummary: {
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: 15,
+    fontFamily: 'Nunito_400Regular',
+  },
+  appointmentItem: {
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 12,
-    marginBottom: 8,
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
+    marginBottom: 10,
+    borderLeftWidth: 4,
   },
-  quickItemText: {
+  appointmentTime: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
+    marginBottom: 4,
+    fontFamily: 'Poppins_700Bold',
+  },
+  appointmentTitle: {
     fontSize: 14,
     color: colors.text,
     fontFamily: 'Nunito_400Regular',
   },
-  notePreviewCard: {
-    backgroundColor: colors.card,
-    borderRadius: 15,
+  slideButton: {
+    borderRadius: 12,
     padding: 15,
-    marginBottom: 10,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
+    alignItems: 'center',
+    marginTop: 10,
   },
-  notePreviewTitle: {
-    fontSize: 16,
+  slideButtonText: {
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
-    marginBottom: 5,
+    color: colors.card,
     fontFamily: 'Poppins_600SemiBold',
   },
-  notePreviewContent: {
+  slideIndicators: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  slideIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.textSecondary,
+    opacity: 0.3,
+  },
+  slideIndicatorActive: {
+    backgroundColor: colors.vibrantOrange,
+    opacity: 1,
+  },
+  menuGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 15,
+    justifyContent: 'space-between',
+  },
+  menuCard: {
+    width: '47%',
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  menuIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  menuCustomIcon: {
+    width: 28,
+    height: 28,
+  },
+  menuLabel: {
     fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    fontFamily: 'Poppins_600SemiBold',
   },
   modalOverlay: {
     flex: 1,
