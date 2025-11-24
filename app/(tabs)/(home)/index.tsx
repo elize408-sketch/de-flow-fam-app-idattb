@@ -93,19 +93,26 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        {/* Header with Flow Fam in center, settings on right */}
+        {/* Header with Flow Fam in center, logo on right, settings on left */}
         <View style={styles.header}>
           <View style={styles.placeholder} />
 
           <View style={styles.centerHeader}>
-            <Text style={styles.title}>Flow Fam</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>Flow Fam</Text>
+              <Image
+                source={require('@/assets/images/ddb023ae-01a4-4b40-aa63-c769180048ad.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
             <Text style={styles.tagline}>Rust, overzicht en liefde</Text>
           </View>
 
           <View style={styles.placeholder} />
         </View>
 
-        {/* User greeting with welcome message in same block */}
+        {/* User greeting with welcome message in same white block */}
         <View style={styles.greetingCard}>
           <View style={[styles.greetingAvatar, { backgroundColor: memberColor }]}>
             {currentUser.photoUri ? (
@@ -119,17 +126,13 @@ export default function HomeScreen() {
             <Text style={styles.greetingSubtext}>
               {isParent ? 'Welkom terug' : `Je hebt ${currentUser.coins} muntjes 🪙`}
             </Text>
+            {isParent && (
+              <Text style={styles.welcomeMessage}>
+                Welkom terug! Ik wens je een fijne dag en succes met je taken en afspraken 🧡
+              </Text>
+            )}
           </View>
         </View>
-
-        {/* Welcome message for parents */}
-        {isParent && (
-          <View style={styles.welcomeMessageCard}>
-            <Text style={styles.welcomeMessageText}>
-              Welkom terug! Ik wens je een fijne dag en succes met je taken en afspraken 🧡
-            </Text>
-          </View>
-        )}
 
         {/* Slider with 2 slides */}
         <View style={styles.sliderContainer}>
@@ -383,12 +386,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: 0.5,
+  },
+  logo: {
+    width: 32,
+    height: 32,
+    tintColor: colors.text,
   },
   tagline: {
     fontSize: 10,
@@ -440,21 +453,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
+    marginBottom: 4,
   },
-  welcomeMessageCard: {
-    backgroundColor: colors.primary,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  welcomeMessageText: {
-    fontSize: 16,
+  welcomeMessage: {
+    fontSize: 14,
     color: colors.text,
-    textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 20,
     fontFamily: 'Nunito_400Regular',
+    marginTop: 4,
   },
   sliderContainer: {
     marginBottom: 30,
