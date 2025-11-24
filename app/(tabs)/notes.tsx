@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -14,6 +14,7 @@ export default function NotesScreen() {
   const [editingNote, setEditingNote] = useState<any>(null);
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteContent, setNewNoteContent] = useState('');
+  const [selectedViewers, setSelectedViewers] = useState<string[]>([]);
 
   const handleAddNote = () => {
     if (!newNoteTitle.trim()) {
@@ -21,14 +22,21 @@ export default function NotesScreen() {
       return;
     }
 
+    if (selectedViewers.length === 0) {
+      Alert.alert('Fout', 'Selecteer minimaal één gezinslid die deze notitie mag zien');
+      return;
+    }
+
     addFamilyNote({
       title: newNoteTitle.trim(),
       content: newNoteContent.trim(),
       createdBy: currentUser?.id || '',
+      sharedWith: selectedViewers,
     });
 
     setNewNoteTitle('');
     setNewNoteContent('');
+    setSelectedViewers([]);
     setShowAddModal(false);
     Alert.alert('Gelukt!', 'Notitie toegevoegd');
   };
@@ -41,13 +49,20 @@ export default function NotesScreen() {
       return;
     }
 
+    if (selectedViewers.length === 0) {
+      Alert.alert('Fout', 'Selecteer minimaal één gezinslid die deze notitie mag zien');
+      return;
+    }
+
     updateFamilyNote(editingNote.id, {
       title: newNoteTitle.trim(),
       content: newNoteContent.trim(),
+      sharedWith: selectedViewers,
     });
 
     setNewNoteTitle('');
     setNewNoteContent('');
+    setSelectedViewers([]);
     setEditingNote(null);
     setShowEditModal(false);
     Alert.alert('Gelukt!', 'Notitie bijgewerkt');
@@ -57,8 +72,25 @@ export default function NotesScreen() {
     setEditingNote(note);
     setNewNoteTitle(note.title);
     setNewNoteContent(note.content);
+    setSelectedViewers(note.sharedWith || []);
     setShowEditModal(true);
   };
+
+  const toggleViewerSelection = (memberId: string) => {
+    setSelectedViewers(prev => {
+      if (prev.includes(memberId)) {
+        return prev.filter(id => id !== memberId);
+      } else {
+        return [...prev, memberId];
+      }
+    });
+  };
+
+  // Filter notes that the current user can see
+  const visibleNotes = familyNotes.filter(note => 
+    note.createdBy === currentUser?.id || 
+    (note.sharedWith && note.sharedWith.includes(currentUser?.id || ''))
+  );
 
   return (
     <View style={styles.container}>
@@ -77,7 +109,7 @@ export default function NotesScreen() {
           </TouchableOpacity>
           
           <View style={styles.header}>
-            <Text style={styles.title}>📝 Gezinsnotities</Text>
+            <Text style={styles.title}>📝 Notities</Text>
             <Text style={styles.subtitle}>Deel belangrijke informatie</Text>
           </View>
           
@@ -97,53 +129,58 @@ export default function NotesScreen() {
           <Text style={styles.addButtonText}>Notitie toevoegen</Text>
         </TouchableOpacity>
 
-        {familyNotes.length === 0 ? (
+        {visibleNotes.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateEmoji}>📝</Text>
             <Text style={styles.emptyStateText}>Nog geen notities</Text>
             <Text style={styles.emptyStateSubtext}>Voeg je eerste notitie toe!</Text>
           </View>
         ) : (
-          familyNotes.map((note, index) => {
+          visibleNotes.map((note, index) => {
             const creator = familyMembers.find(m => m.id === note.createdBy);
+            const sharedWithMembers = familyMembers.filter(m => note.sharedWith?.includes(m.id));
+            const canEdit = note.createdBy === currentUser?.id;
+            
             return (
               <React.Fragment key={index}>
                 <View style={styles.noteCard}>
                   <View style={styles.noteHeader}>
                     <Text style={styles.noteTitle}>{note.title}</Text>
-                    <View style={styles.noteActions}>
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => openEditModal(note)}
-                      >
-                        <IconSymbol
-                          ios_icon_name="pencil"
-                          android_material_icon_name="edit"
-                          size={20}
-                          color={colors.vibrantOrange}
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => {
-                          Alert.alert(
-                            'Verwijderen?',
-                            `Weet je zeker dat je "${note.title}" wilt verwijderen?`,
-                            [
-                              { text: 'Annuleren', style: 'cancel' },
-                              { text: 'Verwijderen', onPress: () => deleteFamilyNote(note.id), style: 'destructive' },
-                            ]
-                          );
-                        }}
-                      >
-                        <IconSymbol
-                          ios_icon_name="trash"
-                          android_material_icon_name="delete"
-                          size={20}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
-                    </View>
+                    {canEdit && (
+                      <View style={styles.noteActions}>
+                        <TouchableOpacity
+                          style={styles.actionButton}
+                          onPress={() => openEditModal(note)}
+                        >
+                          <IconSymbol
+                            ios_icon_name="pencil"
+                            android_material_icon_name="edit"
+                            size={20}
+                            color={colors.vibrantOrange}
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.actionButton}
+                          onPress={() => {
+                            Alert.alert(
+                              'Verwijderen?',
+                              `Weet je zeker dat je "${note.title}" wilt verwijderen?`,
+                              [
+                                { text: 'Annuleren', style: 'cancel' },
+                                { text: 'Verwijderen', onPress: () => deleteFamilyNote(note.id), style: 'destructive' },
+                              ]
+                            );
+                          }}
+                        >
+                          <IconSymbol
+                            ios_icon_name="trash"
+                            android_material_icon_name="delete"
+                            size={20}
+                            color={colors.textSecondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
                   {note.content && (
                     <Text style={styles.noteContent}>{note.content}</Text>
@@ -152,6 +189,24 @@ export default function NotesScreen() {
                     <Text style={styles.noteMetaText}>
                       Door {creator?.name || 'Onbekend'} • {new Date(note.createdAt).toLocaleDateString('nl-NL')}
                     </Text>
+                    {sharedWithMembers.length > 0 && (
+                      <View style={styles.sharedWithContainer}>
+                        <Text style={styles.sharedWithLabel}>👥 Gedeeld met: </Text>
+                        <View style={styles.sharedWithAvatars}>
+                          {sharedWithMembers.map((member, mIndex) => (
+                            <React.Fragment key={mIndex}>
+                              <View style={[styles.sharedAvatar, { backgroundColor: member.color }]}>
+                                {member.photoUri ? (
+                                  <Image source={{ uri: member.photoUri }} style={styles.sharedAvatarPhoto} />
+                                ) : (
+                                  <Text style={styles.sharedAvatarText}>{member.name.charAt(0)}</Text>
+                                )}
+                              </View>
+                            </React.Fragment>
+                          ))}
+                        </View>
+                      </View>
+                    )}
                   </View>
                 </View>
               </React.Fragment>
@@ -168,47 +223,84 @@ export default function NotesScreen() {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nieuwe notitie</Text>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Nieuwe notitie</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Titel"
-              placeholderTextColor={colors.textSecondary}
-              value={newNoteTitle}
-              onChangeText={setNewNoteTitle}
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Titel"
+                placeholderTextColor={colors.textSecondary}
+                value={newNoteTitle}
+                onChangeText={setNewNoteTitle}
+              />
 
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Inhoud (optioneel)"
-              placeholderTextColor={colors.textSecondary}
-              value={newNoteContent}
-              onChangeText={setNewNoteContent}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Inhoud (optioneel)"
+                placeholderTextColor={colors.textSecondary}
+                value={newNoteContent}
+                onChangeText={setNewNoteContent}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => {
-                  setShowAddModal(false);
-                  setNewNoteTitle('');
-                  setNewNoteContent('');
-                }}
-              >
-                <Text style={styles.modalButtonText}>Annuleren</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleAddNote}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
-              </TouchableOpacity>
+              <Text style={styles.inputLabel}>Wie mag deze notitie zien?</Text>
+              <View style={styles.memberSelector}>
+                {familyMembers.map((member, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.memberOption,
+                        selectedViewers.includes(member.id) && styles.memberOptionActive,
+                      ]}
+                      onPress={() => toggleViewerSelection(member.id)}
+                    >
+                      <View style={[styles.memberAvatar, { backgroundColor: member.color || colors.accent }]}>
+                        {member.photoUri ? (
+                          <Image source={{ uri: member.photoUri }} style={styles.memberAvatarPhoto} />
+                        ) : (
+                          <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
+                        )}
+                      </View>
+                      <Text style={styles.memberName}>{member.name}</Text>
+                      {selectedViewers.includes(member.id) && (
+                        <View style={styles.checkmark}>
+                          <IconSymbol
+                            ios_icon_name="checkmark"
+                            android_material_icon_name="check"
+                            size={16}
+                            color={colors.accent}
+                          />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowAddModal(false);
+                    setNewNoteTitle('');
+                    setNewNoteContent('');
+                    setSelectedViewers([]);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleAddNote}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -220,48 +312,85 @@ export default function NotesScreen() {
         onRequestClose={() => setShowEditModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Notitie bewerken</Text>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Notitie bewerken</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Titel"
-              placeholderTextColor={colors.textSecondary}
-              value={newNoteTitle}
-              onChangeText={setNewNoteTitle}
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Titel"
+                placeholderTextColor={colors.textSecondary}
+                value={newNoteTitle}
+                onChangeText={setNewNoteTitle}
+              />
 
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Inhoud (optioneel)"
-              placeholderTextColor={colors.textSecondary}
-              value={newNoteContent}
-              onChangeText={setNewNoteContent}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Inhoud (optioneel)"
+                placeholderTextColor={colors.textSecondary}
+                value={newNoteContent}
+                onChangeText={setNewNoteContent}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => {
-                  setShowEditModal(false);
-                  setEditingNote(null);
-                  setNewNoteTitle('');
-                  setNewNoteContent('');
-                }}
-              >
-                <Text style={styles.modalButtonText}>Annuleren</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleEditNote}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
-              </TouchableOpacity>
+              <Text style={styles.inputLabel}>Wie mag deze notitie zien?</Text>
+              <View style={styles.memberSelector}>
+                {familyMembers.map((member, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.memberOption,
+                        selectedViewers.includes(member.id) && styles.memberOptionActive,
+                      ]}
+                      onPress={() => toggleViewerSelection(member.id)}
+                    >
+                      <View style={[styles.memberAvatar, { backgroundColor: member.color || colors.accent }]}>
+                        {member.photoUri ? (
+                          <Image source={{ uri: member.photoUri }} style={styles.memberAvatarPhoto} />
+                        ) : (
+                          <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
+                        )}
+                      </View>
+                      <Text style={styles.memberName}>{member.name}</Text>
+                      {selectedViewers.includes(member.id) && (
+                        <View style={styles.checkmark}>
+                          <IconSymbol
+                            ios_icon_name="checkmark"
+                            android_material_icon_name="check"
+                            size={16}
+                            color={colors.accent}
+                          />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowEditModal(false);
+                    setEditingNote(null);
+                    setNewNoteTitle('');
+                    setNewNoteContent('');
+                    setSelectedViewers([]);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleEditNote}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -400,12 +529,50 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
+    marginBottom: 8,
+  },
+  sharedWithContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  sharedWithLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  sharedWithAvatars: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  sharedAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  sharedAvatarPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+  },
+  sharedAvatarText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     padding: 20,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   modalContent: {
     backgroundColor: colors.card,
@@ -436,6 +603,70 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 100,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 10,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  memberSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  memberOption: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 10,
+    alignItems: 'center',
+    minWidth: 70,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+  },
+  memberOptionActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.primary,
+  },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
+    overflow: 'hidden',
+  },
+  memberAvatarPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+  },
+  memberAvatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  checkmark: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalButtons: {
     flexDirection: 'row',

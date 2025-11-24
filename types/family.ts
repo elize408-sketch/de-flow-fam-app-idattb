@@ -138,6 +138,18 @@ export interface FamilyNote {
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
+  sharedWith?: string[];
+}
+
+export interface Reminder {
+  id: string;
+  title: string;
+  description?: string;
+  date: Date;
+  time: string;
+  assignedTo: string[];
+  completed: boolean;
+  createdBy: string;
 }
 
 export interface DailyScheduleItem {

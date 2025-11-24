@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, DailyScheduleItem, Notification } from '@/types/family';
+import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, Reminder, DailyScheduleItem, Notification } from '@/types/family';
 import { initialFamilyMembers, initialTasks, initialRewards } from '@/data/familyData';
 
 interface FamilyContextType {
@@ -17,6 +17,7 @@ interface FamilyContextType {
   memories: Memory[];
   shoppingList: ShoppingItem[];
   familyNotes: FamilyNote[];
+  reminders: Reminder[];
   dailySchedule: DailyScheduleItem[];
   notifications: Notification[];
   selectedMember: FamilyMember | null;
@@ -63,6 +64,9 @@ interface FamilyContextType {
   addFamilyNote: (note: Omit<FamilyNote, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateFamilyNote: (noteId: string, updates: Partial<FamilyNote>) => void;
   deleteFamilyNote: (noteId: string) => void;
+  addReminder: (reminder: Omit<Reminder, 'id'>) => void;
+  updateReminder: (reminderId: string, updates: Partial<Reminder>) => void;
+  deleteReminder: (reminderId: string) => void;
   addDailyScheduleItem: (item: Omit<DailyScheduleItem, 'id'>) => void;
   updateDailyScheduleItem: (itemId: string, updates: Partial<DailyScheduleItem>) => void;
   deleteDailyScheduleItem: (itemId: string) => void;
@@ -73,6 +77,7 @@ interface FamilyContextType {
   getTotalVariableExpenses: () => number;
   getRemainingBudget: () => number;
   getMonthlyOverview: () => { income: number; fixed: number; variable: number; remaining: number };
+  addIngredientsToShoppingList: (ingredients: string[]) => void;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -91,6 +96,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
   const [familyNotes, setFamilyNotes] = useState<FamilyNote[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [dailySchedule, setDailySchedule] = useState<DailyScheduleItem[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
@@ -406,6 +412,26 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     setFamilyNotes(prev => prev.filter(note => note.id !== noteId));
   };
 
+  const addReminder = (reminder: Omit<Reminder, 'id'>) => {
+    const newReminder: Reminder = {
+      ...reminder,
+      id: Date.now().toString(),
+    };
+    setReminders(prev => [...prev, newReminder]);
+  };
+
+  const updateReminder = (reminderId: string, updates: Partial<Reminder>) => {
+    setReminders(prev =>
+      prev.map(reminder =>
+        reminder.id === reminderId ? { ...reminder, ...updates } : reminder
+      )
+    );
+  };
+
+  const deleteReminder = (reminderId: string) => {
+    setReminders(prev => prev.filter(reminder => reminder.id !== reminderId));
+  };
+
   const addDailyScheduleItem = (item: Omit<DailyScheduleItem, 'id'>) => {
     const newItem: DailyScheduleItem = {
       ...item,
@@ -471,6 +497,16 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     return { income, fixed, variable, remaining };
   };
 
+  const addIngredientsToShoppingList = (ingredients: string[]) => {
+    ingredients.forEach(ingredient => {
+      addShoppingItem({
+        name: ingredient,
+        completed: false,
+        addedBy: currentUser?.id || '',
+      });
+    });
+  };
+
   return (
     <FamilyContext.Provider
       value={{
@@ -487,6 +523,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         memories,
         shoppingList,
         familyNotes,
+        reminders,
         dailySchedule,
         notifications,
         selectedMember,
@@ -533,6 +570,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         addFamilyNote,
         updateFamilyNote,
         deleteFamilyNote,
+        addReminder,
+        updateReminder,
+        deleteReminder,
         addDailyScheduleItem,
         updateDailyScheduleItem,
         deleteDailyScheduleItem,
@@ -543,6 +583,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         getTotalVariableExpenses,
         getRemainingBudget,
         getMonthlyOverview,
+        addIngredientsToShoppingList,
       }}
     >
       {children}

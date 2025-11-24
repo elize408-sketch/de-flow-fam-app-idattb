@@ -79,16 +79,16 @@ export default function HomeScreen() {
     setCurrentSlide(index);
   };
 
-  // Menu sections to display below slider
+  // Menu sections to display below slider - NEW ORDER: Agenda, Taken, Boodschappen, Financiën, Herinneringen, Maaltijden
   const menuSections = [
-    { icon: 'list', label: 'Boodschappen', route: '/(tabs)/shopping', color: colors.vibrantOrange },
     { icon: 'calendar-today', label: 'Agenda', route: '/(tabs)/agenda', color: colors.vibrantBlue },
-    { icon: 'custom-euro', label: 'Budget', route: '/(tabs)/finances', color: colors.vibrantGreen },
-    { icon: 'folder', label: 'Documenten', route: '/(tabs)/notes', color: colors.vibrantPurple },
-    { icon: 'restaurant', label: 'Maaltijdplanner', route: '/(tabs)/meals', color: colors.vibrantPink },
-    { icon: 'schedule', label: 'Rooster', route: '/(tabs)/profile', color: colors.vibrantTeal },
-    { icon: 'book', label: 'Recepten', route: '/(tabs)/meals', color: colors.vibrantOrange },
-    { icon: 'map', label: 'Kaart', route: '/(tabs)/profile', color: colors.vibrantBlue },
+    { icon: 'check-circle', label: 'Taken', route: '/(tabs)/tasks', color: colors.vibrantGreen },
+    { icon: 'list', label: 'Boodschappen', route: '/(tabs)/shopping', color: colors.vibrantOrange },
+    { icon: 'custom-euro', label: 'Financiën', route: '/(tabs)/finances', color: colors.vibrantGreen },
+    { icon: 'notifications', label: 'Herinneringen', route: '/(tabs)/reminders', color: colors.vibrantPurple },
+    { icon: 'restaurant', label: 'Maaltijden', route: '/(tabs)/meals', color: colors.vibrantPink },
+    { icon: 'folder', label: 'Notities', route: '/(tabs)/notes', color: colors.vibrantPurple },
+    { icon: 'shopping-bag', label: 'Shop', route: '/(tabs)/shop', color: colors.vibrantTeal },
   ];
 
   return (
