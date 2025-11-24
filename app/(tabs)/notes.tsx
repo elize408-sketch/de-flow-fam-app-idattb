@@ -69,8 +69,8 @@ export default function NotesScreen() {
             onPress={() => router.push('/(tabs)/(home)')}
           >
             <IconSymbol
-              ios_icon_name="chevron.left"
-              android_material_icon_name="arrow_back"
+              ios_icon_name="house"
+              android_material_icon_name="home"
               size={24}
               color={colors.text}
             />

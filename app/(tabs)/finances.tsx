@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -8,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Slider from '@react-native-community/slider';
 
 export default function FinancesScreen() {
+  const router = useRouter();
   const {
     incomes,
     expenses,
@@ -101,27 +103,29 @@ export default function FinancesScreen() {
               <Text style={styles.modalTitle}>Pincode instellen</Text>
               <Text style={styles.modalSubtitle}>Kies een 4-cijferige pincode</Text>
 
-              <TextInput
-                style={styles.passcodeInput}
-                placeholder="Pincode"
-                placeholderTextColor={colors.textSecondary}
-                value={newPasscode}
-                onChangeText={setNewPasscode}
-                keyboardType="numeric"
-                maxLength={4}
-                secureTextEntry
-              />
+              <View style={styles.passcodeInputContainer}>
+                <TextInput
+                  style={styles.passcodeInput}
+                  placeholder="Pincode"
+                  placeholderTextColor={colors.textSecondary}
+                  value={newPasscode}
+                  onChangeText={setNewPasscode}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  secureTextEntry
+                />
 
-              <TextInput
-                style={styles.passcodeInput}
-                placeholder="Bevestig pincode"
-                placeholderTextColor={colors.textSecondary}
-                value={confirmPasscode}
-                onChangeText={setConfirmPasscode}
-                keyboardType="numeric"
-                maxLength={4}
-                secureTextEntry
-              />
+                <TextInput
+                  style={styles.passcodeInput}
+                  placeholder="Bevestig pincode"
+                  placeholderTextColor={colors.textSecondary}
+                  value={confirmPasscode}
+                  onChangeText={setConfirmPasscode}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  secureTextEntry
+                />
+              </View>
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -169,16 +173,18 @@ export default function FinancesScreen() {
         <View style={styles.unlockContainer}>
           <Text style={styles.unlockEmoji}>🔒</Text>
           <Text style={styles.unlockTitle}>Voer je pincode in</Text>
-          <TextInput
-            style={styles.passcodeInput}
-            placeholder="••••"
-            placeholderTextColor={colors.textSecondary}
-            value={passcodeInput}
-            onChangeText={setPasscodeInput}
-            keyboardType="numeric"
-            maxLength={4}
-            secureTextEntry
-          />
+          <View style={styles.passcodeInputContainer}>
+            <TextInput
+              style={styles.passcodeInput}
+              placeholder="••••"
+              placeholderTextColor={colors.textSecondary}
+              value={passcodeInput}
+              onChangeText={setPasscodeInput}
+              keyboardType="numeric"
+              maxLength={4}
+              secureTextEntry
+            />
+          </View>
           <TouchableOpacity
             style={styles.unlockButton}
             onPress={() => {
@@ -353,9 +359,25 @@ export default function FinancesScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Financiën</Text>
-          <Text style={styles.subtitle}>Beheer je gezinsbudget</Text>
+        <View style={styles.headerRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.push('/(tabs)/(home)')}
+          >
+            <IconSymbol
+              ios_icon_name="house"
+              android_material_icon_name="home"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+          
+          <View style={styles.header}>
+            <Text style={styles.title}>Financiën</Text>
+            <Text style={styles.subtitle}>Beheer je gezinsbudget</Text>
+          </View>
+          
+          <View style={styles.placeholder} />
         </View>
 
         {isFirstTime && (
@@ -1029,9 +1051,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 120,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 2,
+  },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    flex: 1,
+  },
+  placeholder: {
+    width: 40,
   },
   title: {
     fontSize: 32,
@@ -1126,6 +1167,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
   },
+  passcodeInputContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   passcodeInput: {
     backgroundColor: colors.card,
     borderRadius: 15,
@@ -1133,7 +1179,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: colors.text,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
     width: 200,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: 10,

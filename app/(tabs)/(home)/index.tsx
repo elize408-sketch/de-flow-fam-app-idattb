@@ -82,7 +82,7 @@ export default function HomeScreen() {
   // Menu sections to display below slider
   const menuSections = [
     { icon: 'list', label: 'Boodschappen', route: '/(tabs)/shopping', color: colors.vibrantOrange },
-    { icon: 'calendar-today', label: 'Kalender', route: '/(tabs)/agenda', color: colors.vibrantBlue },
+    { icon: 'calendar-today', label: 'Agenda', route: '/(tabs)/agenda', color: colors.vibrantBlue },
     { icon: 'custom-euro', label: 'Budget', route: '/(tabs)/finances', color: colors.vibrantGreen },
     { icon: 'folder', label: 'Documenten', route: '/(tabs)/notes', color: colors.vibrantPurple },
     { icon: 'restaurant', label: 'Maaltijdplanner', route: '/(tabs)/meals', color: colors.vibrantPink },
