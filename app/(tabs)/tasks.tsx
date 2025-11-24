@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -8,6 +9,7 @@ import TaskCompletionAnimation from '@/components/TaskCompletionAnimation';
 import IconPicker from '@/components/IconPicker';
 
 export default function TasksScreen() {
+  const router = useRouter();
   const { 
     tasks, 
     householdTasks,
@@ -22,13 +24,12 @@ export default function TasksScreen() {
   const [showAnimation, setShowAnimation] = useState(false);
   const [completedTaskCoins, setCompletedTaskCoins] = useState(0);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  const [showAddHouseholdModal, setShowAddHouseholdModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
-  const [newTaskCoins, setNewTaskCoins] = useState('2');
   const [newTaskAssignedTo, setNewTaskAssignedTo] = useState('');
   const [newTaskRepeatType, setNewTaskRepeatType] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('daily');
   const [newTaskIcon, setNewTaskIcon] = useState('check');
   const [taskType, setTaskType] = useState<'personal' | 'household'>('personal');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
 
   const isParent = currentUser?.role === 'parent';
 
@@ -43,17 +44,23 @@ export default function TasksScreen() {
   };
 
   const handleAddTask = () => {
+    const errors: {[key: string]: boolean} = {};
+
     if (!newTaskName.trim()) {
-      Alert.alert('Fout', 'Vul een taaknaam in');
-      return;
+      errors.taskName = true;
     }
 
     if (!newTaskAssignedTo) {
-      Alert.alert('Fout', 'Selecteer een gezinslid');
+      errors.assignedTo = true;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      Alert.alert('Fout', 'Vul alle verplichte velden in');
       return;
     }
 
-    const coins = parseInt(newTaskCoins) || 0;
+    setValidationErrors({});
 
     if (taskType === 'household') {
       addHouseholdTask({
@@ -64,10 +71,11 @@ export default function TasksScreen() {
         icon: newTaskIcon,
       });
     } else {
+      // Personal tasks without coins (only for parents from tasks screen)
       addTask({
         name: newTaskName.trim(),
         icon: newTaskIcon,
-        coins,
+        coins: 0,
         assignedTo: newTaskAssignedTo,
         completed: false,
         repeatType: newTaskRepeatType,
@@ -76,7 +84,6 @@ export default function TasksScreen() {
     }
 
     setNewTaskName('');
-    setNewTaskCoins('2');
     setNewTaskAssignedTo('');
     setNewTaskRepeatType('daily');
     setNewTaskIcon('check');
@@ -106,11 +113,28 @@ export default function TasksScreen() {
     
     return (
       <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.contentContainer}>
-          <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.push('/(tabs)/(home)')}
+          >
+            <IconSymbol
+              ios_icon_name="house"
+              android_material_icon_name="home"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+          
+          <View style={styles.headerCenter}>
             <Text style={styles.title}>Mijn Taken</Text>
-            <Text style={styles.subtitle}>Verdien muntjes door taken te voltooien!</Text>
           </View>
+          
+          <View style={styles.placeholder} />
+        </View>
+
+        <ScrollView contentContainerStyle={styles.contentContainer}>
+          <Text style={styles.subtitle}>Verdien muntjes door taken te voltooien!</Text>
 
           <View style={styles.coinsCard}>
             <Text style={styles.coinsEmoji}>🪙</Text>
@@ -225,11 +249,28 @@ export default function TasksScreen() {
   // Parent view - show their own tasks and household tasks
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.push('/(tabs)/(home)')}
+        >
+          <IconSymbol
+            ios_icon_name="house"
+            android_material_icon_name="home"
+            size={24}
+            color={colors.text}
+          />
+        </TouchableOpacity>
+        
+        <View style={styles.headerCenter}>
           <Text style={styles.title}>Taken</Text>
-          <Text style={styles.subtitle}>Beheer persoonlijke en huishoudelijke taken</Text>
         </View>
+        
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.subtitle}>Beheer persoonlijke en huishoudelijke taken</Text>
 
         {isParent && (
           <TouchableOpacity
@@ -281,10 +322,12 @@ export default function TasksScreen() {
                       </Text>
                     </View>
                   </View>
-                  <View style={[styles.taskCoins, task.completed && styles.taskCoinsCompleted]}>
-                    <Text style={styles.taskCoinsText}>{task.coins}</Text>
-                    <Text style={styles.taskCoinEmoji}>🪙</Text>
-                  </View>
+                  {task.coins > 0 && (
+                    <View style={[styles.taskCoins, task.completed && styles.taskCoinsCompleted]}>
+                      <Text style={styles.taskCoinsText}>{task.coins}</Text>
+                      <Text style={styles.taskCoinEmoji}>🪙</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               </React.Fragment>
             ))}
@@ -358,7 +401,7 @@ export default function TasksScreen() {
         onComplete={() => setShowAnimation(false)}
       />
 
-      {/* Add Task Modal */}
+      {/* Add Task Modal - Only personal (no coins) and household tasks */}
       <Modal
         visible={showAddTaskModal}
         transparent
@@ -377,7 +420,7 @@ export default function TasksScreen() {
                   onPress={() => setTaskType('personal')}
                 >
                   <Text style={[styles.taskTypeButtonText, taskType === 'personal' && styles.taskTypeButtonTextActive]}>
-                    ✅ Persoonlijk (met muntjes)
+                    ✅ Persoonlijk
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -391,11 +434,19 @@ export default function TasksScreen() {
               </View>
 
               <TextInput
-                style={styles.input}
-                placeholder="Taaknaam"
-                placeholderTextColor={colors.textSecondary}
+                style={[
+                  styles.input,
+                  validationErrors.taskName && styles.inputError
+                ]}
+                placeholder="Taaknaam *"
+                placeholderTextColor={validationErrors.taskName ? '#E74C3C' : colors.textSecondary}
                 value={newTaskName}
-                onChangeText={setNewTaskName}
+                onChangeText={(text) => {
+                  setNewTaskName(text);
+                  if (validationErrors.taskName && text.trim()) {
+                    setValidationErrors(prev => ({ ...prev, taskName: false }));
+                  }
+                }}
               />
 
               <IconPicker
@@ -405,18 +456,7 @@ export default function TasksScreen() {
                 taskName={newTaskName}
               />
 
-              {taskType === 'personal' && (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Aantal muntjes"
-                  placeholderTextColor={colors.textSecondary}
-                  value={newTaskCoins}
-                  onChangeText={setNewTaskCoins}
-                  keyboardType="numeric"
-                />
-              )}
-
-              <Text style={styles.inputLabel}>Toewijzen aan:</Text>
+              <Text style={styles.inputLabel}>Toewijzen aan: *</Text>
               <View style={styles.memberSelector}>
                 {familyMembers.map((member, index) => (
                   <React.Fragment key={index}>
@@ -424,8 +464,14 @@ export default function TasksScreen() {
                       style={[
                         styles.memberOption,
                         newTaskAssignedTo === member.id && styles.memberOptionActive,
+                        validationErrors.assignedTo && !newTaskAssignedTo && styles.memberOptionError,
                       ]}
-                      onPress={() => setNewTaskAssignedTo(member.id)}
+                      onPress={() => {
+                        setNewTaskAssignedTo(member.id);
+                        if (validationErrors.assignedTo) {
+                          setValidationErrors(prev => ({ ...prev, assignedTo: false }));
+                        }
+                      }}
                     >
                       <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
                         {member.photoUri ? (
@@ -469,17 +515,21 @@ export default function TasksScreen() {
                 ))}
               </View>
 
+              <Text style={styles.infoNote}>
+                💡 Kindertaken met muntjes kunnen alleen toegevoegd worden vanuit Instellingen
+              </Text>
+
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonCancel]}
                   onPress={() => {
                     setShowAddTaskModal(false);
                     setNewTaskName('');
-                    setNewTaskCoins('2');
                     setNewTaskAssignedTo('');
                     setNewTaskRepeatType('daily');
                     setNewTaskIcon('check');
                     setTaskType('personal');
+                    setValidationErrors({});
                   }}
                 >
                   <Text style={styles.modalButtonText}>Annuleren</Text>
@@ -504,14 +554,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  contentContainer: {
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 10,
   },
-  header: {
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 2,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  placeholder: {
+    width: 40,
+  },
+  contentContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 120,
   },
   title: {
     fontSize: 32,
@@ -523,6 +593,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     marginTop: 5,
+    marginBottom: 20,
+    textAlign: 'center',
     fontFamily: 'Nunito_400Regular',
   },
   coinsCard: {
@@ -717,6 +789,12 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 15,
     fontFamily: 'Nunito_400Regular',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  inputError: {
+    borderColor: '#E74C3C',
+    backgroundColor: '#FFE5E5',
   },
   inputLabel: {
     fontSize: 16,
@@ -772,6 +850,9 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     backgroundColor: colors.primary,
   },
+  memberOptionError: {
+    borderColor: '#E74C3C',
+  },
   memberOptionAvatar: {
     width: 40,
     height: 40,
@@ -826,6 +907,17 @@ const styles = StyleSheet.create({
   },
   repeatOptionTextActive: {
     color: colors.text,
+  },
+  infoNote: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+    fontFamily: 'Nunito_400Regular',
+    marginBottom: 20,
+    padding: 10,
+    backgroundColor: colors.primary,
+    borderRadius: 10,
   },
   modalButtons: {
     flexDirection: 'row',

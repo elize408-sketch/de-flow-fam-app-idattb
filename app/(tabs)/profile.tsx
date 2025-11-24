@@ -42,6 +42,7 @@ export default function ProfileScreen() {
   const [newAppointmentTitle, setNewAppointmentTitle] = useState('');
   const [newAppointmentDate, setNewAppointmentDate] = useState(new Date());
   const [newAppointmentTime, setNewAppointmentTime] = useState('09:00');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
 
   const isParent = currentUser?.role === 'parent';
 
@@ -136,16 +137,24 @@ export default function ProfileScreen() {
   };
 
   const handleEditTask = () => {
+    const errors: {[key: string]: boolean} = {};
+
     if (!editTaskName.trim()) {
-      Alert.alert('Fout', 'Vul een taaknaam in');
-      return;
+      errors.taskName = true;
     }
 
     const coins = parseInt(editTaskCoins);
     if (isNaN(coins) || coins < 0) {
-      Alert.alert('Fout', 'Vul een geldig aantal muntjes in');
+      errors.taskCoins = true;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      Alert.alert('Fout', 'Vul alle verplichte velden correct in');
       return;
     }
+
+    setValidationErrors({});
 
     updateTask(editingTask.id, {
       name: editTaskName.trim(),
@@ -217,27 +226,28 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.push('/(tabs)/(home)')}
-          >
-            <IconSymbol
-              ios_icon_name="house"
-              android_material_icon_name="home"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-          
-          <View style={styles.header}>
-            <Text style={styles.title}>Instellingen</Text>
-            <Text style={styles.subtitle}>Beheer je gezin</Text>
-          </View>
-          
-          <View style={styles.placeholder} />
+      <View style={styles.headerRow}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.push('/(tabs)/(home)')}
+        >
+          <IconSymbol
+            ios_icon_name="house"
+            android_material_icon_name="home"
+            size={24}
+            color={colors.text}
+          />
+        </TouchableOpacity>
+        
+        <View style={styles.header}>
+          <Text style={styles.title}>Instellingen</Text>
         </View>
+        
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.subtitle}>Beheer je gezin</Text>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -681,19 +691,35 @@ export default function ProfileScreen() {
               <Text style={styles.modalTitle}>Taak bewerken</Text>
 
               <TextInput
-                style={styles.input}
-                placeholder="Taaknaam"
-                placeholderTextColor={colors.textSecondary}
+                style={[
+                  styles.input,
+                  validationErrors.taskName && styles.inputError
+                ]}
+                placeholder="Taaknaam *"
+                placeholderTextColor={validationErrors.taskName ? '#E74C3C' : colors.textSecondary}
                 value={editTaskName}
-                onChangeText={setEditTaskName}
+                onChangeText={(text) => {
+                  setEditTaskName(text);
+                  if (validationErrors.taskName && text.trim()) {
+                    setValidationErrors(prev => ({ ...prev, taskName: false }));
+                  }
+                }}
               />
 
               <TextInput
-                style={styles.input}
-                placeholder="Aantal muntjes"
-                placeholderTextColor={colors.textSecondary}
+                style={[
+                  styles.input,
+                  validationErrors.taskCoins && styles.inputError
+                ]}
+                placeholder="Aantal muntjes *"
+                placeholderTextColor={validationErrors.taskCoins ? '#E74C3C' : colors.textSecondary}
                 value={editTaskCoins}
-                onChangeText={setEditTaskCoins}
+                onChangeText={(text) => {
+                  setEditTaskCoins(text);
+                  if (validationErrors.taskCoins && text.trim()) {
+                    setValidationErrors(prev => ({ ...prev, taskCoins: false }));
+                  }
+                }}
                 keyboardType="numeric"
               />
 
@@ -743,6 +769,7 @@ export default function ProfileScreen() {
                     setEditTaskCoins('');
                     setEditTaskIcon('check');
                     setEditTaskRepeat('none');
+                    setValidationErrors({});
                   }}
                 >
                   <Text style={styles.modalButtonText}>Annuleren</Text>
@@ -767,16 +794,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  contentContainer: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 140,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
   },
   backButton: {
     width: 40,
@@ -789,11 +813,15 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   header: {
-    alignItems: 'center',
     flex: 1,
+    alignItems: 'center',
   },
   placeholder: {
     width: 40,
+  },
+  contentContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 140,
   },
   title: {
     fontSize: 32,
@@ -805,6 +833,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     marginTop: 5,
+    marginBottom: 20,
+    textAlign: 'center',
     fontFamily: 'Nunito_400Regular',
   },
   section: {
@@ -1023,6 +1053,12 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 15,
     fontFamily: 'Nunito_400Regular',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  inputError: {
+    borderColor: '#E74C3C',
+    backgroundColor: '#FFE5E5',
   },
   inputLabel: {
     fontSize: 16,
