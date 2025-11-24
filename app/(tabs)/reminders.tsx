@@ -102,7 +102,6 @@ export default function RemindersScreen() {
         return;
       }
 
-      // Get all reminders with photos for the current child
       const childReminders = reminders.filter(r => 
         r.photoUri && 
         (isParent ? true : r.assignedTo.includes(currentUser?.id || ''))
@@ -113,12 +112,10 @@ export default function RemindersScreen() {
         return;
       }
 
-      // Sort by date
       const sortedReminders = [...childReminders].sort((a, b) => 
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
 
-      // Create email body with all information
       let emailBody = `Beste Flow Fam,\n\nIk wil graag een fotoboek bestellen met de volgende informatie:\n\n`;
       emailBody += `Aantal foto's: ${sortedReminders.length}\n`;
       emailBody += `Maximaal toegestaan: 75 foto's\n\n`;
@@ -135,8 +132,6 @@ export default function RemindersScreen() {
 
       emailBody += `\nMet vriendelijke groet,\n${currentUser?.name || 'Flow Fam gebruiker'}`;
 
-      // Note: On mobile, we can't attach the actual image files directly
-      // The user will need to manually attach them or we'd need a backend service
       await MailComposer.composeAsync({
         recipients: ['info@flowfam.nl'],
         subject: 'Fotoboek bestellen',
@@ -150,7 +145,6 @@ export default function RemindersScreen() {
     }
   };
 
-  // Filter reminders based on user role
   const myReminders = isParent 
     ? reminders 
     : reminders.filter(r => r.assignedTo.includes(currentUser?.id || ''));
@@ -161,7 +155,6 @@ export default function RemindersScreen() {
   const photoCount = myReminders.filter(r => r.photoUri).length;
   const maxPhotos = 75;
 
-  // Calendar helper functions
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate();
   };
@@ -180,14 +173,12 @@ export default function RemindersScreen() {
     const firstDay = getFirstDayOfMonth(selectedMonth, selectedYear);
     const days = [];
 
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(
         <View key={`empty-${i}`} style={styles.calendarDay} />
       );
     }
 
-    // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(selectedYear, selectedMonth, day);
       const isSelected = 
@@ -256,7 +247,7 @@ export default function RemindersScreen() {
           </TouchableOpacity>
           
           <View style={styles.header}>
-            <Text style={styles.title}>🔔 Herinneringen</Text>
+            <Text style={styles.title}>Herinneringen</Text>
             <Text style={styles.subtitle}>
               {isParent ? 'Alle gezinsherinneringen' : 'Vergeet niets meer'}
             </Text>
@@ -448,7 +439,6 @@ export default function RemindersScreen() {
         )}
       </ScrollView>
 
-      {/* Add Reminder Modal */}
       <Modal
         visible={showAddModal}
         transparent
@@ -583,7 +573,6 @@ export default function RemindersScreen() {
         </View>
       </Modal>
 
-      {/* Calendar Picker Modal */}
       <Modal
         visible={showCalendarPicker}
         transparent

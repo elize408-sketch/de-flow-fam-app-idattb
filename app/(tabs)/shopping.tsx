@@ -49,7 +49,7 @@ export default function ShoppingScreen() {
           </TouchableOpacity>
           
           <View style={styles.header}>
-            <Text style={styles.title}>🛒 Boodschappen</Text>
+            <Text style={styles.title}>Boodschappen</Text>
             <Text style={styles.subtitle}>Gezamenlijke boodschappenlijst</Text>
           </View>
           
