@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -11,7 +11,6 @@ const { width: screenWidth } = Dimensions.get('window');
 export default function HomeScreen() {
   const router = useRouter();
   const { familyMembers, currentUser, setCurrentUser, tasks, appointments } = useFamily();
-  const [showMemberPicker, setShowMemberPicker] = useState(!currentUser);
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -31,7 +30,6 @@ export default function HomeScreen() {
                   style={[styles.memberCard, { backgroundColor: member.color || colors.accent }]}
                   onPress={() => {
                     setCurrentUser(member);
-                    setShowMemberPicker(false);
                   }}
                 >
                   <View style={styles.memberCardAvatar}>
@@ -79,7 +77,7 @@ export default function HomeScreen() {
     setCurrentSlide(index);
   };
 
-  // Menu sections to display below slider - NEW ORDER: Agenda, Taken, Boodschappen, Financiën, Herinneringen, Maaltijden
+  // Menu sections to display below slider
   const menuSections = [
     { icon: 'calendar-today', label: 'Agenda', route: '/(tabs)/agenda', color: colors.vibrantBlue },
     { icon: 'check-circle', label: 'Taken', route: '/(tabs)/tasks', color: colors.vibrantGreen },
@@ -94,27 +92,9 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        {/* Header with user name on left, Flow Fam in center, settings on right */}
+        {/* Header with Flow Fam in center, settings on right */}
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.userNameButton}
-            onPress={() => setShowMemberPicker(true)}
-          >
-            <View style={[styles.smallAvatar, { backgroundColor: memberColor }]}>
-              {currentUser.photoUri ? (
-                <Image source={{ uri: currentUser.photoUri }} style={styles.smallAvatarPhoto} />
-              ) : (
-                <Text style={styles.smallAvatarText}>{currentUser.name.charAt(0)}</Text>
-              )}
-            </View>
-            <Text style={styles.userName}>{currentUser.name}</Text>
-            <IconSymbol 
-              ios_icon_name="chevron.down" 
-              android_material_icon_name="expand_more" 
-              size={20} 
-              color={colors.text} 
-            />
-          </TouchableOpacity>
+          <View style={styles.placeholder} />
 
           <View style={styles.centerHeader}>
             <Text style={styles.title}>Flow Fam</Text>
@@ -132,6 +112,23 @@ export default function HomeScreen() {
               color={colors.text} 
             />
           </TouchableOpacity>
+        </View>
+
+        {/* User greeting */}
+        <View style={styles.greetingCard}>
+          <View style={[styles.greetingAvatar, { backgroundColor: memberColor }]}>
+            {currentUser.photoUri ? (
+              <Image source={{ uri: currentUser.photoUri }} style={styles.greetingAvatarPhoto} />
+            ) : (
+              <Text style={styles.greetingAvatarText}>{currentUser.name.charAt(0)}</Text>
+            )}
+          </View>
+          <View style={styles.greetingInfo}>
+            <Text style={styles.greetingText}>Hallo, {currentUser.name}! 👋</Text>
+            <Text style={styles.greetingSubtext}>
+              {isParent ? 'Welkom terug' : `Je hebt ${currentUser.coins} muntjes 🪙`}
+            </Text>
+          </View>
         </View>
 
         {/* Slider with 2 slides */}
@@ -287,56 +284,6 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
-
-      <Modal
-        visible={showMemberPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMemberPicker(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowMemberPicker(false)}
-        >
-          <View style={styles.memberPickerModal}>
-            <Text style={styles.modalTitle}>Wissel van profiel</Text>
-            {familyMembers.map((member, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
-                  style={styles.memberOption}
-                  onPress={() => {
-                    setCurrentUser(member);
-                    setShowMemberPicker(false);
-                  }}
-                >
-                  <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
-                    {member.photoUri ? (
-                      <Image source={{ uri: member.photoUri }} style={styles.memberOptionPhoto} />
-                    ) : (
-                      <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
-                    )}
-                  </View>
-                  <View style={styles.memberOptionInfo}>
-                    <Text style={styles.memberOptionName}>{member.name}</Text>
-                    <Text style={styles.memberOptionRole}>
-                      {member.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
-                    </Text>
-                  </View>
-                  {currentUser.id === member.id && (
-                    <IconSymbol 
-                      ios_icon_name="checkmark" 
-                      android_material_icon_name="check" 
-                      size={24} 
-                      color={colors.accent} 
-                    />
-                  )}
-                </TouchableOpacity>
-              </React.Fragment>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 }
@@ -429,44 +376,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 20,
   },
-  userNameButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 4,
-  },
-  smallAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-    overflow: 'hidden',
-  },
-  smallAvatarPhoto: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-  },
-  smallAvatarText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  userName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
+  placeholder: {
+    width: 40,
   },
   centerHeader: {
     alignItems: 'center',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: -1,
+    flex: 1,
   },
   title: {
     fontSize: 28,
@@ -490,6 +405,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     boxShadow: `0px 2px 8px ${colors.shadow}`,
     elevation: 2,
+  },
+  greetingCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  greetingAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    overflow: 'hidden',
+  },
+  greetingAvatarPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+  },
+  greetingAvatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  greetingInfo: {
+    flex: 1,
+  },
+  greetingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  greetingSubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
   },
   sliderContainer: {
     marginBottom: 30,
@@ -673,72 +633,5 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
     fontFamily: 'Poppins_600SemiBold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  memberPickerModal: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
-    width: '100%',
-    maxWidth: 400,
-    boxShadow: `0px 8px 24px ${colors.shadow}`,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 20,
-    textAlign: 'center',
-    fontFamily: 'Poppins_700Bold',
-  },
-  memberOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderRadius: 15,
-    marginBottom: 10,
-    backgroundColor: colors.background,
-  },
-  memberOptionAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-    overflow: 'hidden',
-  },
-  memberOptionPhoto: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 25,
-  },
-  memberOptionAvatarText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  memberOptionInfo: {
-    flex: 1,
-  },
-  memberOptionName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 2,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  memberOptionRole: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
   },
 });

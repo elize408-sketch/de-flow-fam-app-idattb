@@ -23,12 +23,13 @@ const AVAILABLE_COLORS = [
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { familyMembers, addFamilyMember, updateFamilyMember, currentUser, tasks, deleteTask, updateTask, appointments, addAppointment, updateAppointment, deleteAppointment } = useFamily();
+  const { familyMembers, addFamilyMember, updateFamilyMember, currentUser, setCurrentUser, tasks, deleteTask, updateTask, appointments, addAppointment, updateAppointment, deleteAppointment } = useFamily();
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showManageChildTasksModal, setShowManageChildTasksModal] = useState(false);
   const [showManageChildPlanningModal, setShowManageChildPlanningModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
   const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
+  const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<'parent' | 'child'>('child');
@@ -349,7 +350,96 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Profile Switcher Section - Last item */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Profiel wisselen</Text>
+          <TouchableOpacity
+            style={styles.profileSwitcherButton}
+            onPress={() => setShowProfileSwitcher(true)}
+          >
+            <View style={[styles.currentUserAvatar, { backgroundColor: currentUser?.color || colors.accent }]}>
+              {currentUser?.photoUri ? (
+                <Image source={{ uri: currentUser.photoUri }} style={styles.currentUserPhoto} />
+              ) : (
+                <Text style={styles.currentUserAvatarText}>{currentUser?.name.charAt(0)}</Text>
+              )}
+            </View>
+            <View style={styles.currentUserInfo}>
+              <Text style={styles.currentUserName}>{currentUser?.name}</Text>
+              <Text style={styles.currentUserRole}>
+                {currentUser?.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+              </Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron-right"
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
+
+      {/* Profile Switcher Modal */}
+      <Modal
+        visible={showProfileSwitcher}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowProfileSwitcher(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.profileSwitcherModal}>
+            <Text style={styles.modalTitle}>Wissel van profiel</Text>
+            <Text style={styles.profileSwitcherSubtitle}>Selecteer wie je bent</Text>
+            
+            {familyMembers.map((member, index) => (
+              <React.Fragment key={index}>
+                <TouchableOpacity
+                  style={[
+                    styles.profileOption,
+                    currentUser?.id === member.id && styles.profileOptionActive
+                  ]}
+                  onPress={() => {
+                    setCurrentUser(member);
+                    setShowProfileSwitcher(false);
+                    router.push('/(tabs)/(home)');
+                  }}
+                >
+                  <View style={[styles.profileOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
+                    {member.photoUri ? (
+                      <Image source={{ uri: member.photoUri }} style={styles.profileOptionPhoto} />
+                    ) : (
+                      <Text style={styles.profileOptionAvatarText}>{member.name.charAt(0)}</Text>
+                    )}
+                  </View>
+                  <View style={styles.profileOptionInfo}>
+                    <Text style={styles.profileOptionName}>{member.name}</Text>
+                    <Text style={styles.profileOptionRole}>
+                      {member.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+                    </Text>
+                  </View>
+                  {currentUser?.id === member.id && (
+                    <IconSymbol
+                      ios_icon_name="checkmark"
+                      android_material_icon_name="check"
+                      size={24}
+                      color={colors.vibrantGreen}
+                    />
+                  )}
+                </TouchableOpacity>
+              </React.Fragment>
+            ))}
+
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonCancel, { marginTop: 20 }]}
+              onPress={() => setShowProfileSwitcher(false)}
+            >
+              <Text style={styles.modalButtonText}>Annuleren</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Add Member Modal */}
       <Modal
@@ -990,6 +1080,50 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontFamily: 'Nunito_400Regular',
   },
+  profileSwitcherButton: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  currentUserAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    overflow: 'hidden',
+  },
+  currentUserPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+  },
+  currentUserAvatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  currentUserInfo: {
+    flex: 1,
+  },
+  currentUserName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  currentUserRole: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1018,6 +1152,72 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
+  },
+  profileSwitcherModal: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    boxShadow: `0px 8px 24px ${colors.shadow}`,
+    elevation: 5,
+  },
+  profileSwitcherSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontFamily: 'Nunito_400Regular',
+  },
+  profileOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 10,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  profileOptionActive: {
+    borderColor: colors.vibrantGreen,
+    backgroundColor: colors.primary,
+  },
+  profileOptionAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    overflow: 'hidden',
+  },
+  profileOptionPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+  },
+  profileOptionAvatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  profileOptionInfo: {
+    flex: 1,
+  },
+  profileOptionName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  profileOptionRole: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
   },
   photoPickerButton: {
     width: 120,

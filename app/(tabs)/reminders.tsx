@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
+import * as MailComposer from 'expo-mail-composer';
 
 export default function RemindersScreen() {
   const router = useRouter();
@@ -18,7 +18,9 @@ export default function RemindersScreen() {
   const [newReminderTime, setNewReminderTime] = useState('10:00');
   const [newReminderAssignedTo, setNewReminderAssignedTo] = useState<string[]>([]);
   const [newReminderPhoto, setNewReminderPhoto] = useState<string | undefined>(undefined);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCalendarPicker, setShowCalendarPicker] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const isParent = currentUser?.role === 'parent';
 
@@ -88,9 +90,67 @@ export default function RemindersScreen() {
     updateReminder(reminderId, { completed: !currentStatus });
   };
 
+  const handleOrderPhotoBook = async () => {
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+      
+      if (!isAvailable) {
+        Alert.alert(
+          'E-mail niet beschikbaar',
+          'Je apparaat ondersteunt geen e-mail. Stuur handmatig een e-mail naar info@flowfam.nl met het onderwerp "fotoboek bestellen".'
+        );
+        return;
+      }
+
+      // Get all reminders with photos for the current child
+      const childReminders = reminders.filter(r => 
+        r.photoUri && 
+        (isParent ? true : r.assignedTo.includes(currentUser?.id || ''))
+      );
+
+      if (childReminders.length === 0) {
+        Alert.alert('Geen foto&apos;s', 'Er zijn nog geen foto&apos;s toegevoegd aan herinneringen');
+        return;
+      }
+
+      // Sort by date
+      const sortedReminders = [...childReminders].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+      // Create email body with all information
+      let emailBody = `Beste Flow Fam,\n\nIk wil graag een fotoboek bestellen met de volgende informatie:\n\n`;
+      emailBody += `Aantal foto's: ${sortedReminders.length}\n`;
+      emailBody += `Maximaal toegestaan: 75 foto's\n\n`;
+      emailBody += `FOTO OVERZICHT (op volgorde van datum):\n\n`;
+
+      sortedReminders.forEach((reminder, index) => {
+        emailBody += `${index + 1}. ${reminder.title}\n`;
+        emailBody += `   Datum: ${new Date(reminder.date).toLocaleDateString('nl-NL')}\n`;
+        if (reminder.description) {
+          emailBody += `   Beschrijving: ${reminder.description}\n`;
+        }
+        emailBody += `   Foto: ${reminder.photoUri}\n\n`;
+      });
+
+      emailBody += `\nMet vriendelijke groet,\n${currentUser?.name || 'Flow Fam gebruiker'}`;
+
+      // Note: On mobile, we can't attach the actual image files directly
+      // The user will need to manually attach them or we'd need a backend service
+      await MailComposer.composeAsync({
+        recipients: ['info@flowfam.nl'],
+        subject: 'Fotoboek bestellen',
+        body: emailBody,
+        isHtml: false,
+      });
+
+    } catch (error) {
+      console.error('Error composing email:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het opstellen van de e-mail');
+    }
+  };
+
   // Filter reminders based on user role
-  // Parents see ALL reminders from all family members
-  // Children see only their own reminders
   const myReminders = isParent 
     ? reminders 
     : reminders.filter(r => r.assignedTo.includes(currentUser?.id || ''));
@@ -98,8 +158,86 @@ export default function RemindersScreen() {
   const activeReminders = myReminders.filter(r => !r.completed);
   const completedReminders = myReminders.filter(r => r.completed);
 
-  const photoCount = reminders.filter(r => r.photoUri).length;
+  const photoCount = myReminders.filter(r => r.photoUri).length;
   const maxPhotos = 75;
+
+  // Calendar helper functions
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (month: number, year: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const monthNames = [
+    'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+    'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'
+  ];
+
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
+    const firstDay = getFirstDayOfMonth(selectedMonth, selectedYear);
+    const days = [];
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      days.push(
+        <View key={`empty-${i}`} style={styles.calendarDay} />
+      );
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(selectedYear, selectedMonth, day);
+      const isSelected = 
+        newReminderDate.getDate() === day &&
+        newReminderDate.getMonth() === selectedMonth &&
+        newReminderDate.getFullYear() === selectedYear;
+
+      days.push(
+        <TouchableOpacity
+          key={day}
+          style={[
+            styles.calendarDay,
+            styles.calendarDayActive,
+            isSelected && styles.calendarDaySelected
+          ]}
+          onPress={() => {
+            setNewReminderDate(date);
+            setShowCalendarPicker(false);
+          }}
+        >
+          <Text style={[
+            styles.calendarDayText,
+            isSelected && styles.calendarDayTextSelected
+          ]}>
+            {day}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return days;
+  };
+
+  const changeMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (selectedMonth === 0) {
+        setSelectedMonth(11);
+        setSelectedYear(selectedYear - 1);
+      } else {
+        setSelectedMonth(selectedMonth - 1);
+      }
+    } else {
+      if (selectedMonth === 11) {
+        setSelectedMonth(0);
+        setSelectedYear(selectedYear + 1);
+      } else {
+        setSelectedMonth(selectedMonth + 1);
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -141,26 +279,11 @@ export default function RemindersScreen() {
             {photoCount > 0 && (
               <TouchableOpacity
                 style={styles.orderButton}
-                onPress={() => {
-                  Alert.alert(
-                    'Fotoboek bestellen',
-                    'Je wordt doorgestuurd naar de Flow Fam webshop om je fotoboek te bestellen.',
-                    [
-                      { text: 'Annuleren', style: 'cancel' },
-                      { 
-                        text: 'Naar webshop', 
-                        onPress: () => {
-                          // In a real app, this would open the webshop
-                          Alert.alert('Info', 'Webshop: www.flowfam.nl');
-                        }
-                      },
-                    ]
-                  );
-                }}
+                onPress={handleOrderPhotoBook}
               >
                 <IconSymbol
-                  ios_icon_name="cart"
-                  android_material_icon_name="shopping-cart"
+                  ios_icon_name="envelope"
+                  android_material_icon_name="email"
                   size={20}
                   color={colors.card}
                 />
@@ -374,26 +497,22 @@ export default function RemindersScreen() {
 
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
+                onPress={() => {
+                  setSelectedMonth(newReminderDate.getMonth());
+                  setSelectedYear(newReminderDate.getFullYear());
+                  setShowCalendarPicker(true);
+                }}
               >
                 <Text style={styles.dateButtonText}>
                   📅 {newReminderDate.toLocaleDateString('nl-NL')}
                 </Text>
-              </TouchableOpacity>
-
-              {showDatePicker && (
-                <DateTimePicker
-                  value={newReminderDate}
-                  mode="date"
-                  display="default"
-                  onChange={(event, selectedDate) => {
-                    setShowDatePicker(false);
-                    if (selectedDate) {
-                      setNewReminderDate(selectedDate);
-                    }
-                  }}
+                <IconSymbol
+                  ios_icon_name="chevron.down"
+                  android_material_icon_name="expand_more"
+                  size={20}
+                  color={colors.text}
                 />
-              )}
+              </TouchableOpacity>
 
               <TextInput
                 style={styles.input}
@@ -462,6 +581,63 @@ export default function RemindersScreen() {
             </View>
           </ScrollView>
         </View>
+      </Modal>
+
+      {/* Calendar Picker Modal */}
+      <Modal
+        visible={showCalendarPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCalendarPicker(false)}
+      >
+        <TouchableOpacity 
+          style={styles.calendarOverlay}
+          activeOpacity={1}
+          onPress={() => setShowCalendarPicker(false)}
+        >
+          <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity onPress={() => changeMonth('prev')} style={styles.calendarNavButton}>
+                <IconSymbol
+                  ios_icon_name="chevron.left"
+                  android_material_icon_name="chevron_left"
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+              <Text style={styles.calendarMonthYear}>
+                {monthNames[selectedMonth]} {selectedYear}
+              </Text>
+              <TouchableOpacity onPress={() => changeMonth('next')} style={styles.calendarNavButton}>
+                <IconSymbol
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="chevron_right"
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.calendarWeekDays}>
+              {['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'].map((day, index) => (
+                <React.Fragment key={index}>
+                  <Text style={styles.calendarWeekDay}>{day}</Text>
+                </React.Fragment>
+              ))}
+            </View>
+
+            <View style={styles.calendarGrid}>
+              {renderCalendar()}
+            </View>
+
+            <TouchableOpacity
+              style={styles.calendarCloseButton}
+              onPress={() => setShowCalendarPicker(false)}
+            >
+              <Text style={styles.calendarCloseButtonText}>Sluiten</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -771,6 +947,9 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 15,
     marginBottom: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   dateButtonText: {
     fontSize: 16,
@@ -865,5 +1044,88 @@ const styles = StyleSheet.create({
   },
   modalButtonTextConfirm: {
     color: colors.card,
+  },
+  calendarOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  calendarModal: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 350,
+    boxShadow: `0px 8px 24px ${colors.shadow}`,
+    elevation: 5,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  calendarNavButton: {
+    padding: 8,
+  },
+  calendarMonthYear: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  calendarWeekDays: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  calendarWeekDay: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+  },
+  calendarDay: {
+    width: '14.28%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  calendarDayActive: {
+    borderRadius: 8,
+  },
+  calendarDaySelected: {
+    backgroundColor: colors.vibrantPurple,
+  },
+  calendarDayText: {
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
+  calendarDayTextSelected: {
+    color: colors.card,
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+  },
+  calendarCloseButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+  },
+  calendarCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
