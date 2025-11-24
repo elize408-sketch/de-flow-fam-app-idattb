@@ -177,7 +177,14 @@ export default function AgendaScreen() {
           </TouchableOpacity>
           
           <View style={styles.header}>
-            <Text style={styles.title}>Agenda</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>Agenda</Text>
+              <Image
+                source={require('@/assets/images/a56adfdd-4a2a-4ea5-b258-83f73aa9c188.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
             <Text style={styles.subtitle}>Gezinsafspraken en planning</Text>
           </View>
           
@@ -562,6 +569,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   placeholder: {
     width: 40,
   },
@@ -570,6 +582,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
+  },
+  logo: {
+    width: 28,
+    height: 28,
+    tintColor: colors.text,
   },
   subtitle: {
     fontSize: 16,
