@@ -20,6 +20,8 @@ export default function RemindersScreen() {
   const [newReminderPhoto, setNewReminderPhoto] = useState<string | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  const isParent = currentUser?.role === 'parent';
+
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -86,10 +88,18 @@ export default function RemindersScreen() {
     updateReminder(reminderId, { completed: !currentStatus });
   };
 
-  // Filter reminders for current user
-  const myReminders = reminders.filter(r => r.assignedTo.includes(currentUser?.id || ''));
+  // Filter reminders based on user role
+  // Parents see ALL reminders from all family members
+  // Children see only their own reminders
+  const myReminders = isParent 
+    ? reminders 
+    : reminders.filter(r => r.assignedTo.includes(currentUser?.id || ''));
+    
   const activeReminders = myReminders.filter(r => !r.completed);
   const completedReminders = myReminders.filter(r => r.completed);
+
+  const photoCount = reminders.filter(r => r.photoUri).length;
+  const maxPhotos = 75;
 
   return (
     <View style={styles.container}>
@@ -109,11 +119,56 @@ export default function RemindersScreen() {
           
           <View style={styles.header}>
             <Text style={styles.title}>🔔 Herinneringen</Text>
-            <Text style={styles.subtitle}>Vergeet niets meer</Text>
+            <Text style={styles.subtitle}>
+              {isParent ? 'Alle gezinsherinneringen' : 'Vergeet niets meer'}
+            </Text>
           </View>
           
           <View style={styles.placeholder} />
         </View>
+
+        {isParent && (
+          <View style={styles.photoBookCard}>
+            <View style={styles.photoBookHeader}>
+              <Text style={styles.photoBookTitle}>📸 Fotoboek</Text>
+              <Text style={styles.photoBookCount}>
+                {photoCount} / {maxPhotos} foto&apos;s
+              </Text>
+            </View>
+            <Text style={styles.photoBookNote}>
+              💡 Maximaal {maxPhotos} foto&apos;s per fotoboek
+            </Text>
+            {photoCount > 0 && (
+              <TouchableOpacity
+                style={styles.orderButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Fotoboek bestellen',
+                    'Je wordt doorgestuurd naar de Flow Fam webshop om je fotoboek te bestellen.',
+                    [
+                      { text: 'Annuleren', style: 'cancel' },
+                      { 
+                        text: 'Naar webshop', 
+                        onPress: () => {
+                          // In a real app, this would open the webshop
+                          Alert.alert('Info', 'Webshop: www.flowfam.nl');
+                        }
+                      },
+                    ]
+                  );
+                }}
+              >
+                <IconSymbol
+                  ios_icon_name="cart"
+                  android_material_icon_name="shopping-cart"
+                  size={20}
+                  color={colors.card}
+                />
+                <Text style={styles.orderButtonText}>Bestel Fotoboek</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         <TouchableOpacity
           style={styles.addButton}
@@ -456,6 +511,53 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 5,
     fontFamily: 'Nunito_400Regular',
+  },
+  photoBookCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  photoBookHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  photoBookTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  photoBookCount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.accent,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  photoBookNote: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 15,
+    fontFamily: 'Nunito_400Regular',
+  },
+  orderButton: {
+    backgroundColor: colors.vibrantOrange,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  orderButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.card,
+    marginLeft: 10,
+    fontFamily: 'Poppins_600SemiBold',
   },
   addButton: {
     backgroundColor: colors.vibrantPurple,

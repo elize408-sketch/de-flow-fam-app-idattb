@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import CheckmarkAnimation from '@/components/CheckmarkAnimation';
 import * as ImagePicker from 'expo-image-picker';
 import * as Calendar from 'expo-calendar';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -18,6 +19,7 @@ export default function MealsScreen() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showCheckmarkAnimation, setShowCheckmarkAnimation] = useState(false);
   const [selectedMealForDetail, setSelectedMealForDetail] = useState<any>(null);
   const [selectedMealForEdit, setSelectedMealForEdit] = useState<any>(null);
   const [selectedMealForPlan, setSelectedMealForPlan] = useState<any>(null);
@@ -127,7 +129,7 @@ export default function MealsScreen() {
   const handleAddIngredientsToShoppingList = (meal: any) => {
     if (meal.ingredients && meal.ingredients.length > 0) {
       addIngredientsToShoppingList(meal.ingredients);
-      Alert.alert('Gelukt!', `${meal.ingredients.length} ingrediënten toegevoegd aan boodschappenlijst`);
+      setShowCheckmarkAnimation(true);
     } else {
       Alert.alert('Geen ingrediënten', 'Dit recept heeft geen ingrediënten');
     }
@@ -153,7 +155,6 @@ export default function MealsScreen() {
         return;
       }
 
-      // Get default calendar
       const defaultCalendar = await Calendar.getDefaultCalendarAsync();
       
       if (!defaultCalendar) {
@@ -161,7 +162,6 @@ export default function MealsScreen() {
         return;
       }
 
-      // Create event
       const startDate = new Date(planDate);
       const [hours, minutes] = planTime.split(':');
       startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -366,6 +366,11 @@ export default function MealsScreen() {
           )}
         </View>
       </ScrollView>
+
+      <CheckmarkAnimation
+        visible={showCheckmarkAnimation}
+        onComplete={() => setShowCheckmarkAnimation(false)}
+      />
 
       {/* Recipe Detail Modal */}
       <Modal

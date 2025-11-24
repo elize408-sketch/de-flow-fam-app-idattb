@@ -355,6 +355,7 @@ export default function FinancesScreen() {
   const totalFixed = getTotalFixedExpenses();
   const totalVariable = getTotalVariableExpenses();
   const remaining = getRemainingBudget();
+  const totalExpenses = totalFixed + totalVariable;
 
   return (
     <View style={styles.container}>
@@ -406,11 +407,14 @@ export default function FinancesScreen() {
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabelBold}>💰 Resterend budget</Text>
+            <Text style={styles.summaryLabelBold}>📊 Over deze maand</Text>
             <Text style={[styles.summaryAmountBold, remaining >= 0 ? styles.positiveAmount : styles.negativeAmount]}>
               €{remaining.toFixed(2)}
             </Text>
           </View>
+          <Text style={styles.summaryNote}>
+            (Inkomen - Uitgaven: €{totalIncome.toFixed(2)} - €{totalExpenses.toFixed(2)})
+          </Text>
         </View>
 
         <View style={styles.actionButtons}>
@@ -1274,6 +1278,13 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.background,
     marginVertical: 10,
+  },
+  summaryNote: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 5,
+    fontFamily: 'Nunito_400Regular',
   },
   actionButtons: {
     flexDirection: 'row',
