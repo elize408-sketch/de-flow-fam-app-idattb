@@ -6,6 +6,7 @@ import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function RemindersScreen() {
   const router = useRouter();
@@ -16,7 +17,28 @@ export default function RemindersScreen() {
   const [newReminderDate, setNewReminderDate] = useState(new Date());
   const [newReminderTime, setNewReminderTime] = useState('10:00');
   const [newReminderAssignedTo, setNewReminderAssignedTo] = useState<string[]>([]);
+  const [newReminderPhoto, setNewReminderPhoto] = useState<string | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const handlePickPhoto = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s om een foto te kunnen toevoegen');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+      aspect: [4, 3],
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setNewReminderPhoto(result.assets[0].uri);
+    }
+  };
 
   const toggleMemberSelection = (memberId: string) => {
     setNewReminderAssignedTo(prev => {
@@ -47,6 +69,7 @@ export default function RemindersScreen() {
       assignedTo: newReminderAssignedTo,
       completed: false,
       createdBy: currentUser?.id || '',
+      photoUri: newReminderPhoto,
     });
 
     setNewReminderTitle('');
@@ -54,6 +77,7 @@ export default function RemindersScreen() {
     setNewReminderDate(new Date());
     setNewReminderTime('10:00');
     setNewReminderAssignedTo([]);
+    setNewReminderPhoto(undefined);
     setShowAddModal(false);
     Alert.alert('Gelukt!', 'Herinnering toegevoegd');
   };
@@ -137,6 +161,9 @@ export default function RemindersScreen() {
                         </TouchableOpacity>
 
                         <View style={styles.reminderInfo}>
+                          {reminder.photoUri && (
+                            <Image source={{ uri: reminder.photoUri }} style={styles.reminderPhoto} />
+                          )}
                           <Text style={styles.reminderTitle}>{reminder.title}</Text>
                           {reminder.description && (
                             <Text style={styles.reminderDescription}>{reminder.description}</Text>
@@ -210,6 +237,9 @@ export default function RemindersScreen() {
                         </TouchableOpacity>
 
                         <View style={styles.reminderInfo}>
+                          {reminder.photoUri && (
+                            <Image source={{ uri: reminder.photoUri }} style={styles.reminderPhoto} />
+                          )}
                           <Text style={[styles.reminderTitle, styles.reminderTitleCompleted]}>{reminder.title}</Text>
                           {reminder.description && (
                             <Text style={styles.reminderDescription}>{reminder.description}</Text>
@@ -270,6 +300,22 @@ export default function RemindersScreen() {
                 numberOfLines={3}
                 textAlignVertical="top"
               />
+
+              <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
+                {newReminderPhoto ? (
+                  <Image source={{ uri: newReminderPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <IconSymbol
+                      ios_icon_name="camera"
+                      android_material_icon_name="camera-alt"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.photoPlaceholderText}>Foto toevoegen (optioneel)</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.dateButton}
@@ -346,6 +392,7 @@ export default function RemindersScreen() {
                     setNewReminderDate(new Date());
                     setNewReminderTime('10:00');
                     setNewReminderAssignedTo([]);
+                    setNewReminderPhoto(undefined);
                   }}
                 >
                   <Text style={styles.modalButtonText}>Annuleren</Text>
@@ -493,6 +540,12 @@ const styles = StyleSheet.create({
   reminderInfo: {
     flex: 1,
   },
+  reminderPhoto: {
+    width: '100%',
+    height: 150,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
   reminderTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -583,6 +636,33 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 80,
+  },
+  photoButton: {
+    marginBottom: 15,
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  photoPreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 15,
+  },
+  photoPlaceholder: {
+    width: '100%',
+    height: 150,
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.secondary,
+    borderStyle: 'dashed',
+  },
+  photoPlaceholderText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 10,
+    fontFamily: 'Nunito_400Regular',
   },
   dateButton: {
     backgroundColor: colors.background,

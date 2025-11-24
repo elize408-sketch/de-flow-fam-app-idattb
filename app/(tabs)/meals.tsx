@@ -1,18 +1,26 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Animated, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import * as ImagePicker from 'expo-image-picker';
+import * as Calendar from 'expo-calendar';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function MealsScreen() {
   const router = useRouter();
-  const { meals, addMeal, deleteMeal } = useFamily();
+  const { meals, addMeal, updateMeal, deleteMeal, addIngredientsToShoppingList } = useFamily();
   const [showAddMealModal, setShowAddMealModal] = useState(false);
   const [showSpinnerModal, setShowSpinnerModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [selectedMealForDetail, setSelectedMealForDetail] = useState<any>(null);
+  const [selectedMealForEdit, setSelectedMealForEdit] = useState<any>(null);
+  const [selectedMealForPlan, setSelectedMealForPlan] = useState<any>(null);
   const [newMealName, setNewMealName] = useState('');
   const [newMealIngredients, setNewMealIngredients] = useState('');
   const [newMealInstructions, setNewMealInstructions] = useState('');
@@ -20,8 +28,11 @@ export default function MealsScreen() {
   const [aiIngredients, setAiIngredients] = useState('');
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [spinValue] = useState(new Animated.Value(0));
-  const [selectedMeal, setSelectedMeal] = useState<string>('');
+  const [selectedMeal, setSelectedMeal] = useState<any>(null);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [planDate, setPlanDate] = useState(new Date());
+  const [planTime, setPlanTime] = useState('18:00');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -72,6 +83,114 @@ export default function MealsScreen() {
     Alert.alert('Gelukt!', 'Recept toegevoegd');
   };
 
+  const handleUpdateMeal = () => {
+    if (!selectedMealForEdit || !newMealName.trim()) {
+      Alert.alert('Fout', 'Vul een naam in voor het recept');
+      return;
+    }
+
+    const ingredients = newMealIngredients
+      .split('\n')
+      .filter(i => i.trim())
+      .map(i => i.trim());
+
+    updateMeal(selectedMealForEdit.id, {
+      name: newMealName.trim(),
+      ingredients,
+      instructions: newMealInstructions.trim(),
+      photoUri: newMealPhoto,
+    });
+
+    setNewMealName('');
+    setNewMealIngredients('');
+    setNewMealInstructions('');
+    setNewMealPhoto(undefined);
+    setSelectedMealForEdit(null);
+    setShowEditModal(false);
+    Alert.alert('Gelukt!', 'Recept bijgewerkt');
+  };
+
+  const openEditModal = (meal: any) => {
+    setSelectedMealForEdit(meal);
+    setNewMealName(meal.name);
+    setNewMealIngredients(meal.ingredients?.join('\n') || '');
+    setNewMealInstructions(meal.instructions || '');
+    setNewMealPhoto(meal.photoUri);
+    setShowEditModal(true);
+  };
+
+  const openDetailModal = (meal: any) => {
+    setSelectedMealForDetail(meal);
+    setShowDetailModal(true);
+  };
+
+  const handleAddIngredientsToShoppingList = (meal: any) => {
+    if (meal.ingredients && meal.ingredients.length > 0) {
+      addIngredientsToShoppingList(meal.ingredients);
+      Alert.alert('Gelukt!', `${meal.ingredients.length} ingrediënten toegevoegd aan boodschappenlijst`);
+    } else {
+      Alert.alert('Geen ingrediënten', 'Dit recept heeft geen ingrediënten');
+    }
+  };
+
+  const handlePlanInAgenda = async (meal: any) => {
+    setSelectedMealForPlan(meal);
+    setShowPlanModal(true);
+  };
+
+  const confirmPlanInAgenda = async () => {
+    if (!selectedMealForPlan) return;
+
+    try {
+      const { status } = await Calendar.requestCalendarPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Toestemming vereist',
+          'Je moet toegang geven tot je agenda om maaltijden te kunnen plannen',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Get default calendar
+      const defaultCalendar = await Calendar.getDefaultCalendarAsync();
+      
+      if (!defaultCalendar) {
+        Alert.alert('Fout', 'Geen standaard agenda gevonden');
+        return;
+      }
+
+      // Create event
+      const startDate = new Date(planDate);
+      const [hours, minutes] = planTime.split(':');
+      startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1);
+
+      const eventId = await Calendar.createEventAsync(defaultCalendar.id, {
+        title: `🍽️ ${selectedMealForPlan.name}`,
+        startDate,
+        endDate,
+        notes: selectedMealForPlan.instructions || 'Maaltijd gepland vanuit Flow Fam',
+        timeZone: 'Europe/Amsterdam',
+      });
+
+      console.log('Event created with ID:', eventId);
+      
+      setShowPlanModal(false);
+      setSelectedMealForPlan(null);
+      setPlanDate(new Date());
+      setPlanTime('18:00');
+      
+      Alert.alert('Gelukt!', `${selectedMealForPlan.name} is toegevoegd aan je agenda`);
+    } catch (error) {
+      console.error('Error creating calendar event:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het toevoegen aan de agenda');
+    }
+  };
+
   const spinWheel = () => {
     if (meals.length === 0) {
       Alert.alert('Geen recepten', 'Voeg eerst recepten toe om het rad te kunnen draaien');
@@ -87,7 +206,7 @@ export default function MealsScreen() {
       useNativeDriver: true,
     }).start(() => {
       const randomIndex = Math.floor(Math.random() * meals.length);
-      setSelectedMeal(meals[randomIndex].name);
+      setSelectedMeal(meals[randomIndex]);
       setIsSpinning(false);
     });
   };
@@ -191,7 +310,10 @@ export default function MealsScreen() {
           ) : (
             meals.map((meal, index) => (
               <React.Fragment key={index}>
-                <View style={styles.mealCard}>
+                <TouchableOpacity 
+                  style={styles.mealCard}
+                  onPress={() => openDetailModal(meal)}
+                >
                   {meal.photoUri ? (
                     <Image source={{ uri: meal.photoUri }} style={styles.mealPhoto} />
                   ) : (
@@ -212,13 +334,21 @@ export default function MealsScreen() {
                   </View>
                   <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => {
+                    onPress={(e) => {
+                      e.stopPropagation();
                       Alert.alert(
                         'Verwijderen?',
                         `Weet je zeker dat je ${meal.name} wilt verwijderen?`,
                         [
                           { text: 'Annuleren', style: 'cancel' },
-                          { text: 'Verwijderen', onPress: () => deleteMeal(meal.id), style: 'destructive' },
+                          { 
+                            text: 'Verwijderen', 
+                            onPress: () => {
+                              deleteMeal(meal.id);
+                              Alert.alert('Verwijderd', 'Recept is verwijderd');
+                            }, 
+                            style: 'destructive' 
+                          },
                         ]
                       );
                     }}
@@ -230,12 +360,190 @@ export default function MealsScreen() {
                       color={colors.textSecondary}
                     />
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               </React.Fragment>
             ))
           )}
         </View>
       </ScrollView>
+
+      {/* Recipe Detail Modal */}
+      <Modal
+        visible={showDetailModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDetailModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              {selectedMealForDetail && (
+                <>
+                  {selectedMealForDetail.photoUri ? (
+                    <Image 
+                      source={{ uri: selectedMealForDetail.photoUri }} 
+                      style={styles.detailPhoto} 
+                    />
+                  ) : (
+                    <View style={styles.detailPhotoPlaceholder}>
+                      <Text style={styles.detailPhotoEmoji}>🍽️</Text>
+                    </View>
+                  )}
+                  
+                  <Text style={styles.detailTitle}>{selectedMealForDetail.name}</Text>
+                  
+                  {selectedMealForDetail.ingredients && selectedMealForDetail.ingredients.length > 0 && (
+                    <View style={styles.detailSection}>
+                      <Text style={styles.detailSectionTitle}>Ingrediënten:</Text>
+                      {selectedMealForDetail.ingredients.map((ingredient: string, idx: number) => (
+                        <React.Fragment key={idx}>
+                          <Text style={styles.detailIngredient}>• {ingredient}</Text>
+                        </React.Fragment>
+                      ))}
+                    </View>
+                  )}
+                  
+                  {selectedMealForDetail.instructions && (
+                    <View style={styles.detailSection}>
+                      <Text style={styles.detailSectionTitle}>Bereidingswijze:</Text>
+                      <Text style={styles.detailInstructions}>{selectedMealForDetail.instructions}</Text>
+                    </View>
+                  )}
+                  
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10 }]}
+                    onPress={() => {
+                      handleAddIngredientsToShoppingList(selectedMealForDetail);
+                      setShowDetailModal(false);
+                    }}
+                  >
+                    <IconSymbol
+                      ios_icon_name="cart"
+                      android_material_icon_name="shopping-cart"
+                      size={20}
+                      color={colors.card}
+                    />
+                    <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm, { marginLeft: 8 }]}>
+                      Ingrediënten toevoegen aan boodschappenlijst
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10, backgroundColor: colors.vibrantPurple }]}
+                    onPress={() => {
+                      setShowDetailModal(false);
+                      handlePlanInAgenda(selectedMealForDetail);
+                    }}
+                  >
+                    <IconSymbol
+                      ios_icon_name="calendar"
+                      android_material_icon_name="event"
+                      size={20}
+                      color={colors.card}
+                    />
+                    <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm, { marginLeft: 8 }]}>
+                      Plan in mijn agenda
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, { marginBottom: 10, backgroundColor: colors.vibrantOrange }]}
+                    onPress={() => {
+                      setShowDetailModal(false);
+                      openEditModal(selectedMealForDetail);
+                    }}
+                  >
+                    <IconSymbol
+                      ios_icon_name="pencil"
+                      android_material_icon_name="edit"
+                      size={20}
+                      color={colors.card}
+                    />
+                    <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm, { marginLeft: 8 }]}>
+                      Recept wijzigen
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonCancel]}
+                    onPress={() => setShowDetailModal(false)}
+                  >
+                    <Text style={styles.modalButtonText}>Sluiten</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Plan in Agenda Modal */}
+      <Modal
+        visible={showPlanModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPlanModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Plan in agenda</Text>
+            {selectedMealForPlan && (
+              <Text style={styles.planMealName}>{selectedMealForPlan.name}</Text>
+            )}
+
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={styles.dateButtonText}>
+                📅 {planDate.toLocaleDateString('nl-NL')}
+              </Text>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={planDate}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) {
+                    setPlanDate(selectedDate);
+                  }
+                }}
+              />
+            )}
+
+            <TextInput
+              style={styles.input}
+              placeholder="Tijd (bijv. 18:00)"
+              placeholderTextColor={colors.textSecondary}
+              value={planTime}
+              onChangeText={setPlanTime}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setShowPlanModal(false);
+                  setSelectedMealForPlan(null);
+                  setPlanDate(new Date());
+                  setPlanTime('18:00');
+                }}
+              >
+                <Text style={styles.modalButtonText}>Annuleren</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={confirmPlanInAgenda}
+              >
+                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Add Meal Modal */}
       <Modal
@@ -318,6 +626,88 @@ export default function MealsScreen() {
         </View>
       </Modal>
 
+      {/* Edit Meal Modal */}
+      <Modal
+        visible={showEditModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Recept wijzigen</Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Naam van het recept"
+                placeholderTextColor={colors.textSecondary}
+                value={newMealName}
+                onChangeText={setNewMealName}
+              />
+
+              <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
+                {newMealPhoto ? (
+                  <Image source={{ uri: newMealPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <IconSymbol
+                      ios_icon_name="camera"
+                      android_material_icon_name="camera-alt"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.photoPlaceholderText}>Foto toevoegen</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Ingrediënten (één per regel)"
+                placeholderTextColor={colors.textSecondary}
+                value={newMealIngredients}
+                onChangeText={setNewMealIngredients}
+                multiline
+                numberOfLines={4}
+              />
+
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Bereidingswijze"
+                placeholderTextColor={colors.textSecondary}
+                value={newMealInstructions}
+                onChangeText={setNewMealInstructions}
+                multiline
+                numberOfLines={4}
+              />
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowEditModal(false);
+                    setSelectedMealForEdit(null);
+                    setNewMealName('');
+                    setNewMealIngredients('');
+                    setNewMealInstructions('');
+                    setNewMealPhoto(undefined);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleUpdateMeal}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
       {/* Spinner Modal */}
       <Modal
         visible={showSpinnerModal}
@@ -331,15 +721,38 @@ export default function MealsScreen() {
             <Text style={styles.spinnerSubtitle}>Draai aan het rad voor een willekeurig recept!</Text>
 
             <Animated.View style={[styles.wheel, { transform: [{ rotate: spin }] }]}>
-              <View style={styles.wheelInner}>
-                <Text style={styles.wheelEmoji}>🍽️</Text>
-              </View>
+              {selectedMeal && selectedMeal.photoUri ? (
+                <Image source={{ uri: selectedMeal.photoUri }} style={styles.wheelPhoto} />
+              ) : (
+                <View style={styles.wheelInner}>
+                  <Text style={styles.wheelEmoji}>🍽️</Text>
+                </View>
+              )}
             </Animated.View>
 
             {selectedMeal && !isSpinning && (
               <View style={styles.selectedMealContainer}>
                 <Text style={styles.selectedMealLabel}>Vandaag eten we:</Text>
-                <Text style={styles.selectedMealName}>{selectedMeal}</Text>
+                <Text style={styles.selectedMealName}>{selectedMeal.name}</Text>
+                
+                <TouchableOpacity
+                  style={[styles.spinButton, { backgroundColor: colors.vibrantOrange, marginTop: 15 }]}
+                  onPress={() => {
+                    handleAddIngredientsToShoppingList(selectedMeal);
+                  }}
+                >
+                  <Text style={styles.spinButtonText}>Ingrediënten toevoegen aan boodschappenlijst</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.spinButton, { backgroundColor: colors.vibrantPurple, marginTop: 10 }]}
+                  onPress={() => {
+                    setShowSpinnerModal(false);
+                    handlePlanInAgenda(selectedMeal);
+                  }}
+                >
+                  <Text style={styles.spinButtonText}>Plan in mijn agenda</Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -357,7 +770,7 @@ export default function MealsScreen() {
               style={styles.closeButton}
               onPress={() => {
                 setShowSpinnerModal(false);
-                setSelectedMeal('');
+                setSelectedMeal(null);
               }}
             >
               <Text style={styles.closeButtonText}>Sluiten</Text>
@@ -646,6 +1059,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 15,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   modalButtonCancel: {
     backgroundColor: colors.background,
@@ -695,6 +1110,13 @@ const styles = StyleSheet.create({
     borderWidth: 8,
     borderColor: colors.accent,
   },
+  wheelPhoto: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    borderWidth: 8,
+    borderColor: colors.accent,
+  },
   wheelEmoji: {
     fontSize: 80,
   },
@@ -730,10 +1152,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   spinButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
   },
   closeButton: {
     padding: 10,
@@ -767,5 +1190,72 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     fontFamily: 'Nunito_400Regular',
+  },
+  detailPhoto: {
+    width: '100%',
+    height: 250,
+    borderRadius: 15,
+    marginBottom: 20,
+  },
+  detailPhotoPlaceholder: {
+    width: '100%',
+    height: 250,
+    borderRadius: 15,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  detailPhotoEmoji: {
+    fontSize: 100,
+  },
+  detailTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
+    fontFamily: 'Poppins_700Bold',
+  },
+  detailSection: {
+    marginBottom: 20,
+  },
+  detailSectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 10,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  detailIngredient: {
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 5,
+    fontFamily: 'Nunito_400Regular',
+  },
+  detailInstructions: {
+    fontSize: 16,
+    color: colors.text,
+    lineHeight: 24,
+    fontFamily: 'Nunito_400Regular',
+  },
+  dateButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
+  planMealName: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontFamily: 'Poppins_600SemiBold',
   },
 });

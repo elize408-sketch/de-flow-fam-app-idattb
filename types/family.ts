@@ -150,6 +150,7 @@ export interface Reminder {
   assignedTo: string[];
   completed: boolean;
   createdBy: string;
+  photoUri?: string;
 }
 
 export interface DailyScheduleItem {
