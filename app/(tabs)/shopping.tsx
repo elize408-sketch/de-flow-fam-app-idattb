@@ -147,12 +147,6 @@ export default function ShoppingScreen() {
             style={[styles.tab, activeTab === 'shopping' && styles.tabActive]}
             onPress={() => setActiveTab('shopping')}
           >
-            <IconSymbol
-              ios_icon_name="cart"
-              android_material_icon_name="shopping-cart"
-              size={20}
-              color={activeTab === 'shopping' ? colors.card : colors.text}
-            />
             <Text style={[styles.tabText, activeTab === 'shopping' && styles.tabTextActive]}>
               Boodschappenlijst
             </Text>
@@ -162,12 +156,6 @@ export default function ShoppingScreen() {
             style={[styles.tab, activeTab === 'pantry' && styles.tabActive]}
             onPress={() => setActiveTab('pantry')}
           >
-            <IconSymbol
-              ios_icon_name="archivebox"
-              android_material_icon_name="inventory-2"
-              size={20}
-              color={activeTab === 'pantry' ? colors.card : colors.text}
-            />
             <Text style={[styles.tabText, activeTab === 'pantry' && styles.tabTextActive]}>
               Voorraadkast
             </Text>
@@ -182,12 +170,6 @@ export default function ShoppingScreen() {
                 style={[styles.actionButton, { backgroundColor: colors.vibrantPurple }]}
                 onPress={handleExportPDF}
               >
-                <IconSymbol
-                  ios_icon_name="doc-text"
-                  android_material_icon_name="picture-as-pdf"
-                  size={18}
-                  color={colors.card}
-                />
                 <Text style={styles.actionButtonText}>Exporteer als PDF</Text>
               </TouchableOpacity>
 
@@ -195,12 +177,6 @@ export default function ShoppingScreen() {
                 style={[styles.actionButton, { backgroundColor: colors.vibrantBlue }]}
                 onPress={handleShareText}
               >
-                <IconSymbol
-                  ios_icon_name="square-and-arrow-up"
-                  android_material_icon_name="share"
-                  size={18}
-                  color={colors.card}
-                />
                 <Text style={styles.actionButtonText}>Deel lijst</Text>
               </TouchableOpacity>
             </View>
@@ -551,7 +527,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderRadius: 15,
-    gap: 8,
   },
   tabActive: {
     backgroundColor: colors.vibrantOrange,
@@ -576,7 +551,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
     borderRadius: 15,
     padding: 12,
     boxShadow: `0px 4px 12px ${colors.shadow}`,

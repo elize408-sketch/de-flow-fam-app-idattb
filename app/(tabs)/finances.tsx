@@ -53,6 +53,7 @@ export default function FinancesScreen() {
   const [showPotDetailsModal, setShowPotDetailsModal] = useState(false);
   const [showAddBudgetPotModal, setShowAddBudgetPotModal] = useState(false);
   const [showEditBudgetPotModal, setShowEditBudgetPotModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedPot, setSelectedPot] = useState<any>(null);
   const [selectedBudgetPot, setSelectedBudgetPot] = useState<any>(null);
   const [yearsToView, setYearsToView] = useState(1);
@@ -61,8 +62,6 @@ export default function FinancesScreen() {
   const [newIncomeType, setNewIncomeType] = useState<'salary' | 'partner' | 'benefits' | 'other'>('salary');
   const [newExpenseName, setNewExpenseName] = useState('');
   const [newExpenseAmount, setNewExpenseAmount] = useState('');
-  const [newExpenseCategory, setNewExpenseCategory] = useState<'fixed' | 'variable'>('fixed');
-  const [newExpenseRecurring, setNewExpenseRecurring] = useState(true);
   const [receiptAmount, setReceiptAmount] = useState('');
   const [receiptBudgetPot, setReceiptBudgetPot] = useState<string>('');
   const [newPotName, setNewPotName] = useState('');
@@ -273,17 +272,15 @@ export default function FinancesScreen() {
     addExpense({
       name: newExpenseName.trim(),
       amount,
-      category: newExpenseCategory,
+      category: 'fixed',
       date: new Date(),
       paid: false,
-      recurring: newExpenseRecurring,
+      recurring: true,
       recurringFrequency: 'monthly',
     });
 
     setNewExpenseName('');
     setNewExpenseAmount('');
-    setNewExpenseCategory('fixed');
-    setNewExpenseRecurring(true);
     setShowAddExpenseModal(false);
     Alert.alert('Gelukt!', 'Uitgave toegevoegd');
   };
@@ -526,10 +523,7 @@ export default function FinancesScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.onboardingButton}
-                onPress={() => {
-                  setNewExpenseCategory('fixed');
-                  setShowAddExpenseModal(true);
-                }}
+                onPress={() => setShowAddExpenseModal(true)}
               >
                 <IconSymbol
                   ios_icon_name="plus"
@@ -616,57 +610,27 @@ export default function FinancesScreen() {
           <>
             <View style={styles.summaryCard}>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>💵 Totaal inkomen</Text>
-                <Text style={[styles.summaryAmount, styles.incomeAmount]}>€{totalIncome.toFixed(2)}</Text>
-              </View>
-              <View style={styles.summaryDivider} />
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>🏠 Vaste lasten</Text>
-                <Text style={[styles.summaryAmount, styles.expenseAmount]}>-€{totalFixed.toFixed(2)}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>🛒 Variabele lasten</Text>
-                <Text style={[styles.summaryAmount, styles.expenseAmount]}>-€{totalVariable.toFixed(2)}</Text>
-              </View>
-              <View style={styles.summaryDivider} />
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabelBold}>📊 Over deze maand</Text>
+                <Text style={styles.summaryLabelBold}>Over deze maand</Text>
                 <Text style={[styles.summaryAmountBold, remaining >= 0 ? styles.positiveAmount : styles.negativeAmount]}>
                   €{remaining.toFixed(2)}
                 </Text>
               </View>
-              <Text style={styles.summaryNote}>
-                (Inkomen - Uitgaven: €{totalIncome.toFixed(2)} - €{totalExpenses.toFixed(2)})
-              </Text>
             </View>
 
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => setShowSettingsModal(true)}
+            >
+              <IconSymbol
+                ios_icon_name="gear"
+                android_material_icon_name="settings"
+                size={20}
+                color={colors.card}
+              />
+              <Text style={styles.settingsButtonText}>Instellingen</Text>
+            </TouchableOpacity>
+
             <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: colors.primary }]}
-                onPress={() => setShowAddIncomeModal(true)}
-              >
-                <IconSymbol
-                  ios_icon_name="plus"
-                  android_material_icon_name="add"
-                  size={20}
-                  color={colors.text}
-                />
-                <Text style={styles.actionButtonText}>Inkomen</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: colors.secondary }]}
-                onPress={() => setShowAddExpenseModal(true)}
-              >
-                <IconSymbol
-                  ios_icon_name="plus"
-                  android_material_icon_name="add"
-                  size={20}
-                  color={colors.text}
-                />
-                <Text style={styles.actionButtonText}>Uitgave</Text>
-              </TouchableOpacity>
-
               <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: colors.accent }]}
                 onPress={() => setShowScanReceiptModal(true)}
@@ -812,96 +776,6 @@ export default function FinancesScreen() {
               )}
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Inkomsten</Text>
-              {incomes.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>Nog geen inkomsten toegevoegd</Text>
-                </View>
-              ) : (
-                incomes.map((income, index) => (
-                  <React.Fragment key={index}>
-                    <View style={styles.itemCard}>
-                      <View style={styles.itemInfo}>
-                        <Text style={styles.itemName}>{income.name}</Text>
-                        <Text style={styles.itemMeta}>
-                          {income.type === 'salary' && '💼 Salaris'}
-                          {income.type === 'partner' && '👥 Partner'}
-                          {income.type === 'benefits' && '🎁 Toeslagen'}
-                          {income.type === 'other' && '📌 Overig'}
-                        </Text>
-                      </View>
-                      <Text style={[styles.itemAmount, styles.incomeAmount]}>€{income.amount.toFixed(2)}</Text>
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => {
-                          Alert.alert(
-                            'Verwijderen?',
-                            `Weet je zeker dat je ${income.name} wilt verwijderen?`,
-                            [
-                              { text: 'Annuleren', style: 'cancel' },
-                              { text: 'Verwijderen', onPress: () => deleteIncome(income.id), style: 'destructive' },
-                            ]
-                          );
-                        }}
-                      >
-                        <IconSymbol
-                          ios_icon_name="trash"
-                          android_material_icon_name="delete"
-                          size={20}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </React.Fragment>
-                ))
-              )}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Uitgaven</Text>
-              {expenses.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>Nog geen uitgaven toegevoegd</Text>
-                </View>
-              ) : (
-                expenses.map((expense, index) => (
-                  <React.Fragment key={index}>
-                    <View style={styles.itemCard}>
-                      <View style={styles.itemInfo}>
-                        <Text style={styles.itemName}>{expense.name}</Text>
-                        <Text style={styles.itemMeta}>
-                          {expense.category === 'fixed' ? '🏠 Vast' : '🛒 Variabel'}
-                          {expense.recurring && ' • 🔄 Terugkerend'}
-                        </Text>
-                      </View>
-                      <Text style={[styles.itemAmount, styles.expenseAmount]}>€{expense.amount.toFixed(2)}</Text>
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => {
-                          Alert.alert(
-                            'Verwijderen?',
-                            `Weet je zeker dat je ${expense.name} wilt verwijderen?`,
-                            [
-                              { text: 'Annuleren', style: 'cancel' },
-                              { text: 'Verwijderen', onPress: () => deleteExpense(expense.id), style: 'destructive' },
-                            ]
-                          );
-                        }}
-                      >
-                        <IconSymbol
-                          ios_icon_name="trash"
-                          android_material_icon_name="delete"
-                          size={20}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </React.Fragment>
-                ))
-              )}
-            </View>
-
             {receipts.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Bonnetjes ({receipts.length})</Text>
@@ -923,6 +797,182 @@ export default function FinancesScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Settings Modal */}
+      <Modal
+        visible={showSettingsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSettingsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Instellingen financiën</Text>
+
+              {/* Inkomsten beheren */}
+              <View style={styles.settingsSection}>
+                <View style={styles.settingsSectionHeader}>
+                  <Text style={styles.settingsSectionTitle}>Inkomsten beheren</Text>
+                  <TouchableOpacity onPress={() => {
+                    setShowSettingsModal(false);
+                    setShowAddIncomeModal(true);
+                  }}>
+                    <IconSymbol
+                      ios_icon_name="plus"
+                      android_material_icon_name="add"
+                      size={24}
+                      color={colors.accent}
+                    />
+                  </TouchableOpacity>
+                </View>
+                {incomes.length === 0 ? (
+                  <Text style={styles.emptyText}>Geen inkomsten</Text>
+                ) : (
+                  incomes.map((income, index) => (
+                    <React.Fragment key={index}>
+                      <View style={styles.settingsItem}>
+                        <View style={styles.settingsItemInfo}>
+                          <Text style={styles.settingsItemName}>{income.name}</Text>
+                          <Text style={styles.settingsItemAmount}>€{income.amount.toFixed(2)}</Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => {
+                            Alert.alert(
+                              'Verwijderen?',
+                              `Weet je zeker dat je ${income.name} wilt verwijderen?`,
+                              [
+                                { text: 'Annuleren', style: 'cancel' },
+                                { text: 'Verwijderen', onPress: () => deleteIncome(income.id), style: 'destructive' },
+                              ]
+                            );
+                          }}
+                        >
+                          <IconSymbol
+                            ios_icon_name="trash"
+                            android_material_icon_name="delete"
+                            size={20}
+                            color={colors.textSecondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </React.Fragment>
+                  ))
+                )}
+              </View>
+
+              {/* Uitgaven beheren */}
+              <View style={styles.settingsSection}>
+                <View style={styles.settingsSectionHeader}>
+                  <Text style={styles.settingsSectionTitle}>Uitgaven beheren</Text>
+                  <TouchableOpacity onPress={() => {
+                    setShowSettingsModal(false);
+                    setShowAddExpenseModal(true);
+                  }}>
+                    <IconSymbol
+                      ios_icon_name="plus"
+                      android_material_icon_name="add"
+                      size={24}
+                      color={colors.accent}
+                    />
+                  </TouchableOpacity>
+                </View>
+                {expenses.length === 0 ? (
+                  <Text style={styles.emptyText}>Geen uitgaven</Text>
+                ) : (
+                  expenses.map((expense, index) => (
+                    <React.Fragment key={index}>
+                      <View style={styles.settingsItem}>
+                        <View style={styles.settingsItemInfo}>
+                          <Text style={styles.settingsItemName}>{expense.name}</Text>
+                          <Text style={styles.settingsItemAmount}>€{expense.amount.toFixed(2)}</Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => {
+                            Alert.alert(
+                              'Verwijderen?',
+                              `Weet je zeker dat je ${expense.name} wilt verwijderen?`,
+                              [
+                                { text: 'Annuleren', style: 'cancel' },
+                                { text: 'Verwijderen', onPress: () => deleteExpense(expense.id), style: 'destructive' },
+                              ]
+                            );
+                          }}
+                        >
+                          <IconSymbol
+                            ios_icon_name="trash"
+                            android_material_icon_name="delete"
+                            size={20}
+                            color={colors.textSecondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </React.Fragment>
+                  ))
+                )}
+              </View>
+
+              {/* Variabele potjes beheren */}
+              <View style={styles.settingsSection}>
+                <View style={styles.settingsSectionHeader}>
+                  <Text style={styles.settingsSectionTitle}>Variabele potjes beheren</Text>
+                  <TouchableOpacity onPress={() => {
+                    setShowSettingsModal(false);
+                    setShowAddBudgetPotModal(true);
+                  }}>
+                    <IconSymbol
+                      ios_icon_name="plus"
+                      android_material_icon_name="add"
+                      size={24}
+                      color={colors.accent}
+                    />
+                  </TouchableOpacity>
+                </View>
+                {budgetPots.length === 0 ? (
+                  <Text style={styles.emptyText}>Geen variabele potjes</Text>
+                ) : (
+                  budgetPots.map((pot, index) => (
+                    <React.Fragment key={index}>
+                      <View style={styles.settingsItem}>
+                        <View style={styles.settingsItemInfo}>
+                          <Text style={styles.settingsItemName}>{pot.name}</Text>
+                          <Text style={styles.settingsItemAmount}>€{pot.budget.toFixed(2)}</Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => {
+                            Alert.alert(
+                              'Verwijderen?',
+                              `Weet je zeker dat je ${pot.name} wilt verwijderen?`,
+                              [
+                                { text: 'Annuleren', style: 'cancel' },
+                                { text: 'Verwijderen', onPress: () => deleteBudgetPot(pot.id), style: 'destructive' },
+                              ]
+                            );
+                          }}
+                        >
+                          <IconSymbol
+                            ios_icon_name="trash"
+                            android_material_icon_name="delete"
+                            size={20}
+                            color={colors.textSecondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </React.Fragment>
+                  ))
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setShowSettingsModal(false)}
+              >
+                <Text style={styles.modalButtonText}>Sluiten</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
 
       {/* Add Income Modal */}
       <Modal
@@ -1017,7 +1067,7 @@ export default function FinancesScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder="Naam (bijv. Huur)"
+              placeholder="Naam"
               placeholderTextColor={colors.textSecondary}
               value={newExpenseName}
               onChangeText={setNewExpenseName}
@@ -1032,59 +1082,6 @@ export default function FinancesScreen() {
               keyboardType="decimal-pad"
             />
 
-            <Text style={styles.inputLabel}>Categorie:</Text>
-            <View style={styles.categorySelector}>
-              <TouchableOpacity
-                style={[
-                  styles.categoryOption,
-                  newExpenseCategory === 'fixed' && styles.categoryOptionActive,
-                ]}
-                onPress={() => setNewExpenseCategory('fixed')}
-              >
-                <Text
-                  style={[
-                    styles.categoryOptionText,
-                    newExpenseCategory === 'fixed' && styles.categoryOptionTextActive,
-                  ]}
-                >
-                  🏠 Vaste lasten
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.categoryOption,
-                  newExpenseCategory === 'variable' && styles.categoryOptionActive,
-                ]}
-                onPress={() => setNewExpenseCategory('variable')}
-              >
-                <Text
-                  style={[
-                    styles.categoryOptionText,
-                    newExpenseCategory === 'variable' && styles.categoryOptionTextActive,
-                  ]}
-                >
-                  🛒 Variabele lasten
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.checkboxRow}
-              onPress={() => setNewExpenseRecurring(!newExpenseRecurring)}
-            >
-              <View style={[styles.checkbox, newExpenseRecurring && styles.checkboxChecked]}>
-                {newExpenseRecurring && (
-                  <IconSymbol
-                    ios_icon_name="checkmark"
-                    android_material_icon_name="check"
-                    size={16}
-                    color={colors.card}
-                  />
-                )}
-              </View>
-              <Text style={styles.checkboxLabel}>Terugkerende uitgave</Text>
-            </TouchableOpacity>
-
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonCancel]}
@@ -1092,8 +1089,6 @@ export default function FinancesScreen() {
                   setShowAddExpenseModal(false);
                   setNewExpenseName('');
                   setNewExpenseAmount('');
-                  setNewExpenseCategory('fixed');
-                  setNewExpenseRecurring(true);
                 }}
               >
                 <Text style={styles.modalButtonText}>Annuleren</Text>
@@ -1636,6 +1631,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 30,
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 20,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
@@ -1784,32 +1780,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 8,
   },
-  summaryLabel: {
-    fontSize: 16,
-    color: colors.text,
-    fontFamily: 'Nunito_400Regular',
-  },
   summaryLabelBold: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
-  summaryAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
-  },
   summaryAmountBold: {
     fontSize: 20,
     fontWeight: '700',
     fontFamily: 'Poppins_700Bold',
-  },
-  incomeAmount: {
-    color: '#4CAF50',
-  },
-  expenseAmount: {
-    color: '#F44336',
   },
   positiveAmount: {
     color: '#4CAF50',
@@ -1817,17 +1797,26 @@ const styles = StyleSheet.create({
   negativeAmount: {
     color: '#F44336',
   },
-  summaryDivider: {
-    height: 1,
-    backgroundColor: colors.background,
-    marginVertical: 10,
+  expenseAmount: {
+    color: '#F44336',
   },
-  summaryNote: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
+  settingsButton: {
+    backgroundColor: colors.vibrantBlue,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  settingsButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.card,
+    marginLeft: 10,
+    fontFamily: 'Poppins_600SemiBold',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -1995,40 +1984,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
   },
-  itemCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  itemMeta: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  itemAmount: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginRight: 10,
-    fontFamily: 'Poppins_700Bold',
-  },
-  deleteButton: {
-    padding: 10,
-  },
   receiptsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -2138,56 +2093,6 @@ const styles = StyleSheet.create({
   },
   typeOptionTextActive: {
     color: colors.text,
-  },
-  categorySelector: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  categoryOption: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  categoryOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
-  },
-  categoryOptionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  categoryOptionTextActive: {
-    color: colors.text,
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  checkboxChecked: {
-    backgroundColor: colors.accent,
-  },
-  checkboxLabel: {
-    fontSize: 16,
-    color: colors.text,
-    fontFamily: 'Nunito_400Regular',
   },
   budgetPotSelector: {
     flexDirection: 'row',
@@ -2350,6 +2255,52 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  settingsSection: {
+    marginBottom: 25,
+  },
+  settingsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  settingsSectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  settingsItem: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  settingsItemInfo: {
+    flex: 1,
+  },
+  settingsItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  settingsItemAmount: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    padding: 20,
+    fontFamily: 'Nunito_400Regular',
   },
   modalButtons: {
     flexDirection: 'row',

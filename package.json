@@ -28,6 +28,7 @@
     "@react-navigation/native-stack": "^7.2.0",
     "@types/difflib": "^0.2.7",
     "difflib": "^0.2.4",
+    "docx": "^9.5.1",
     "eas": "^0.1.0",
     "expo": "~54.0.1",
     "expo-blur": "^15.0.6",

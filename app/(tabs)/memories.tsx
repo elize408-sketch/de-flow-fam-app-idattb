@@ -6,6 +6,10 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as MailComposer from 'expo-mail-composer';
+import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel } from 'docx';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 export default function MemoriesScreen() {
   const { memories, addMemory, deleteMemory, familyMembers } = useFamily();
@@ -19,14 +23,7 @@ export default function MemoriesScreen() {
   const [selectedMemory, setSelectedMemory] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showPhotoBookModal, setShowPhotoBookModal] = useState(false);
-  const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('small');
   const [selectedMemberForPhotoBook, setSelectedMemberForPhotoBook] = useState<string>('');
-
-  const photoBookPrices = {
-    small: 25,
-    medium: 40,
-    large: 65,
-  };
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -62,10 +59,9 @@ export default function MemoriesScreen() {
     addMemory({
       title: newTitle.trim(),
       description: newDescription.trim(),
-      photoUri: newPhoto,
+      photos: [newPhoto],
       date: newDate,
-      tags: [],
-      assignedTo: newAssignedTo || undefined,
+      createdBy: newAssignedTo || '',
     });
 
     setNewTitle('');
@@ -83,7 +79,7 @@ export default function MemoriesScreen() {
       return;
     }
 
-    const memberMemories = memories.filter(m => m.assignedTo === selectedMemberForPhotoBook);
+    const memberMemories = memories.filter(m => m.createdBy === selectedMemberForPhotoBook);
     
     if (memberMemories.length === 0) {
       Alert.alert('Geen herinneringen', 'Er zijn nog geen herinneringen voor dit gezinslid');
@@ -98,53 +94,163 @@ export default function MemoriesScreen() {
     const member = familyMembers.find(m => m.id === selectedMemberForPhotoBook);
     const memberName = member?.name || 'Onbekend';
 
-    const memoriesText = memberMemories.map((memory, index) => {
-      const date = new Date(memory.date).toLocaleDateString('nl-NL', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-      
-      return `
-${index + 1}. ${memory.title}
-Datum: ${date}
-${memory.description ? `Beschrijving: ${memory.description}` : ''}
--------------------`;
-    }).join('\n');
-
-    const emailSubject = `Fotoboek Bestelling - Fotoboek van ${memberName}`;
-    const emailBody = `
-Beste Flow Fam team,
-
-Ik wil graag een fotoboek bestellen met de volgende specificaties:
-
-Titel: Fotoboek van ${memberName}
-Formaat: ${selectedSize === 'small' ? 'Klein' : selectedSize === 'medium' ? 'Middel' : 'Groot'}
-Prijs: €${photoBookPrices[selectedSize]} (excl. verzendkosten)
-Aantal herinneringen: ${memberMemories.length}
-
-HERINNERINGEN:
-${memoriesText}
-
-Met vriendelijke groet,
-Een Flow Fam gebruiker
-    `;
-
     try {
-      const mailto = `mailto:info@flowfam.nl?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-      await Linking.openURL(mailto);
-      
-      setShowPhotoBookModal(false);
-      setSelectedMemberForPhotoBook('');
-      Alert.alert(
-        'Bestelling verzonden! 📧',
-        'Je fotoboek bestelling is verzonden naar info@flowfam.nl. Je ontvangt binnenkort een bevestiging.',
-        [{ text: 'OK' }]
+      // Create document sections
+      const docSections = [];
+
+      // Title
+      docSections.push(
+        new Paragraph({
+          text: `Fotoboek van ${memberName}`,
+          heading: HeadingLevel.HEADING_1,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        })
       );
+
+      // Add each memory
+      for (let i = 0; i < memberMemories.length; i++) {
+        const memory = memberMemories[i];
+        const date = new Date(memory.date).toLocaleDateString('nl-NL', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+
+        // Memory title
+        docSections.push(
+          new Paragraph({
+            text: `${i + 1}. ${memory.title}`,
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 },
+          })
+        );
+
+        // Date
+        docSections.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Datum: ${date}`,
+                italics: true,
+              }),
+            ],
+            spacing: { after: 200 },
+          })
+        );
+
+        // Description
+        if (memory.description) {
+          docSections.push(
+            new Paragraph({
+              text: memory.description,
+              spacing: { after: 200 },
+            })
+          );
+        }
+
+        // Add photos
+        if (memory.photos && memory.photos.length > 0) {
+          for (const photoUri of memory.photos) {
+            try {
+              // Read image as base64
+              const base64 = await FileSystem.readAsStringAsync(photoUri, {
+                encoding: FileSystem.EncodingType.Base64,
+              });
+
+              docSections.push(
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: Uint8Array.from(atob(base64), c => c.charCodeAt(0)),
+                      transformation: {
+                        width: 400,
+                        height: 300,
+                      },
+                    }),
+                  ],
+                  spacing: { after: 300 },
+                })
+              );
+            } catch (error) {
+              console.error('Error adding photo to document:', error);
+            }
+          }
+        }
+
+        // Separator
+        docSections.push(
+          new Paragraph({
+            text: '-------------------',
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 300 },
+          })
+        );
+      }
+
+      // Create document
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: docSections,
+          },
+        ],
+      });
+
+      // Generate document
+      const buffer = await Packer.toBlob(doc);
+      
+      // Save to file system
+      const fileName = `Fotoboek_${memberName}_${Date.now()}.docx`;
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+      
+      // Convert blob to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(buffer);
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        const base64 = base64data.split(',')[1];
+        
+        await FileSystem.writeAsStringAsync(fileUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Check if mail composer is available
+        const isAvailable = await MailComposer.isAvailableAsync();
+        
+        if (isAvailable) {
+          // Send via mail composer
+          await MailComposer.composeAsync({
+            recipients: ['info@flowfam.nl'],
+            subject: `Fotoboek Bestelling - Fotoboek van ${memberName}`,
+            body: `Beste Flow Fam team,\n\nHierbij stuur ik mijn fotoboek bestelling.\n\nTitel: Fotoboek van ${memberName}\nAantal herinneringen: ${memberMemories.length}\n\nMet vriendelijke groet,\nEen Flow Fam gebruiker`,
+            attachments: [fileUri],
+          });
+
+          setShowPhotoBookModal(false);
+          setSelectedMemberForPhotoBook('');
+          Alert.alert('Je fotoboek is verstuurd! We gaan het voor je maken 💛');
+        } else {
+          // Fallback: share the file
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            dialogTitle: 'Deel je fotoboek',
+          });
+
+          setShowPhotoBookModal(false);
+          setSelectedMemberForPhotoBook('');
+          Alert.alert(
+            'Fotoboek gegenereerd',
+            'Je fotoboek is gegenereerd. Stuur het bestand naar info@flowfam.nl om je bestelling te plaatsen.',
+            [{ text: 'OK' }]
+          );
+        }
+      };
     } catch (error) {
-      console.error('Email error:', error);
-      Alert.alert('Fout', 'Kon email niet verzenden. Probeer het later opnieuw.');
+      console.error('Error creating photobook:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het maken van het fotoboek. Probeer het later opnieuw.');
     }
   };
 
@@ -164,7 +270,7 @@ Een Flow Fam gebruiker
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Fotoboek</Text>
-          <Text style={styles.subtitle}>Jouw gezinsblog</Text>
+          <Text style={styles.subtitle}>Jouw fotoboeken en herinneringen</Text>
         </View>
 
         <View style={styles.actionButtons}>
@@ -212,8 +318,8 @@ Een Flow Fam gebruiker
                 <Text style={styles.yearTitle}>{year}</Text>
                 <View style={styles.memoriesGrid}>
                   {memoriesByYear[year].map((memory: any, memoryIndex: number) => {
-                    const assignedMember = memory.assignedTo 
-                      ? familyMembers.find(m => m.id === memory.assignedTo)
+                    const assignedMember = memory.createdBy 
+                      ? familyMembers.find(m => m.id === memory.createdBy)
                       : null;
                     
                     return (
@@ -225,7 +331,7 @@ Een Flow Fam gebruiker
                             setShowDetailModal(true);
                           }}
                         >
-                          <Image source={{ uri: memory.photoUri }} style={styles.memoryImage} />
+                          <Image source={{ uri: memory.photos[0] }} style={styles.memoryImage} />
                           <View style={styles.memoryOverlay}>
                             {assignedMember && (
                               <View style={styles.memoryBadge}>
@@ -415,7 +521,7 @@ Een Flow Fam gebruiker
 
               <View style={styles.memberSelector}>
                 {familyMembers.map((member, index) => {
-                  const memberMemories = memories.filter(m => m.assignedTo === member.id);
+                  const memberMemories = memories.filter(m => m.createdBy === member.id);
                   return (
                     <React.Fragment key={index}>
                       <TouchableOpacity
@@ -439,52 +545,14 @@ Een Flow Fam gebruiker
               </View>
 
               {selectedMemberForPhotoBook && (
-                <>
-                  <Text style={styles.inputLabel}>Kies het formaat:</Text>
-                  <View style={styles.sizeSelector}>
-                    {[
-                      { size: 'small', label: 'Klein', price: 25 },
-                      { size: 'medium', label: 'Middel', price: 40 },
-                      { size: 'large', label: 'Groot', price: 65 },
-                    ].map((option, index) => (
-                      <React.Fragment key={index}>
-                        <TouchableOpacity
-                          style={[
-                            styles.sizeOption,
-                            selectedSize === option.size && styles.sizeOptionActive,
-                          ]}
-                          onPress={() => setSelectedSize(option.size as any)}
-                        >
-                          <Text style={[
-                            styles.sizeOptionLabel,
-                            selectedSize === option.size && styles.sizeOptionLabelActive,
-                          ]}>
-                            {option.label}
-                          </Text>
-                          <Text style={[
-                            styles.sizeOptionPrice,
-                            selectedSize === option.size && styles.sizeOptionPriceActive,
-                          ]}>
-                            €{option.price}
-                          </Text>
-                          <Text style={styles.sizeOptionNote}>excl. verzendkosten</Text>
-                        </TouchableOpacity>
-                      </React.Fragment>
-                    ))}
-                  </View>
-
-                  <View style={styles.orderSummary}>
-                    <Text style={styles.orderSummaryText}>
-                      📚 {memories.filter(m => m.assignedTo === selectedMemberForPhotoBook).length} herinneringen
-                    </Text>
-                    <Text style={styles.orderSummaryText}>
-                      💰 Totaal: €{photoBookPrices[selectedSize]} (excl. verzendkosten)
-                    </Text>
-                    <Text style={styles.orderSummaryNote}>
-                      💡 Maximaal 75 foto&apos;s per fotoboek
-                    </Text>
-                  </View>
-                </>
+                <View style={styles.orderSummary}>
+                  <Text style={styles.orderSummaryText}>
+                    📚 {memories.filter(m => m.createdBy === selectedMemberForPhotoBook).length} herinneringen
+                  </Text>
+                  <Text style={styles.orderSummaryNote}>
+                    💡 Maximaal 75 foto&apos;s per fotoboek
+                  </Text>
+                </View>
               )}
 
               <View style={styles.modalButtons}>
@@ -532,7 +600,7 @@ Een Flow Fam gebruiker
 
           {selectedMemory && (
             <ScrollView contentContainerStyle={styles.detailModalContent}>
-              <Image source={{ uri: selectedMemory.photoUri }} style={styles.detailImage} />
+              <Image source={{ uri: selectedMemory.photos[0] }} style={styles.detailImage} />
               <View style={styles.detailInfo}>
                 <Text style={styles.detailTitle}>{selectedMemory.title}</Text>
                 <Text style={styles.detailDate}>
@@ -543,9 +611,9 @@ Een Flow Fam gebruiker
                     day: 'numeric',
                   })}
                 </Text>
-                {selectedMemory.assignedTo && (
+                {selectedMemory.createdBy && (
                   <Text style={styles.detailAssigned}>
-                    Voor: {familyMembers.find(m => m.id === selectedMemory.assignedTo)?.name || 'Onbekend'}
+                    Voor: {familyMembers.find(m => m.id === selectedMemory.createdBy)?.name || 'Onbekend'}
                   </Text>
                 )}
                 {selectedMemory.description && (
@@ -907,49 +975,6 @@ const styles = StyleSheet.create({
   },
   photoBookMemberCount: {
     fontSize: 12,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  sizeSelector: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  sizeOption: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  sizeOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
-  },
-  sizeOptionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: 5,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  sizeOptionLabelActive: {
-    color: colors.text,
-  },
-  sizeOptionPrice: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    marginBottom: 5,
-    fontFamily: 'Poppins_700Bold',
-  },
-  sizeOptionPriceActive: {
-    color: colors.accent,
-  },
-  sizeOptionNote: {
-    fontSize: 10,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
   },
