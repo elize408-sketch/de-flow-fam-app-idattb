@@ -8,6 +8,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import TaskCompletionAnimation from '@/components/TaskCompletionAnimation';
 import IconPicker from '@/components/IconPicker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TasksScreen() {
   const router = useRouter();
@@ -462,12 +463,7 @@ export default function TasksScreen() {
                   }
                 }}
               >
-                <IconSymbol
-                  ios_icon_name="chevron.left"
-                  android_material_icon_name="arrow_back"
-                  size={24}
-                  color={colors.text}
-                />
+                <Ionicons name="close-outline" size={28} color={colors.text} />
               </TouchableOpacity>
               <Text style={styles.modalTitle}>
                 {!taskMode ? 'Type taak kiezen' : 'Nieuwe taak toevoegen'}

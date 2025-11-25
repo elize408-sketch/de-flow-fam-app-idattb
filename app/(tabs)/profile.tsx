@@ -43,6 +43,7 @@ export default function ProfileScreen() {
   const [newAppointmentTitle, setNewAppointmentTitle] = useState('');
   const [newAppointmentDate, setNewAppointmentDate] = useState(new Date());
   const [newAppointmentTime, setNewAppointmentTime] = useState('09:00');
+  const [newAppointmentRepeat, setNewAppointmentRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
 
   const isParent = currentUser?.role === 'parent';
@@ -192,12 +193,13 @@ export default function ProfileScreen() {
       time: newAppointmentTime,
       assignedTo: [selectedChildForPlanning],
       color: child?.color || colors.accent,
-      repeatType: 'none',
+      repeatType: newAppointmentRepeat,
     });
 
     setNewAppointmentTitle('');
     setNewAppointmentDate(new Date());
     setNewAppointmentTime('09:00');
+    setNewAppointmentRepeat('none');
     Alert.alert('Gelukt!', 'Afspraak toegevoegd');
   };
 
@@ -701,6 +703,35 @@ export default function ProfileScreen() {
                     onChangeText={setNewAppointmentTime}
                   />
 
+                  <Text style={styles.inputLabel}>Herhaling:</Text>
+                  <View style={styles.repeatSelector}>
+                    {[
+                      { value: 'none', label: 'Geen' },
+                      { value: 'daily', label: 'Dagelijks' },
+                      { value: 'weekly', label: 'Wekelijks' },
+                      { value: 'monthly', label: 'Maandelijks' },
+                    ].map((option, index) => (
+                      <React.Fragment key={index}>
+                        <TouchableOpacity
+                          style={[
+                            styles.repeatOption,
+                            newAppointmentRepeat === option.value && styles.repeatOptionActive,
+                          ]}
+                          onPress={() => setNewAppointmentRepeat(option.value as any)}
+                        >
+                          <Text
+                            style={[
+                              styles.repeatOptionText,
+                              newAppointmentRepeat === option.value && styles.repeatOptionTextActive,
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                        </TouchableOpacity>
+                      </React.Fragment>
+                    ))}
+                  </View>
+
                   <TouchableOpacity
                     style={[styles.addAppointmentButton]}
                     onPress={handleAddAppointment}
@@ -731,6 +762,13 @@ export default function ProfileScreen() {
                                 <Text style={styles.appointmentTitle}>{apt.title}</Text>
                                 <Text style={styles.appointmentMeta}>
                                   {apt.time} • {apt.date.toLocaleDateString('nl-NL')}
+                                  {apt.repeatType !== 'none' && (
+                                    <Text> • 🔄 {
+                                      apt.repeatType === 'daily' ? 'Dagelijks' :
+                                      apt.repeatType === 'weekly' ? 'Wekelijks' :
+                                      apt.repeatType === 'monthly' ? 'Maandelijks' : ''
+                                    }</Text>
+                                  )}
                                 </Text>
                               </View>
                               <TouchableOpacity
@@ -759,6 +797,7 @@ export default function ProfileScreen() {
                   setSelectedChildForPlanning('');
                   setNewAppointmentTitle('');
                   setNewAppointmentTime('09:00');
+                  setNewAppointmentRepeat('none');
                 }}
               >
                 <Text style={styles.modalButtonText}>Sluiten</Text>
