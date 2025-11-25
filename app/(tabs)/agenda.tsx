@@ -372,11 +372,12 @@ export default function AgendaScreen() {
                 />
               </View>
 
+              <Text style={styles.inputLabel}>Eindtijd (optioneel)</Text>
               <View style={styles.timeInputContainer}>
                 <Ionicons name="time-outline" size={22} color="#333" />
                 <TextInput
                   style={styles.timeInput}
-                  placeholder="Eindtijd (optioneel, bijv. 11:30)"
+                  placeholder="bijv. 11:30"
                   placeholderTextColor={colors.textSecondary}
                   value={newAppointmentEndTime}
                   onChangeText={setNewAppointmentEndTime}

@@ -270,7 +270,7 @@ export default function MemoriesScreen() {
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Fotoboek</Text>
-          <Text style={styles.subtitle}>Jouw fotoboeken en herinneringen</Text>
+          <Text style={styles.subtitle}>Alle gezinsherinneringen</Text>
         </View>
 
         <View style={styles.actionButtons}>
