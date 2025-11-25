@@ -77,8 +77,8 @@ export default function HomeScreen() {
     setCurrentSlide(index);
   };
 
-  // Menu sections to display below slider
-  const menuSections = [
+  // Menu sections - filter based on user role
+  const allMenuSections = [
     { icon: 'calendar-today', label: 'Agenda', route: '/(tabs)/agenda', color: colors.vibrantBlue },
     { icon: 'check-circle', label: 'Taken', route: '/(tabs)/tasks', color: colors.vibrantGreen },
     { icon: 'list', label: 'Boodschappen', route: '/(tabs)/shopping', color: colors.vibrantOrange },
@@ -89,6 +89,15 @@ export default function HomeScreen() {
     { icon: 'shopping-bag', label: 'Shop', route: '/(tabs)/shop', color: colors.vibrantTeal },
     { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
   ];
+
+  // Children only see: Profiel, Taken, Agenda
+  const childMenuSections = [
+    { icon: 'calendar-today', label: 'Agenda', route: '/(tabs)/agenda', color: colors.vibrantBlue },
+    { icon: 'check-circle', label: 'Taken', route: '/(tabs)/tasks', color: colors.vibrantGreen },
+    { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
+  ];
+
+  const menuSections = isParent ? allMenuSections : childMenuSections;
 
   return (
     <View style={styles.container}>

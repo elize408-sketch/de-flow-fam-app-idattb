@@ -23,6 +23,8 @@ import Animated, {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Href } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
+import { useFamily } from '@/contexts/FamilyContext';
+import { getTabsForRole } from '@/utils/tabFilters';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -34,14 +36,12 @@ export interface TabBarItem {
 }
 
 interface FloatingTabBarProps {
-  tabs: TabBarItem[];
   containerWidth?: number;
   borderRadius?: number;
   bottomMargin?: number;
 }
 
 export default function FloatingTabBar({
-  tabs,
   containerWidth = screenWidth * 0.95,
   borderRadius = 16,
   bottomMargin
@@ -50,6 +50,16 @@ export default function FloatingTabBar({
   const pathname = usePathname();
   const theme = useTheme();
   const animatedValue = useSharedValue(0);
+  const { currentUser } = useFamily();
+
+  // Get tabs based on current user role
+  const tabs = React.useMemo(() => {
+    if (!currentUser) {
+      // Default to parent tabs if no user selected
+      return getTabsForRole('parent');
+    }
+    return getTabsForRole(currentUser.role);
+  }, [currentUser]);
 
   const activeTabIndex = React.useMemo(() => {
     let bestMatch = -1;
