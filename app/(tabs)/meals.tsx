@@ -9,6 +9,8 @@ import CheckmarkAnimation from '@/components/CheckmarkAnimation';
 import * as ImagePicker from 'expo-image-picker';
 import * as Calendar from 'expo-calendar';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ingredient, IngredientCategory } from '@/types/family';
+import { categorizeIngredient, parseIngredient } from '@/utils/ingredientCategories';
 
 const DAYS_OF_WEEK = [
   { key: 'monday', label: 'Maandag' },
@@ -22,7 +24,15 @@ const DAYS_OF_WEEK = [
 
 export default function MealsScreen() {
   const router = useRouter();
-  const { meals, addMeal, updateMeal, deleteMeal, addIngredientsToShoppingList } = useFamily();
+  const { 
+    meals, 
+    addMeal, 
+    updateMeal, 
+    deleteMeal, 
+    addRecipeIngredientsToShoppingList,
+    weekPlanningServings,
+    setWeekPlanningServings,
+  } = useFamily();
   const [showAddMealModal, setShowAddMealModal] = useState(false);
   const [showSpinnerModal, setShowSpinnerModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
@@ -130,10 +140,22 @@ export default function MealsScreen() {
       return;
     }
 
-    const ingredients = newMealIngredients
+    // Parse ingredients
+    const ingredientLines = newMealIngredients
       .split('\n')
       .filter(i => i.trim())
       .map(i => i.trim());
+
+    const ingredients: Ingredient[] = ingredientLines.map(line => {
+      const parsed = parseIngredient(line);
+      const category = categorizeIngredient(parsed.name);
+      return {
+        name: parsed.name,
+        quantity: parsed.quantity,
+        unit: parsed.unit,
+        category,
+      };
+    });
 
     addMeal({
       name: newMealName.trim(),
@@ -141,7 +163,8 @@ export default function MealsScreen() {
       ingredients,
       instructions: newMealInstructions.trim(),
       prepTime: 30,
-      servings: 4,
+      servings: 2,
+      baseServings: 2,
       photoUri: newMealPhoto,
     });
 
@@ -159,10 +182,22 @@ export default function MealsScreen() {
       return;
     }
 
-    const ingredients = newMealIngredients
+    // Parse ingredients
+    const ingredientLines = newMealIngredients
       .split('\n')
       .filter(i => i.trim())
       .map(i => i.trim());
+
+    const ingredients: Ingredient[] = ingredientLines.map(line => {
+      const parsed = parseIngredient(line);
+      const category = categorizeIngredient(parsed.name);
+      return {
+        name: parsed.name,
+        quantity: parsed.quantity,
+        unit: parsed.unit,
+        category,
+      };
+    });
 
     updateMeal(selectedMealForEdit.id, {
       name: newMealName.trim(),
@@ -183,7 +218,17 @@ export default function MealsScreen() {
   const openEditModal = (meal: any) => {
     setSelectedMealForEdit(meal);
     setNewMealName(meal.name);
-    setNewMealIngredients(meal.ingredients?.join('\n') || '');
+    
+    // Convert ingredients back to text format
+    if (meal.ingredients && Array.isArray(meal.ingredients)) {
+      const ingredientText = meal.ingredients
+        .map((ing: Ingredient) => `${ing.quantity} ${ing.unit} ${ing.name}`)
+        .join('\n');
+      setNewMealIngredients(ingredientText);
+    } else {
+      setNewMealIngredients('');
+    }
+    
     setNewMealInstructions(meal.instructions || '');
     setNewMealPhoto(meal.photoUri);
     setShowEditModal(true);
@@ -194,12 +239,30 @@ export default function MealsScreen() {
     setShowDetailModal(true);
   };
 
-  const handleAddIngredientsToShoppingList = (meal: any) => {
-    if (meal.ingredients && meal.ingredients.length > 0) {
-      addIngredientsToShoppingList(meal.ingredients);
-      setShowCheckmarkAnimation(true);
-    } else {
+  const handleAddIngredientsToShoppingList = async (meal: any) => {
+    if (!meal.ingredients || meal.ingredients.length === 0) {
       Alert.alert('Geen ingrediënten', 'Dit recept heeft geen ingrediënten');
+      return;
+    }
+
+    try {
+      const result = await addRecipeIngredientsToShoppingList(meal);
+      
+      if (result.skipped.length > 0) {
+        Alert.alert(
+          'Ingrediënten toegevoegd',
+          `${result.added} ingrediënten toegevoegd.\n\nSommige ingrediënten stonden al in je voorraadkast:\n${result.skipped.join(', ')}`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        setShowCheckmarkAnimation(true);
+        setTimeout(() => {
+          Alert.alert('Gelukt!', 'Ingrediënten toegevoegd aan je boodschappenlijst!');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error adding ingredients:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het toevoegen van ingrediënten');
     }
   };
 
@@ -451,6 +514,55 @@ export default function MealsScreen() {
           )}
         </View>
 
+        {/* Servings Stepper Section */}
+        <View style={styles.section}>
+          <View style={styles.servingsCard}>
+            <Text style={styles.servingsTitle}>Voor hoeveel personen kook je deze week?</Text>
+            <View style={styles.stepperContainer}>
+              <TouchableOpacity
+                style={[styles.stepperButton, weekPlanningServings <= 1 && styles.stepperButtonDisabled]}
+                onPress={() => {
+                  if (weekPlanningServings > 1) {
+                    setWeekPlanningServings(weekPlanningServings - 1);
+                  }
+                }}
+                disabled={weekPlanningServings <= 1}
+              >
+                <IconSymbol
+                  ios_icon_name="minus"
+                  android_material_icon_name="remove"
+                  size={24}
+                  color={weekPlanningServings <= 1 ? colors.textSecondary : colors.text}
+                />
+              </TouchableOpacity>
+              
+              <View style={styles.servingsDisplay}>
+                <Text style={styles.servingsNumber}>{weekPlanningServings}</Text>
+                <Text style={styles.servingsLabel}>
+                  {weekPlanningServings === 1 ? 'persoon' : 'personen'}
+                </Text>
+              </View>
+              
+              <TouchableOpacity
+                style={[styles.stepperButton, weekPlanningServings >= 10 && styles.stepperButtonDisabled]}
+                onPress={() => {
+                  if (weekPlanningServings < 10) {
+                    setWeekPlanningServings(weekPlanningServings + 1);
+                  }
+                }}
+                disabled={weekPlanningServings >= 10}
+              >
+                <IconSymbol
+                  ios_icon_name="plus"
+                  android_material_icon_name="add"
+                  size={24}
+                  color={weekPlanningServings >= 10 ? colors.textSecondary : colors.text}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
         {/* Week Planning Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Weekplanning – Diner</Text>
@@ -484,17 +596,35 @@ export default function MealsScreen() {
                           )}
                         </View>
                       </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.removeRecipeButton}
-                        onPress={() => handleRemoveRecipeFromDay(day.key)}
-                      >
-                        <IconSymbol
-                          ios_icon_name="xmark-circle"
-                          android_material_icon_name="cancel"
-                          size={24}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
+                      
+                      <View style={styles.recipeActions}>
+                        <TouchableOpacity
+                          style={styles.addIngredientsButton}
+                          onPress={() => handleAddIngredientsToShoppingList(assignedRecipe)}
+                        >
+                          <IconSymbol
+                            ios_icon_name="cart-badge-plus"
+                            android_material_icon_name="add-shopping-cart"
+                            size={20}
+                            color={colors.vibrantOrange}
+                          />
+                          <Text style={styles.addIngredientsButtonText}>
+                            Voeg ingrediënten toe aan boodschappenlijstje
+                          </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                          style={styles.removeRecipeButton}
+                          onPress={() => handleRemoveRecipeFromDay(day.key)}
+                        >
+                          <IconSymbol
+                            ios_icon_name="xmark-circle"
+                            android_material_icon_name="cancel"
+                            size={24}
+                            color={colors.textSecondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ) : (
                     <TouchableOpacity
@@ -615,9 +745,11 @@ export default function MealsScreen() {
                   {selectedMealForDetail.ingredients && selectedMealForDetail.ingredients.length > 0 && (
                     <View style={styles.detailSection}>
                       <Text style={styles.detailSectionTitle}>Ingrediënten:</Text>
-                      {selectedMealForDetail.ingredients.map((ingredient: string, idx: number) => (
+                      {selectedMealForDetail.ingredients.map((ingredient: Ingredient, idx: number) => (
                         <React.Fragment key={idx}>
-                          <Text style={styles.detailIngredient}>• {ingredient}</Text>
+                          <Text style={styles.detailIngredient}>
+                            • {ingredient.quantity} {ingredient.unit} {ingredient.name}
+                          </Text>
                         </React.Fragment>
                       ))}
                     </View>
@@ -805,7 +937,7 @@ export default function MealsScreen() {
 
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Ingrediënten (één per regel)"
+                placeholder="Ingrediënten (bijv: 200 gram pasta, 2 st tomaten)"
                 placeholderTextColor={colors.textSecondary}
                 value={newMealIngredients}
                 onChangeText={setNewMealIngredients}
@@ -886,7 +1018,7 @@ export default function MealsScreen() {
 
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Ingrediënten (één per regel)"
+                placeholder="Ingrediënten (bijv: 200 gram pasta, 2 st tomaten)"
                 placeholderTextColor={colors.textSecondary}
                 value={newMealIngredients}
                 onChangeText={setNewMealIngredients}
@@ -1226,6 +1358,56 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 10,
   },
+  servingsCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+    marginBottom: 15,
+  },
+  servingsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  stepperButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 2,
+  },
+  stepperButtonDisabled: {
+    opacity: 0.4,
+  },
+  servingsDisplay: {
+    alignItems: 'center',
+    minWidth: 100,
+  },
+  servingsNumber: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  servingsLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
   dayCard: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -1268,11 +1450,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
   },
   assignedRecipeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: 10,
   },
   assignedRecipe: {
-    flex: 1,
     backgroundColor: colors.background,
     borderRadius: 15,
     padding: 10,
@@ -1312,9 +1492,31 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
   },
+  recipeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  addIngredientsButton: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.vibrantOrange,
+  },
+  addIngredientsButtonText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.vibrantOrange,
+    fontFamily: 'Poppins_600SemiBold',
+  },
   removeRecipeButton: {
     padding: 10,
-    marginLeft: 8,
   },
   modalOverlay: {
     flex: 1,

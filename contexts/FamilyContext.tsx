@@ -1,7 +1,10 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, Reminder, DailyScheduleItem, Notification } from '@/types/family';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, Reminder, DailyScheduleItem, Notification, PantryItem, Ingredient, IngredientCategory } from '@/types/family';
 import { initialFamilyMembers, initialTasks, initialRewards } from '@/data/familyData';
+import { savePantryItems, loadPantryItems, saveWeekPlanningServings, loadWeekPlanningServings } from '@/utils/localStorage';
+import { categorizeIngredient, parseIngredient, shouldNotScale } from '@/utils/ingredientCategories';
+import { Alert, Share } from 'react-native';
 
 interface FamilyContextType {
   familyMembers: FamilyMember[];
@@ -16,6 +19,7 @@ interface FamilyContextType {
   savingsPots: SavingsPot[];
   memories: Memory[];
   shoppingList: ShoppingItem[];
+  pantryItems: PantryItem[];
   familyNotes: FamilyNote[];
   reminders: Reminder[];
   dailySchedule: DailyScheduleItem[];
@@ -24,10 +28,12 @@ interface FamilyContextType {
   currentUser: FamilyMember | null;
   financePasscode: string | null;
   financeOnboardingComplete: boolean;
+  weekPlanningServings: number;
   setSelectedMember: (member: FamilyMember | null) => void;
   setCurrentUser: (user: FamilyMember | null) => void;
   setFinancePasscode: (passcode: string) => void;
   setFinanceOnboardingComplete: (complete: boolean) => void;
+  setWeekPlanningServings: (servings: number) => void;
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   updateFamilyMember: (memberId: string, updates: Partial<FamilyMember>) => void;
   completeTask: (taskId: string) => void;
@@ -61,6 +67,9 @@ interface FamilyContextType {
   addShoppingItem: (item: Omit<ShoppingItem, 'id' | 'addedAt'>) => void;
   toggleShoppingItem: (itemId: string) => void;
   deleteShoppingItem: (itemId: string) => void;
+  addPantryItem: (item: Omit<PantryItem, 'id' | 'addedAt'>) => void;
+  updatePantryItem: (itemId: string, updates: Partial<PantryItem>) => void;
+  deletePantryItem: (itemId: string) => void;
   addFamilyNote: (note: Omit<FamilyNote, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateFamilyNote: (noteId: string, updates: Partial<FamilyNote>) => void;
   deleteFamilyNote: (noteId: string) => void;
@@ -78,6 +87,8 @@ interface FamilyContextType {
   getRemainingBudget: () => number;
   getMonthlyOverview: () => { income: number; fixed: number; variable: number; remaining: number };
   addIngredientsToShoppingList: (ingredients: string[]) => void;
+  addRecipeIngredientsToShoppingList: (meal: Meal) => Promise<{ added: number; skipped: string[] }>;
+  shareShoppingListText: () => Promise<void>;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -95,6 +106,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [savingsPots, setSavingsPots] = useState<SavingsPot[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
   const [familyNotes, setFamilyNotes] = useState<FamilyNote[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [dailySchedule, setDailySchedule] = useState<DailyScheduleItem[]>([]);
@@ -103,6 +115,23 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FamilyMember | null>(familyMembers[0]);
   const [financePasscode, setFinancePasscode] = useState<string | null>(null);
   const [financeOnboardingComplete, setFinanceOnboardingComplete] = useState(false);
+  const [weekPlanningServings, setWeekPlanningServingsState] = useState(2);
+
+  // Load pantry items and week planning servings on mount
+  useEffect(() => {
+    loadPantryItems().then(items => setPantryItems(items));
+    loadWeekPlanningServings().then(servings => setWeekPlanningServingsState(servings));
+  }, []);
+
+  // Save pantry items whenever they change
+  useEffect(() => {
+    savePantryItems(pantryItems);
+  }, [pantryItems]);
+
+  const setWeekPlanningServings = (servings: number) => {
+    setWeekPlanningServingsState(servings);
+    saveWeekPlanningServings(servings);
+  };
 
   const addFamilyMember = (member: Omit<FamilyMember, 'id'>) => {
     const newMember: FamilyMember = {
@@ -305,6 +334,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     const newMeal: Meal = {
       ...meal,
       id: Date.now().toString(),
+      baseServings: meal.servings || 2,
     };
     setMeals(prev => [...prev, newMeal]);
   };
@@ -381,6 +411,25 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const deleteShoppingItem = (itemId: string) => {
     setShoppingList(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addPantryItem = (item: Omit<PantryItem, 'id' | 'addedAt'>) => {
+    const newItem: PantryItem = {
+      ...item,
+      id: Date.now().toString(),
+      addedAt: new Date(),
+    };
+    setPantryItems(prev => [...prev, newItem]);
+  };
+
+  const updatePantryItem = (itemId: string, updates: Partial<PantryItem>) => {
+    setPantryItems(prev =>
+      prev.map(item => (item.id === itemId ? { ...item, ...updates } : item))
+    );
+  };
+
+  const deletePantryItem = (itemId: string) => {
+    setPantryItems(prev => prev.filter(item => item.id !== itemId));
   };
 
   const addFamilyNote = (note: Omit<FamilyNote, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -507,6 +556,87 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const addRecipeIngredientsToShoppingList = async (meal: Meal): Promise<{ added: number; skipped: string[] }> => {
+    if (!meal.ingredients || meal.ingredients.length === 0) {
+      return { added: 0, skipped: [] };
+    }
+
+    const skippedItems: string[] = [];
+    let addedCount = 0;
+
+    // Create a map of pantry items for quick lookup (case-insensitive)
+    const pantryMap = new Map<string, PantryItem>();
+    pantryItems.forEach(item => {
+      pantryMap.set(item.name.toLowerCase(), item);
+    });
+
+    // Process each ingredient
+    for (const ingredient of meal.ingredients) {
+      // Check if ingredient is in pantry
+      if (pantryMap.has(ingredient.name.toLowerCase())) {
+        skippedItems.push(ingredient.name);
+        continue;
+      }
+
+      // Scale ingredient based on weekPlanningServings
+      let scaledQuantity = ingredient.quantity;
+      const baseServings = meal.baseServings || 2;
+      
+      // Only scale if it's a numeric ingredient (not textual like "snufje")
+      if (!shouldNotScale(`${ingredient.quantity} ${ingredient.unit} ${ingredient.name}`)) {
+        scaledQuantity = ingredient.quantity * (weekPlanningServings / baseServings);
+      }
+
+      // Check if item already exists in shopping list
+      const existingItem = shoppingList.find(
+        item => item.name.toLowerCase() === ingredient.name.toLowerCase() &&
+                item.unit === ingredient.unit &&
+                item.category === ingredient.category
+      );
+
+      if (existingItem) {
+        // Merge quantities
+        const newQuantity = (existingItem.quantity || 0) + scaledQuantity;
+        setShoppingList(prev =>
+          prev.map(item =>
+            item.id === existingItem.id
+              ? { ...item, quantity: newQuantity }
+              : item
+          )
+        );
+      } else {
+        // Add new item
+        addShoppingItem({
+          name: ingredient.name,
+          quantity: scaledQuantity,
+          unit: ingredient.unit,
+          category: ingredient.category,
+          completed: false,
+          addedBy: currentUser?.id || '',
+        });
+      }
+      
+      addedCount++;
+    }
+
+    return { added: addedCount, skipped: skippedItems };
+  };
+
+  const shareShoppingListText = async () => {
+    try {
+      const { generateShoppingListText } = await import('@/utils/pdfGenerator');
+      const text = generateShoppingListText(shoppingList.filter(item => !item.completed));
+      
+      await Share.share({
+        message: text,
+        title: 'Flow Fam Boodschappenlijst',
+      });
+    } catch (error) {
+      console.error('Error sharing shopping list:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het delen van de boodschappenlijst');
+    }
+  };
+
   return (
     <FamilyContext.Provider
       value={{
@@ -522,6 +652,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         savingsPots,
         memories,
         shoppingList,
+        pantryItems,
         familyNotes,
         reminders,
         dailySchedule,
@@ -530,10 +661,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         currentUser,
         financePasscode,
         financeOnboardingComplete,
+        weekPlanningServings,
         setSelectedMember,
         setCurrentUser,
         setFinancePasscode,
         setFinanceOnboardingComplete,
+        setWeekPlanningServings,
         addFamilyMember,
         updateFamilyMember,
         completeTask,
@@ -567,6 +700,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         addShoppingItem,
         toggleShoppingItem,
         deleteShoppingItem,
+        addPantryItem,
+        updatePantryItem,
+        deletePantryItem,
         addFamilyNote,
         updateFamilyNote,
         deleteFamilyNote,
@@ -584,6 +720,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         getRemainingBudget,
         getMonthlyOverview,
         addIngredientsToShoppingList,
+        addRecipeIngredientsToShoppingList,
+        shareShoppingListText,
       }}
     >
       {children}

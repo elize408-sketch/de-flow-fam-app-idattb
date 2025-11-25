@@ -4,7 +4,6 @@ export interface FamilyMember {
   name: string;
   role: 'parent' | 'child';
   avatar?: string;
-  photoUri?: string;
   coins: number;
   color: string;
 }
@@ -16,18 +15,15 @@ export interface Task {
   coins: number;
   assignedTo: string;
   completed: boolean;
-  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none' | 'weekdays';
-  weekdays?: number[];
+  recurring: 'daily' | 'weekly' | 'monthly' | 'none';
   completedCount: number;
-  createdBy?: string;
 }
 
 export interface Reward {
   id: string;
   name: string;
-  icon: string;
   cost: number;
-  description: string;
+  icon: string;
 }
 
 export interface Appointment {
@@ -35,12 +31,11 @@ export interface Appointment {
   title: string;
   date: Date;
   time: string;
-  endTime?: string;
   assignedTo: string[];
   color: string;
-  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none' | 'weekdays';
-  weekdays?: number[];
-  description?: string;
+  recurring: 'none' | 'daily' | 'weekly' | 'monthly';
+  location?: string;
+  notes?: string;
 }
 
 export interface HouseholdTask {
@@ -49,10 +44,6 @@ export interface HouseholdTask {
   assignedTo: string;
   completed: boolean;
   dueDate?: Date;
-  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
-  icon?: string;
-  notes?: string;
-  type?: 'regular' | 'repair';
 }
 
 export interface Expense {
@@ -60,18 +51,20 @@ export interface Expense {
   name: string;
   amount: number;
   category: 'fixed' | 'variable';
-  variableCategory?: 'boodschappen' | 'benzine' | 'kleding' | 'entertainment' | 'overig';
+  variableCategory?: 'boodschappen' | 'kleding' | 'vervoer' | 'entertainment' | 'overig';
   date: Date;
   paid: boolean;
-  recurring?: boolean;
+  recurring: boolean;
+  recurringFrequency?: 'weekly' | 'monthly' | 'yearly';
 }
 
 export interface Income {
   id: string;
   name: string;
   amount: number;
-  type: 'salary' | 'partner' | 'benefits' | 'other';
-  resetDate?: number;
+  date: Date;
+  recurring: boolean;
+  recurringFrequency?: 'weekly' | 'monthly' | 'yearly';
 }
 
 export interface Receipt {
@@ -79,55 +72,73 @@ export interface Receipt {
   imageUri: string;
   amount: number;
   date: Date;
-  category: string;
+  category?: string;
 }
+
+export interface Ingredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  category: IngredientCategory;
+}
+
+export type IngredientCategory = 
+  | 'groente'
+  | 'fruit'
+  | 'zuivel'
+  | 'vlees_vis'
+  | 'droge_voorraad'
+  | 'koelkast'
+  | 'diepvries'
+  | 'overig';
 
 export interface Meal {
   id: string;
   name: string;
   type: 'breakfast' | 'lunch' | 'dinner';
-  date?: Date;
-  recipe?: string;
-  ingredients?: string[];
+  ingredients?: Ingredient[];
   instructions?: string;
   prepTime?: number;
   servings?: number;
+  baseServings?: number;
   photoUri?: string;
 }
 
 export interface SavingsPot {
   id: string;
   name: string;
-  goalAmount: number;
+  targetAmount: number;
   currentAmount: number;
-  monthlyDeposit: number;
   color: string;
   icon: string;
-  targetDate?: Date;
-  photoUri?: string;
 }
 
 export interface Memory {
   id: string;
   title: string;
-  description: string;
-  photoUri: string;
+  description?: string;
   date: Date;
-  tags?: string[];
-  assignedTo?: string;
-}
-
-export interface PhotoBookOrder {
-  size: 'small' | 'medium' | 'large';
-  price: number;
-  memories: Memory[];
+  photos: string[];
+  createdBy: string;
 }
 
 export interface ShoppingItem {
   id: string;
   name: string;
+  quantity?: number;
+  unit?: string;
+  category?: IngredientCategory;
   completed: boolean;
   addedBy: string;
+  addedAt: Date;
+}
+
+export interface PantryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  category: IngredientCategory;
   addedAt: Date;
 }
 
@@ -138,7 +149,7 @@ export interface FamilyNote {
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
-  sharedWith?: string[];
+  color?: string;
 }
 
 export interface Reminder {
@@ -149,25 +160,22 @@ export interface Reminder {
   time: string;
   assignedTo: string[];
   completed: boolean;
-  createdBy: string;
-  photoUri?: string;
 }
 
 export interface DailyScheduleItem {
   id: string;
-  childId: string;
-  icon: string;
-  label: string;
-  time?: string;
-  date: Date;
+  time: string;
+  activity: string;
+  assignedTo: string[];
+  recurring: boolean;
 }
 
 export interface Notification {
   id: string;
-  type: 'task' | 'shopping' | 'note' | 'appointment' | 'finance';
+  type: 'task' | 'appointment' | 'finance' | 'shopping' | 'note';
   title: string;
   message: string;
-  createdBy: string;
   createdAt: Date;
   read: boolean;
+  createdBy: string;
 }

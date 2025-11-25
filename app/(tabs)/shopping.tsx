@@ -1,16 +1,36 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import { ShoppingItem, PantryItem, IngredientCategory } from '@/types/family';
+import { CATEGORY_ORDER, CATEGORY_LABELS, categorizeIngredient, parseIngredient } from '@/utils/ingredientCategories';
+import { generateShoppingListPDF } from '@/utils/pdfGenerator';
+
+type TabType = 'shopping' | 'pantry';
 
 export default function ShoppingScreen() {
   const router = useRouter();
-  const { shoppingList, addShoppingItem, toggleShoppingItem, deleteShoppingItem, currentUser } = useFamily();
+  const { 
+    shoppingList, 
+    addShoppingItem, 
+    toggleShoppingItem, 
+    deleteShoppingItem,
+    pantryItems,
+    addPantryItem,
+    updatePantryItem,
+    deletePantryItem,
+    currentUser,
+    shareShoppingListText,
+  } = useFamily();
+  
+  const [activeTab, setActiveTab] = useState<TabType>('shopping');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [newItemUnit, setNewItemUnit] = useState('');
 
   const handleAddItem = () => {
     if (!newItemName.trim()) {
@@ -18,19 +38,84 @@ export default function ShoppingScreen() {
       return;
     }
 
-    addShoppingItem({
-      name: newItemName.trim(),
-      completed: false,
-      addedBy: currentUser?.id || '',
-    });
+    const parsed = parseIngredient(`${newItemQuantity} ${newItemUnit} ${newItemName}`.trim());
+    const category = categorizeIngredient(parsed.name);
+
+    if (activeTab === 'shopping') {
+      addShoppingItem({
+        name: parsed.name,
+        quantity: parsed.quantity,
+        unit: parsed.unit,
+        category,
+        completed: false,
+        addedBy: currentUser?.id || '',
+      });
+      Alert.alert('Gelukt!', 'Item toegevoegd aan boodschappenlijst');
+    } else {
+      addPantryItem({
+        name: parsed.name,
+        quantity: parsed.quantity,
+        unit: parsed.unit,
+        category,
+      });
+      Alert.alert('Gelukt!', 'Item toegevoegd aan voorraadkast');
+    }
 
     setNewItemName('');
+    setNewItemQuantity('');
+    setNewItemUnit('');
     setShowAddModal(false);
-    Alert.alert('Gelukt!', 'Item toegevoegd aan boodschappenlijst');
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const activeItems = shoppingList.filter(item => !item.completed);
+      if (activeItems.length === 0) {
+        Alert.alert('Geen items', 'Je boodschappenlijst is leeg');
+        return;
+      }
+      
+      await generateShoppingListPDF(activeItems);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het exporteren van de PDF');
+    }
+  };
+
+  const handleShareText = async () => {
+    try {
+      const activeItems = shoppingList.filter(item => !item.completed);
+      if (activeItems.length === 0) {
+        Alert.alert('Geen items', 'Je boodschappenlijst is leeg');
+        return;
+      }
+      
+      await shareShoppingListText();
+    } catch (error) {
+      console.error('Error sharing text:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het delen van de lijst');
+    }
+  };
+
+  // Group items by category
+  const groupItemsByCategory = (items: (ShoppingItem | PantryItem)[]) => {
+    const grouped: { [key in IngredientCategory]?: (ShoppingItem | PantryItem)[] } = {};
+    
+    items.forEach(item => {
+      const category = item.category || 'overig';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category]!.push(item);
+    });
+    
+    return grouped;
   };
 
   const activeItems = shoppingList.filter(item => !item.completed);
   const completedItems = shoppingList.filter(item => item.completed);
+  const groupedActiveItems = groupItemsByCategory(activeItems);
+  const groupedPantryItems = groupItemsByCategory(pantryItems);
 
   return (
     <View style={styles.container}>
@@ -56,117 +141,276 @@ export default function ShoppingScreen() {
           <View style={styles.placeholder} />
         </View>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setShowAddModal(true)}
-        >
-          <IconSymbol
-            ios_icon_name="plus"
-            android_material_icon_name="add"
-            size={24}
-            color={colors.card}
-          />
-          <Text style={styles.addButtonText}>Item toevoegen</Text>
-        </TouchableOpacity>
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'shopping' && styles.tabActive]}
+            onPress={() => setActiveTab('shopping')}
+          >
+            <IconSymbol
+              ios_icon_name="cart"
+              android_material_icon_name="shopping-cart"
+              size={20}
+              color={activeTab === 'shopping' ? colors.card : colors.text}
+            />
+            <Text style={[styles.tabText, activeTab === 'shopping' && styles.tabTextActive]}>
+              Boodschappenlijst
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'pantry' && styles.tabActive]}
+            onPress={() => setActiveTab('pantry')}
+          >
+            <IconSymbol
+              ios_icon_name="archivebox"
+              android_material_icon_name="inventory-2"
+              size={20}
+              color={activeTab === 'pantry' ? colors.card : colors.text}
+            />
+            <Text style={[styles.tabText, activeTab === 'pantry' && styles.tabTextActive]}>
+              Voorraadkast
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-        {shoppingList.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateEmoji}>🛒</Text>
-            <Text style={styles.emptyStateText}>Nog geen items</Text>
-            <Text style={styles.emptyStateSubtext}>Voeg je eerste item toe!</Text>
-          </View>
-        ) : (
+        {activeTab === 'shopping' && (
           <>
-            {activeItems.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Te kopen ({activeItems.length})</Text>
-                {activeItems.map((item, index) => (
-                  <React.Fragment key={index}>
-                    <View style={styles.itemCard}>
-                      <TouchableOpacity
-                        style={styles.checkbox}
-                        onPress={() => toggleShoppingItem(item.id)}
-                      >
-                        <View style={styles.checkboxInner}>
-                          {item.completed && (
-                            <IconSymbol
-                              ios_icon_name="checkmark"
-                              android_material_icon_name="check"
-                              size={16}
-                              color={colors.card}
-                            />
-                          )}
-                        </View>
-                      </TouchableOpacity>
+            {/* Export/Share Buttons */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.vibrantPurple }]}
+                onPress={handleExportPDF}
+              >
+                <IconSymbol
+                  ios_icon_name="doc-text"
+                  android_material_icon_name="picture-as-pdf"
+                  size={20}
+                  color={colors.card}
+                />
+                <Text style={styles.actionButtonText}>Exporteer als PDF</Text>
+              </TouchableOpacity>
 
-                      <View style={styles.itemInfo}>
-                        <Text style={styles.itemName}>{item.name}</Text>
-                      </View>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.vibrantBlue }]}
+                onPress={handleShareText}
+              >
+                <IconSymbol
+                  ios_icon_name="square-and-arrow-up"
+                  android_material_icon_name="share"
+                  size={20}
+                  color={colors.card}
+                />
+                <Text style={styles.actionButtonText}>Deel lijst</Text>
+              </TouchableOpacity>
+            </View>
 
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => {
-                          Alert.alert(
-                            'Verwijderen?',
-                            `Weet je zeker dat je "${item.name}" wilt verwijderen?`,
-                            [
-                              { text: 'Annuleren', style: 'cancel' },
-                              { text: 'Verwijderen', onPress: () => deleteShoppingItem(item.id), style: 'destructive' },
-                            ]
-                          );
-                        }}
-                      >
-                        <IconSymbol
-                          ios_icon_name="trash"
-                          android_material_icon_name="delete"
-                          size={20}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </React.Fragment>
-                ))}
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setShowAddModal(true)}
+            >
+              <IconSymbol
+                ios_icon_name="plus"
+                android_material_icon_name="add"
+                size={24}
+                color={colors.card}
+              />
+              <Text style={styles.addButtonText}>Item toevoegen</Text>
+            </TouchableOpacity>
+
+            {shoppingList.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateEmoji}>🛒</Text>
+                <Text style={styles.emptyStateText}>Nog geen items</Text>
+                <Text style={styles.emptyStateSubtext}>Voeg je eerste item toe!</Text>
               </View>
-            )}
+            ) : (
+              <>
+                {activeItems.length > 0 && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Te kopen ({activeItems.length})</Text>
+                    
+                    {CATEGORY_ORDER.map((category, catIndex) => {
+                      const categoryItems = groupedActiveItems[category];
+                      if (!categoryItems || categoryItems.length === 0) return null;
+                      
+                      return (
+                        <React.Fragment key={catIndex}>
+                          <View style={styles.categorySection}>
+                            <Text style={styles.categoryTitle}>{CATEGORY_LABELS[category]}</Text>
+                            {categoryItems.map((item, index) => (
+                              <React.Fragment key={index}>
+                                <View style={styles.itemCard}>
+                                  <TouchableOpacity
+                                    style={styles.checkbox}
+                                    onPress={() => toggleShoppingItem(item.id)}
+                                  >
+                                    <View style={styles.checkboxInner}>
+                                      {(item as ShoppingItem).completed && (
+                                        <IconSymbol
+                                          ios_icon_name="checkmark"
+                                          android_material_icon_name="check"
+                                          size={16}
+                                          color={colors.card}
+                                        />
+                                      )}
+                                    </View>
+                                  </TouchableOpacity>
 
-            {completedItems.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Gekocht ({completedItems.length})</Text>
-                {completedItems.map((item, index) => (
-                  <React.Fragment key={index}>
-                    <View style={[styles.itemCard, styles.itemCardCompleted]}>
-                      <TouchableOpacity
-                        style={styles.checkbox}
-                        onPress={() => toggleShoppingItem(item.id)}
-                      >
-                        <View style={[styles.checkboxInner, styles.checkboxChecked]}>
-                          <IconSymbol
-                            ios_icon_name="checkmark"
-                            android_material_icon_name="check"
-                            size={16}
-                            color={colors.card}
-                          />
+                                  <View style={styles.itemInfo}>
+                                    <Text style={styles.itemName}>
+                                      {item.quantity && item.unit ? `${item.quantity} ${item.unit} ` : ''}
+                                      {item.name}
+                                    </Text>
+                                  </View>
+
+                                  <TouchableOpacity
+                                    style={styles.deleteButton}
+                                    onPress={() => {
+                                      Alert.alert(
+                                        'Verwijderen?',
+                                        `Weet je zeker dat je "${item.name}" wilt verwijderen?`,
+                                        [
+                                          { text: 'Annuleren', style: 'cancel' },
+                                          { text: 'Verwijderen', onPress: () => deleteShoppingItem(item.id), style: 'destructive' },
+                                        ]
+                                      );
+                                    }}
+                                  >
+                                    <IconSymbol
+                                      ios_icon_name="trash"
+                                      android_material_icon_name="delete"
+                                      size={20}
+                                      color={colors.textSecondary}
+                                    />
+                                  </TouchableOpacity>
+                                </View>
+                              </React.Fragment>
+                            ))}
+                          </View>
+                        </React.Fragment>
+                      );
+                    })}
+                  </View>
+                )}
+
+                {completedItems.length > 0 && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Gekocht ({completedItems.length})</Text>
+                    {completedItems.map((item, index) => (
+                      <React.Fragment key={index}>
+                        <View style={[styles.itemCard, styles.itemCardCompleted]}>
+                          <TouchableOpacity
+                            style={styles.checkbox}
+                            onPress={() => toggleShoppingItem(item.id)}
+                          >
+                            <View style={[styles.checkboxInner, styles.checkboxChecked]}>
+                              <IconSymbol
+                                ios_icon_name="checkmark"
+                                android_material_icon_name="check"
+                                size={16}
+                                color={colors.card}
+                              />
+                            </View>
+                          </TouchableOpacity>
+
+                          <View style={styles.itemInfo}>
+                            <Text style={[styles.itemName, styles.itemNameCompleted]}>
+                              {item.quantity && item.unit ? `${item.quantity} ${item.unit} ` : ''}
+                              {item.name}
+                            </Text>
+                          </View>
+
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => deleteShoppingItem(item.id)}
+                          >
+                            <IconSymbol
+                              ios_icon_name="trash"
+                              android_material_icon_name="delete"
+                              size={20}
+                              color={colors.textSecondary}
+                            />
+                          </TouchableOpacity>
                         </View>
-                      </TouchableOpacity>
+                      </React.Fragment>
+                    ))}
+                  </View>
+                )}
+              </>
+            )}
+          </>
+        )}
 
-                      <View style={styles.itemInfo}>
-                        <Text style={[styles.itemName, styles.itemNameCompleted]}>{item.name}</Text>
+        {activeTab === 'pantry' && (
+          <>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setShowAddModal(true)}
+            >
+              <IconSymbol
+                ios_icon_name="plus"
+                android_material_icon_name="add"
+                size={24}
+                color={colors.card}
+              />
+              <Text style={styles.addButtonText}>Item toevoegen</Text>
+            </TouchableOpacity>
+
+            {pantryItems.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateEmoji}>🏺</Text>
+                <Text style={styles.emptyStateText}>Nog geen items</Text>
+                <Text style={styles.emptyStateSubtext}>Voeg je eerste item toe aan de voorraadkast!</Text>
+              </View>
+            ) : (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Voorraad ({pantryItems.length})</Text>
+                
+                {CATEGORY_ORDER.map((category, catIndex) => {
+                  const categoryItems = groupedPantryItems[category];
+                  if (!categoryItems || categoryItems.length === 0) return null;
+                  
+                  return (
+                    <React.Fragment key={catIndex}>
+                      <View style={styles.categorySection}>
+                        <Text style={styles.categoryTitle}>{CATEGORY_LABELS[category]}</Text>
+                        {categoryItems.map((item, index) => (
+                          <React.Fragment key={index}>
+                            <View style={styles.itemCard}>
+                              <View style={styles.itemInfo}>
+                                <Text style={styles.itemName}>
+                                  {item.quantity} {item.unit} {item.name}
+                                </Text>
+                              </View>
+
+                              <TouchableOpacity
+                                style={styles.deleteButton}
+                                onPress={() => {
+                                  Alert.alert(
+                                    'Verwijderen?',
+                                    `Weet je zeker dat je "${item.name}" wilt verwijderen?`,
+                                    [
+                                      { text: 'Annuleren', style: 'cancel' },
+                                      { text: 'Verwijderen', onPress: () => deletePantryItem(item.id), style: 'destructive' },
+                                    ]
+                                  );
+                                }}
+                              >
+                                <IconSymbol
+                                  ios_icon_name="trash"
+                                  android_material_icon_name="delete"
+                                  size={20}
+                                  color={colors.textSecondary}
+                                />
+                              </TouchableOpacity>
+                            </View>
+                          </React.Fragment>
+                        ))}
                       </View>
-
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => deleteShoppingItem(item.id)}
-                      >
-                        <IconSymbol
-                          ios_icon_name="trash"
-                          android_material_icon_name="delete"
-                          size={20}
-                          color={colors.textSecondary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </React.Fragment>
-                ))}
+                    </React.Fragment>
+                  );
+                })}
               </View>
             )}
           </>
@@ -181,16 +425,41 @@ export default function ShoppingScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nieuw item</Text>
+            <Text style={styles.modalTitle}>
+              {activeTab === 'shopping' ? 'Nieuw boodschappen item' : 'Nieuw voorraad item'}
+            </Text>
 
             <TextInput
               style={styles.input}
-              placeholder="Bijv. Melk, Brood, Eieren..."
+              placeholder="Naam (bijv. Melk, Brood, Eieren)"
               placeholderTextColor={colors.textSecondary}
               value={newItemName}
               onChangeText={setNewItemName}
               autoFocus
             />
+
+            <View style={styles.quantityRow}>
+              <TextInput
+                style={[styles.input, styles.quantityInput]}
+                placeholder="Aantal"
+                placeholderTextColor={colors.textSecondary}
+                value={newItemQuantity}
+                onChangeText={setNewItemQuantity}
+                keyboardType="numeric"
+              />
+              
+              <TextInput
+                style={[styles.input, styles.unitInput]}
+                placeholder="Eenheid"
+                placeholderTextColor={colors.textSecondary}
+                value={newItemUnit}
+                onChangeText={setNewItemUnit}
+              />
+            </View>
+
+            <Text style={styles.helperText}>
+              Bijvoorbeeld: 1 liter, 500 gram, 2 stuks
+            </Text>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -198,6 +467,8 @@ export default function ShoppingScreen() {
                 onPress={() => {
                   setShowAddModal(false);
                   setNewItemName('');
+                  setNewItemQuantity('');
+                  setNewItemUnit('');
                 }}
               >
                 <Text style={styles.modalButtonText}>Annuleren</Text>
@@ -263,6 +534,59 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
     textAlign: 'center',
   },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 5,
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    gap: 8,
+  },
+  tabActive: {
+    backgroundColor: colors.vibrantOrange,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  tabTextActive: {
+    color: colors.card,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 15,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 15,
+    padding: 12,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  actionButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.card,
+    fontFamily: 'Poppins_600SemiBold',
+  },
   addButton: {
     backgroundColor: colors.vibrantOrange,
     borderRadius: 20,
@@ -304,6 +628,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
   },
   section: {
     marginBottom: 30,
@@ -313,6 +638,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     marginBottom: 15,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  categorySection: {
+    marginBottom: 20,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.accent,
+    marginBottom: 10,
     fontFamily: 'Poppins_600SemiBold',
   },
   itemCard: {
@@ -389,8 +724,25 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 16,
     color: colors.text,
+    marginBottom: 15,
+    fontFamily: 'Nunito_400Regular',
+  },
+  quantityRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quantityInput: {
+    flex: 1,
+  },
+  unitInput: {
+    flex: 1,
+  },
+  helperText: {
+    fontSize: 12,
+    color: colors.textSecondary,
     marginBottom: 20,
     fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
   },
   modalButtons: {
     flexDirection: 'row',
