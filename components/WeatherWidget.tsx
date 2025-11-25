@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
 import { colors } from '@/styles/commonStyles';
@@ -34,11 +34,7 @@ export default function WeatherWidget({ compact = false, onPress }: WeatherWidge
   const [error, setError] = useState<string | null>(null);
   const [showForecast, setShowForecast] = useState(false);
 
-  useEffect(() => {
-    getWeather();
-  }, []);
-
-  const getWeather = async () => {
+  const getWeather = useCallback(async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       
@@ -96,7 +92,11 @@ export default function WeatherWidget({ compact = false, onPress }: WeatherWidge
       setError('Kon weer niet ophalen');
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    getWeather();
+  }, [getWeather]);
 
   const getWeatherInfo = (code: number) => {
     if (code === 0) return { condition: 'Helder', icon: 'wb-sunny', description: 'Mooi weer!' };

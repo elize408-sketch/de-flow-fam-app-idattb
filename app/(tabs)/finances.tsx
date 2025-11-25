@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image, Picker } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -81,7 +81,7 @@ export default function FinancesScreen() {
     if (isUnlocked && financeResetDay) {
       checkAndPerformMonthlyReset();
     }
-  }, [isUnlocked, financeResetDay]);
+  }, [isUnlocked, financeResetDay, checkAndPerformMonthlyReset]);
 
   // Check if user needs to set or enter passcode
   if (!isParent) {

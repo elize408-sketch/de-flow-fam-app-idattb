@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
@@ -158,9 +158,9 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
         onSelectIcon(suggested);
       }
     }
-  }, [taskName]);
+  }, [taskName, type, selectedIcon, onSelectIcon]);
 
-  const renderIcon = (icon: IconOption, isActive: boolean) => {
+  const renderIcon = useCallback((icon: IconOption, isActive: boolean) => {
     const iconColor = isActive ? colors.card : colors.text;
     
     if (icon.isCustom && icon.customImage) {
@@ -184,7 +184,7 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
         color={iconColor}
       />
     );
-  };
+  }, []);
 
   return (
     <View style={styles.container}>

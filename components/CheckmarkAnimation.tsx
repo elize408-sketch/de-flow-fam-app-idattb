@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 
@@ -9,8 +9,8 @@ interface CheckmarkAnimationProps {
 }
 
 export default function CheckmarkAnimation({ visible, onComplete }: CheckmarkAnimationProps) {
-  const scaleAnim = new Animated.Value(0);
-  const opacityAnim = new Animated.Value(0);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
@@ -43,7 +43,7 @@ export default function CheckmarkAnimation({ visible, onComplete }: CheckmarkAni
         onComplete();
       });
     }
-  }, [visible]);
+  }, [visible, onComplete, scaleAnim, opacityAnim]);
 
   if (!visible) return null;
 

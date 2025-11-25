@@ -62,7 +62,7 @@ function CoinAnimation({ delay, index }: { delay: number; index: number }) {
     setTimeout(() => {
       opacity.value = withTiming(0, { duration: 300 });
     }, delay + 1500);
-  }, []);
+  }, [delay, opacity, rotate, translateX, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -117,7 +117,7 @@ export default function TaskCompletionAnimation({
 
       return () => clearTimeout(timer);
     }
-  }, [visible]);
+  }, [visible, onComplete, opacity, scale, smileyScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
