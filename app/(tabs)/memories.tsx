@@ -163,7 +163,7 @@ Een Flow Fam gebruiker
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Herinneringen</Text>
+          <Text style={styles.title}>Fotoboek</Text>
           <Text style={styles.subtitle}>Jouw gezinsblog</Text>
         </View>
 

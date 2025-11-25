@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Animated, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -9,6 +9,16 @@ import CheckmarkAnimation from '@/components/CheckmarkAnimation';
 import * as ImagePicker from 'expo-image-picker';
 import * as Calendar from 'expo-calendar';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+const DAYS_OF_WEEK = [
+  { key: 'monday', label: 'Maandag' },
+  { key: 'tuesday', label: 'Dinsdag' },
+  { key: 'wednesday', label: 'Woensdag' },
+  { key: 'thursday', label: 'Donderdag' },
+  { key: 'friday', label: 'Vrijdag' },
+  { key: 'saturday', label: 'Zaterdag' },
+  { key: 'sunday', label: 'Zondag' },
+];
 
 export default function MealsScreen() {
   const router = useRouter();
@@ -36,7 +46,63 @@ export default function MealsScreen() {
   const [planTime, setPlanTime] = useState('18:00');
   const [showDatePicker, setShowDatePicker] = useState(false);
   
+  // Week planning state
+  const [weekPlanning, setWeekPlanning] = useState<{ [key: string]: any }>({});
+  const [showRecipeSelector, setShowRecipeSelector] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<string>('');
+  
   const buttonScale = useRef(new Animated.Value(1)).current;
+
+  // Load week planning on mount
+  useEffect(() => {
+    loadWeekPlanning();
+  }, []);
+
+  const loadWeekPlanning = async () => {
+    // TODO: Load from Supabase when user authentication is implemented
+    // For now, use local state
+    console.log('Loading week planning...');
+  };
+
+  const handleSelectRecipeForDay = (day: string) => {
+    setSelectedDay(day);
+    setShowRecipeSelector(true);
+  };
+
+  const handleAssignRecipeToDay = (recipe: any) => {
+    setWeekPlanning(prev => ({
+      ...prev,
+      [selectedDay]: recipe,
+    }));
+    setShowRecipeSelector(false);
+    setSelectedDay('');
+    
+    // TODO: Save to Supabase when user authentication is implemented
+    console.log(`Assigned ${recipe.name} to ${selectedDay}`);
+    Alert.alert('Gelukt!', `${recipe.name} is toegevoegd aan ${DAYS_OF_WEEK.find(d => d.key === selectedDay)?.label}`);
+  };
+
+  const handleRemoveRecipeFromDay = (day: string) => {
+    Alert.alert(
+      'Verwijderen?',
+      'Weet je zeker dat je dit recept wilt verwijderen uit de weekplanning?',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Verwijderen',
+          onPress: () => {
+            setWeekPlanning(prev => {
+              const newPlanning = { ...prev };
+              delete newPlanning[day];
+              return newPlanning;
+            });
+            Alert.alert('Verwijderd', 'Recept is verwijderd uit de weekplanning');
+          },
+          style: 'destructive',
+        },
+      ]
+    );
+  };
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -384,12 +450,142 @@ export default function MealsScreen() {
             ))
           )}
         </View>
+
+        {/* Week Planning Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Weekplanning – Diner</Text>
+          {DAYS_OF_WEEK.map((day, index) => {
+            const assignedRecipe = weekPlanning[day.key];
+            return (
+              <React.Fragment key={index}>
+                <View style={styles.dayCard}>
+                  <View style={styles.dayCardHeader}>
+                    <Text style={styles.dayCardTitle}>{day.label}</Text>
+                    <Text style={styles.dayCardSubtitle}>Diner:</Text>
+                  </View>
+                  
+                  {assignedRecipe ? (
+                    <View style={styles.assignedRecipeContainer}>
+                      <TouchableOpacity
+                        style={styles.assignedRecipe}
+                        onPress={() => openDetailModal(assignedRecipe)}
+                      >
+                        {assignedRecipe.photoUri ? (
+                          <Image source={{ uri: assignedRecipe.photoUri }} style={styles.assignedRecipePhoto} />
+                        ) : (
+                          <View style={styles.assignedRecipeIcon}>
+                            <Text style={styles.assignedRecipeIconEmoji}>🍽️</Text>
+                          </View>
+                        )}
+                        <View style={styles.assignedRecipeInfo}>
+                          <Text style={styles.assignedRecipeName}>{assignedRecipe.name}</Text>
+                          {assignedRecipe.prepTime && (
+                            <Text style={styles.assignedRecipeMeta}>⏱️ {assignedRecipe.prepTime} min</Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.removeRecipeButton}
+                        onPress={() => handleRemoveRecipeFromDay(day.key)}
+                      >
+                        <IconSymbol
+                          ios_icon_name="xmark-circle"
+                          android_material_icon_name="cancel"
+                          size={24}
+                          color={colors.textSecondary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.selectRecipeButton}
+                      onPress={() => handleSelectRecipeForDay(day.key)}
+                    >
+                      <IconSymbol
+                        ios_icon_name="plus-circle"
+                        android_material_icon_name="add-circle"
+                        size={20}
+                        color={colors.accent}
+                      />
+                      <Text style={styles.selectRecipeButtonText}>Kies recept</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </React.Fragment>
+            );
+          })}
+        </View>
       </ScrollView>
 
       <CheckmarkAnimation
         visible={showCheckmarkAnimation}
         onComplete={() => setShowCheckmarkAnimation(false)}
       />
+
+      {/* Recipe Selector Modal */}
+      <Modal
+        visible={showRecipeSelector}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowRecipeSelector(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Kies een recept</Text>
+            <Text style={styles.modalSubtitle}>
+              Voor {DAYS_OF_WEEK.find(d => d.key === selectedDay)?.label}
+            </Text>
+
+            <ScrollView style={styles.recipeList}>
+              {meals.length === 0 ? (
+                <View style={styles.emptyRecipeList}>
+                  <Text style={styles.emptyRecipeListText}>Geen recepten beschikbaar</Text>
+                  <Text style={styles.emptyRecipeListSubtext}>Voeg eerst recepten toe</Text>
+                </View>
+              ) : (
+                meals.map((meal, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={styles.recipeListItem}
+                      onPress={() => handleAssignRecipeToDay(meal)}
+                    >
+                      {meal.photoUri ? (
+                        <Image source={{ uri: meal.photoUri }} style={styles.recipeListPhoto} />
+                      ) : (
+                        <View style={styles.recipeListIcon}>
+                          <Text style={styles.recipeListIconEmoji}>🍽️</Text>
+                        </View>
+                      )}
+                      <View style={styles.recipeListInfo}>
+                        <Text style={styles.recipeListName}>{meal.name}</Text>
+                        {meal.prepTime && (
+                          <Text style={styles.recipeListMeta}>⏱️ {meal.prepTime} min</Text>
+                        )}
+                      </View>
+                      <IconSymbol
+                        ios_icon_name="chevron-right"
+                        android_material_icon_name="chevron-right"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonCancel]}
+              onPress={() => {
+                setShowRecipeSelector(false);
+                setSelectedDay('');
+              }}
+            >
+              <Text style={styles.modalButtonText}>Annuleren</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Recipe Detail Modal */}
       <Modal
@@ -1030,6 +1226,96 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 10,
   },
+  dayCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 12,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  dayCardHeader: {
+    marginBottom: 10,
+  },
+  dayCardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  dayCardSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  selectRecipeButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.accent,
+    borderStyle: 'dashed',
+  },
+  selectRecipeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.accent,
+    marginLeft: 8,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  assignedRecipeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  assignedRecipe: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  assignedRecipePhoto: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  assignedRecipeIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  assignedRecipeIconEmoji: {
+    fontSize: 24,
+  },
+  assignedRecipeInfo: {
+    flex: 1,
+  },
+  assignedRecipeName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  assignedRecipeMeta: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  removeRecipeButton: {
+    padding: 10,
+    marginLeft: 8,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1057,6 +1343,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 15,
+    fontFamily: 'Nunito_400Regular',
   },
   modalCloseButton: {
     position: 'absolute',
@@ -1136,6 +1429,67 @@ const styles = StyleSheet.create({
   },
   modalButtonTextConfirm: {
     color: colors.card,
+  },
+  recipeList: {
+    maxHeight: 400,
+    marginBottom: 15,
+  },
+  emptyRecipeList: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyRecipeListText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 5,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  emptyRecipeListSubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  recipeListItem: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  recipeListPhoto: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  recipeListIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  recipeListIconEmoji: {
+    fontSize: 24,
+  },
+  recipeListInfo: {
+    flex: 1,
+  },
+  recipeListName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  recipeListMeta: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
   },
   spinnerModal: {
     backgroundColor: colors.card,
