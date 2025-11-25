@@ -43,7 +43,6 @@ export default function ShopScreen() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.shopEmoji}>🛍️</Text>
         <Text style={styles.shopTitle}>Welkom bij de Flow Fam Shop!</Text>
         <Text style={styles.shopDescription}>
           Ontdek onze collectie producten die je helpen om meer rust, structuur en verbinding in je gezinsleven te brengen.
@@ -72,7 +71,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: 60,
+    paddingTop: 48,
     paddingHorizontal: 20,
   },
   headerRow: {
@@ -99,26 +98,23 @@ const styles = StyleSheet.create({
     width: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textSecondary,
     marginTop: 5,
     fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingBottom: 100,
-  },
-  shopEmoji: {
-    fontSize: 80,
-    marginBottom: 20,
   },
   shopTitle: {
     fontSize: 28,

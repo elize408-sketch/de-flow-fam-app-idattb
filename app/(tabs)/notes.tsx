@@ -76,6 +76,24 @@ export default function NotesScreen() {
     setShowEditModal(true);
   };
 
+  const handleDeleteNote = (noteId: string, noteTitle: string) => {
+    Alert.alert(
+      'Verwijderen?',
+      `Weet je zeker dat je "${noteTitle}" wilt verwijderen?`,
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        { 
+          text: 'Verwijderen', 
+          onPress: () => {
+            deleteFamilyNote(noteId);
+            Alert.alert('Verwijderd', 'Notitie is verwijderd');
+          }, 
+          style: 'destructive' 
+        },
+      ]
+    );
+  };
+
   const toggleViewerSelection = (memberId: string) => {
     setSelectedViewers(prev => {
       if (prev.includes(memberId)) {
@@ -161,16 +179,7 @@ export default function NotesScreen() {
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.actionButton}
-                          onPress={() => {
-                            Alert.alert(
-                              'Verwijderen?',
-                              `Weet je zeker dat je "${note.title}" wilt verwijderen?`,
-                              [
-                                { text: 'Annuleren', style: 'cancel' },
-                                { text: 'Verwijderen', onPress: () => deleteFamilyNote(note.id), style: 'destructive' },
-                              ]
-                            );
-                          }}
+                          onPress={() => handleDeleteNote(note.id, note.title)}
                         >
                           <IconSymbol
                             ios_icon_name="trash"
@@ -403,7 +412,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 60,
+    paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 140,
   },
@@ -431,16 +440,17 @@ const styles = StyleSheet.create({
     width: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textSecondary,
     marginTop: 5,
     fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
   },
   addButton: {
     backgroundColor: colors.vibrantOrange,

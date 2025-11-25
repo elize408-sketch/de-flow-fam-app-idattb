@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Animated, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -35,6 +35,8 @@ export default function MealsScreen() {
   const [planDate, setPlanDate] = useState(new Date());
   const [planTime, setPlanTime] = useState('18:00');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  const buttonScale = useRef(new Animated.Value(1)).current;
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -140,6 +142,21 @@ export default function MealsScreen() {
     setShowPlanModal(true);
   };
 
+  const animateButton = () => {
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 1.15,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   const confirmPlanInAgenda = async () => {
     if (!selectedMealForPlan) return;
 
@@ -178,6 +195,8 @@ export default function MealsScreen() {
       });
 
       console.log('Event created with ID:', eventId);
+      
+      animateButton();
       
       setShowPlanModal(false);
       setSelectedMealForPlan(null);
@@ -539,12 +558,14 @@ export default function MealsScreen() {
               >
                 <Text style={styles.modalButtonText}>Annuleren</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={confirmPlanInAgenda}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
-              </TouchableOpacity>
+              <Animated.View style={{ flex: 1, transform: [{ scale: buttonScale }] }}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={confirmPlanInAgenda}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </View>
         </View>
@@ -865,7 +886,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 60,
+    paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 120,
   },
@@ -893,16 +914,17 @@ const styles = StyleSheet.create({
     width: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textSecondary,
     marginTop: 5,
     fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
   },
   actionButtons: {
     flexDirection: 'row',

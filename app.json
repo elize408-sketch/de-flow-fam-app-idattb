@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-     "bundleIdentifier": "nl.flowfam.gezinsapp",
+      "bundleIdentifier": "nl.flowfam.gezinsapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
