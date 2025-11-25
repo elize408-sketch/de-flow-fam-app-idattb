@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
-import { IconSymbol } from '@/components/IconSymbol';
+import { Ionicons } from '@expo/vector-icons';
 import { useFamily } from '@/contexts/FamilyContext';
 
 export default function AgendaScreen() {
@@ -168,12 +168,7 @@ export default function AgendaScreen() {
             style={styles.backButton}
             onPress={() => router.push('/(tabs)/(home)')}
           >
-            <IconSymbol
-              ios_icon_name="house"
-              android_material_icon_name="home"
-              size={24}
-              color={colors.text}
-            />
+            <Ionicons name="chevron-back" size={26} color="#333" />
           </TouchableOpacity>
           
           <View style={styles.header}>
@@ -188,12 +183,7 @@ export default function AgendaScreen() {
           style={styles.addButton}
           onPress={() => setShowAddModal(true)}
         >
-          <IconSymbol
-            ios_icon_name="plus"
-            android_material_icon_name="add"
-            size={24}
-            color={colors.card}
-          />
+          <Ionicons name="add" size={24} color={colors.card} />
           <Text style={styles.addButtonText}>Afspraak toevoegen</Text>
         </TouchableOpacity>
 
@@ -203,11 +193,7 @@ export default function AgendaScreen() {
               onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
               style={styles.arrowButton}
             >
-              <Image
-                source={require('@/assets/images/a48502d9-8f03-4c17-acd5-23b19ef0a828.png')}
-                style={styles.arrowIcon}
-                resizeMode="contain"
-              />
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.calendarTitle}>
               {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
@@ -216,11 +202,7 @@ export default function AgendaScreen() {
               onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
               style={styles.arrowButton}
             >
-              <Image
-                source={require('@/assets/images/d8776866-a3f0-4d6b-a35e-b1f98b27eaee.png')}
-                style={styles.arrowIcon}
-                resizeMode="contain"
-              />
+              <Ionicons name="chevron-forward" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -319,12 +301,7 @@ export default function AgendaScreen() {
                           );
                         }}
                       >
-                        <IconSymbol
-                          ios_icon_name="trash"
-                          android_material_icon_name="delete"
-                          size={20}
-                          color={colors.textSecondary}
-                        />
+                        <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
                       </TouchableOpacity>
                     </View>
                   </React.Fragment>
@@ -343,7 +320,24 @@ export default function AgendaScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Nieuwe afspraak</Text>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => {
+                    setShowAddModal(false);
+                    setNewAppointmentTitle('');
+                    setNewAppointmentDate(new Date());
+                    setNewAppointmentTime('10:00');
+                    setNewAppointmentEndTime('');
+                    setNewAppointmentAssignedTo([]);
+                    setNewAppointmentRepeat('none');
+                  }}
+                >
+                  <Ionicons name="chevron-back" size={26} color="#333" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Nieuwe afspraak</Text>
+                <View style={styles.modalHeaderSpacer} />
+              </View>
 
               <TextInput
                 style={styles.input}
@@ -361,32 +355,33 @@ export default function AgendaScreen() {
                   setShowDatePicker(true);
                 }}
               >
+                <Ionicons name="calendar-outline" size={22} color="#333" />
                 <Text style={styles.dateButtonText}>
-                  📅 {newAppointmentDate.toLocaleDateString('nl-NL')}
+                  {newAppointmentDate.toLocaleDateString('nl-NL')}
                 </Text>
-                <IconSymbol
-                  ios_icon_name="chevron.down"
-                  android_material_icon_name="expand_more"
-                  size={20}
-                  color={colors.text}
-                />
               </TouchableOpacity>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Starttijd (bijv. 10:00)"
-                placeholderTextColor={colors.textSecondary}
-                value={newAppointmentTime}
-                onChangeText={setNewAppointmentTime}
-              />
+              <View style={styles.timeInputContainer}>
+                <Ionicons name="time-outline" size={22} color="#333" />
+                <TextInput
+                  style={styles.timeInput}
+                  placeholder="Starttijd (bijv. 10:00)"
+                  placeholderTextColor={colors.textSecondary}
+                  value={newAppointmentTime}
+                  onChangeText={setNewAppointmentTime}
+                />
+              </View>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Eindtijd (optioneel, bijv. 11:30)"
-                placeholderTextColor={colors.textSecondary}
-                value={newAppointmentEndTime}
-                onChangeText={setNewAppointmentEndTime}
-              />
+              <View style={styles.timeInputContainer}>
+                <Ionicons name="time-outline" size={22} color="#333" />
+                <TextInput
+                  style={styles.timeInput}
+                  placeholder="Eindtijd (optioneel, bijv. 11:30)"
+                  placeholderTextColor={colors.textSecondary}
+                  value={newAppointmentEndTime}
+                  onChangeText={setNewAppointmentEndTime}
+                />
+              </View>
 
               <Text style={styles.inputLabel}>Voor wie: (meerdere mogelijk)</Text>
               <View style={styles.memberSelector}>
@@ -405,12 +400,7 @@ export default function AgendaScreen() {
                       <Text style={styles.memberName}>{member.name}</Text>
                       {newAppointmentAssignedTo.includes(member.id) && (
                         <View style={styles.checkmark}>
-                          <IconSymbol
-                            ios_icon_name="checkmark"
-                            android_material_icon_name="check"
-                            size={16}
-                            color={colors.accent}
-                          />
+                          <Ionicons name="checkmark" size={16} color={colors.accent} />
                         </View>
                       )}
                     </TouchableOpacity>
@@ -489,21 +479,13 @@ export default function AgendaScreen() {
           <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
             <View style={styles.calendarPickerHeader}>
               <TouchableOpacity onPress={() => changeMonth('prev')} style={styles.calendarNavButton}>
-                <Image
-                  source={require('@/assets/images/a48502d9-8f03-4c17-acd5-23b19ef0a828.png')}
-                  style={styles.arrowIconSmall}
-                  resizeMode="contain"
-                />
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
               </TouchableOpacity>
               <Text style={styles.calendarMonthYear}>
                 {monthNames[selectedMonth]} {selectedYear}
               </Text>
               <TouchableOpacity onPress={() => changeMonth('next')} style={styles.calendarNavButton}>
-                <Image
-                  source={require('@/assets/images/d8776866-a3f0-4d6b-a35e-b1f98b27eaee.png')}
-                  style={styles.arrowIconSmall}
-                  resizeMode="contain"
-                />
+                <Ionicons name="chevron-forward" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -619,16 +601,6 @@ const styles = StyleSheet.create({
   },
   arrowButton: {
     padding: 8,
-  },
-  arrowIcon: {
-    width: 24,
-    height: 24,
-    tintColor: colors.text,
-  },
-  arrowIconSmall: {
-    width: 20,
-    height: 20,
-    tintColor: colors.text,
   },
   dayNamesRow: {
     flexDirection: 'row',
@@ -772,13 +744,30 @@ const styles = StyleSheet.create({
     boxShadow: `0px 8px 24px ${colors.shadow}`,
     elevation: 5,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 20,
-    textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  modalHeaderSpacer: {
+    width: 40,
   },
   input: {
     backgroundColor: colors.background,
@@ -795,13 +784,29 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 15,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
   },
   dateButtonText: {
     fontSize: 16,
     color: colors.text,
     fontFamily: 'Nunito_400Regular',
+    flex: 1,
+  },
+  timeInputContainer: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  timeInput: {
+    fontSize: 16,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+    flex: 1,
   },
   inputLabel: {
     fontSize: 16,
