@@ -246,7 +246,7 @@ export default function TasksScreen() {
     );
   }
 
-  // Parent view - show their own tasks and household tasks
+  // Parent view - show their own tasks and household tasks WITHOUT COINS
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -287,7 +287,7 @@ export default function TasksScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Personal tasks */}
+        {/* Personal tasks - NO COINS FOR PARENTS */}
         {visibleTasks.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>✅ Persoonlijke taken</Text>
@@ -295,7 +295,7 @@ export default function TasksScreen() {
               <React.Fragment key={taskIndex}>
                 <TouchableOpacity
                   style={[styles.taskCard, task.completed && styles.taskCardCompleted]}
-                  onPress={() => !task.completed && handleCompleteTask(task.id, task.coins)}
+                  onPress={() => !task.completed && handleCompleteTask(task.id, 0)}
                   disabled={task.completed}
                 >
                   <View style={styles.taskIcon}>
@@ -322,12 +322,6 @@ export default function TasksScreen() {
                       </Text>
                     </View>
                   </View>
-                  {task.coins > 0 && (
-                    <View style={[styles.taskCoins, task.completed && styles.taskCoinsCompleted]}>
-                      <Text style={styles.taskCoinsText}>{task.coins}</Text>
-                      <Text style={styles.taskCoinEmoji}>🪙</Text>
-                    </View>
-                  )}
                 </TouchableOpacity>
               </React.Fragment>
             ))}

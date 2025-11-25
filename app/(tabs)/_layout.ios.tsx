@@ -55,20 +55,12 @@ export default function TabLayout() {
     );
   }
 
-  // Children only see: Home, Agenda, Tasks, and Profile
+  // Children only see: Home and Profile
   return (
     <NativeTabs>
       <NativeTabs.Trigger key="home" name="(home)">
         <Icon sf="house.fill" />
         <Label>Home</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger key="agenda" name="agenda">
-        <Icon sf="calendar" />
-        <Label>Agenda</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger key="tasks" name="tasks">
-        <Icon sf="checkmark.circle.fill" />
-        <Label>Taken</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger key="profile" name="profile">
         <Icon sf="person.fill" />

@@ -90,10 +90,8 @@ export default function HomeScreen() {
     { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
   ];
 
-  // Children only see: Profiel, Taken, Agenda
+  // Children only see: Profiel
   const childMenuSections = [
-    { icon: 'calendar-today', label: 'Agenda', route: '/(tabs)/agenda', color: colors.vibrantBlue },
-    { icon: 'check-circle', label: 'Taken', route: '/(tabs)/tasks', color: colors.vibrantGreen },
     { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
   ];
 
@@ -134,7 +132,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Slider with 2 slides */}
+        {/* Slider with 2 slides - Only show tasks for children */}
         <View style={styles.sliderContainer}>
           <ScrollView
             ref={scrollViewRef}
@@ -182,79 +180,87 @@ export default function HomeScreen() {
                             )}
                           </View>
                           <Text style={styles.taskItemName}>{task.name}</Text>
-                          <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
-                            <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
-                          </View>
+                          {!isParent && (
+                            <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
+                              <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
+                            </View>
+                          )}
                         </View>
                       </React.Fragment>
                     ))}
                     
-                    <TouchableOpacity
-                      style={[styles.slideButton, { backgroundColor: memberColor }]}
-                      onPress={() => router.push('/(tabs)/tasks')}
-                    >
-                      <Text style={styles.slideButtonText}>Zie de rest van je taken</Text>
-                    </TouchableOpacity>
+                    {!isParent && (
+                      <TouchableOpacity
+                        style={[styles.slideButton, { backgroundColor: memberColor }]}
+                        onPress={() => router.push('/(tabs)/tasks')}
+                      >
+                        <Text style={styles.slideButtonText}>Zie de rest van je taken</Text>
+                      </TouchableOpacity>
+                    )}
                   </>
                 )}
               </View>
             </View>
 
-            {/* Slide 2: Agenda */}
-            <View style={[styles.slide, { width: screenWidth - 40 }]}>
-              <View style={styles.slideCard}>
-                <View style={styles.slideHeader}>
-                  <Text style={styles.slideTitle}>📅 Agenda vandaag</Text>
-                  <View style={styles.taskBadge}>
-                    <Text style={styles.taskBadgeText}>{myAppointments.length}</Text>
+            {/* Slide 2: Agenda - Only for parents */}
+            {isParent && (
+              <View style={[styles.slide, { width: screenWidth - 40 }]}>
+                <View style={styles.slideCard}>
+                  <View style={styles.slideHeader}>
+                    <Text style={styles.slideTitle}>📅 Agenda vandaag</Text>
+                    <View style={styles.taskBadge}>
+                      <Text style={styles.taskBadgeText}>{myAppointments.length}</Text>
+                    </View>
                   </View>
+                  
+                  {myAppointments.length === 0 ? (
+                    <View style={styles.emptySlide}>
+                      <Text style={styles.emptyEmoji}>📅</Text>
+                      <Text style={styles.emptyText}>Geen afspraken vandaag!</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <Text style={styles.appointmentSummary}>
+                        Je hebt {myAppointments.length} afspraak{myAppointments.length !== 1 ? 'en' : ''} vandaag
+                      </Text>
+                      
+                      {myAppointments.slice(0, 2).map((apt, index) => (
+                        <React.Fragment key={index}>
+                          <View style={[styles.appointmentItem, { borderLeftColor: memberColor }]}>
+                            <Text style={styles.appointmentTime}>{apt.time}</Text>
+                            <Text style={styles.appointmentTitle}>{apt.title}</Text>
+                          </View>
+                        </React.Fragment>
+                      ))}
+                      
+                      <TouchableOpacity
+                        style={[styles.slideButton, { backgroundColor: memberColor }]}
+                        onPress={() => router.push('/(tabs)/agenda')}
+                      >
+                        <Text style={styles.slideButtonText}>Ga naar agenda</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
-                
-                {myAppointments.length === 0 ? (
-                  <View style={styles.emptySlide}>
-                    <Text style={styles.emptyEmoji}>📅</Text>
-                    <Text style={styles.emptyText}>Geen afspraken vandaag!</Text>
-                  </View>
-                ) : (
-                  <>
-                    <Text style={styles.appointmentSummary}>
-                      Je hebt {myAppointments.length} afspraak{myAppointments.length !== 1 ? 'en' : ''} vandaag
-                    </Text>
-                    
-                    {myAppointments.slice(0, 2).map((apt, index) => (
-                      <React.Fragment key={index}>
-                        <View style={[styles.appointmentItem, { borderLeftColor: memberColor }]}>
-                          <Text style={styles.appointmentTime}>{apt.time}</Text>
-                          <Text style={styles.appointmentTitle}>{apt.title}</Text>
-                        </View>
-                      </React.Fragment>
-                    ))}
-                    
-                    <TouchableOpacity
-                      style={[styles.slideButton, { backgroundColor: memberColor }]}
-                      onPress={() => router.push('/(tabs)/agenda')}
-                    >
-                      <Text style={styles.slideButtonText}>Ga naar agenda</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
               </View>
-            </View>
+            )}
           </ScrollView>
 
-          {/* Slide indicators */}
-          <View style={styles.slideIndicators}>
-            {[0, 1].map((index) => (
-              <React.Fragment key={index}>
-                <View
-                  style={[
-                    styles.slideIndicator,
-                    currentSlide === index && styles.slideIndicatorActive,
-                  ]}
-                />
-              </React.Fragment>
-            ))}
-          </View>
+          {/* Slide indicators - Only show for parents with 2 slides */}
+          {isParent && (
+            <View style={styles.slideIndicators}>
+              {[0, 1].map((index) => (
+                <React.Fragment key={index}>
+                  <View
+                    style={[
+                      styles.slideIndicator,
+                      currentSlide === index && styles.slideIndicatorActive,
+                    ]}
+                  />
+                </React.Fragment>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Menu sections below slider */}
