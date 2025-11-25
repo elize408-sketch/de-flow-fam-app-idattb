@@ -23,6 +23,7 @@ export default function TasksScreen() {
   } = useFamily();
   const [showAnimation, setShowAnimation] = useState(false);
   const [completedTaskCoins, setCompletedTaskCoins] = useState(0);
+  const [showCoinsInAnimation, setShowCoinsInAnimation] = useState(true);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskAssignedTo, setNewTaskAssignedTo] = useState('');
@@ -39,6 +40,7 @@ export default function TasksScreen() {
 
   const handleCompleteTask = (taskId: string, coins: number) => {
     setCompletedTaskCoins(coins);
+    setShowCoinsInAnimation(!isParent && coins > 0);
     setShowAnimation(true);
     completeTask(taskId);
   };
@@ -241,6 +243,7 @@ export default function TasksScreen() {
           visible={showAnimation}
           coins={completedTaskCoins}
           onComplete={() => setShowAnimation(false)}
+          showCoins={showCoinsInAnimation}
         />
       </View>
     );
@@ -393,6 +396,7 @@ export default function TasksScreen() {
         visible={showAnimation}
         coins={completedTaskCoins}
         onComplete={() => setShowAnimation(false)}
+        showCoins={showCoinsInAnimation}
       />
 
       {/* Add Task Modal - Only personal (no coins) and household tasks */}
@@ -578,10 +582,11 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   title: {
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,

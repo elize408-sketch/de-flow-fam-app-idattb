@@ -914,10 +914,11 @@ const styles = StyleSheet.create({
     paddingBottom: 140,
   },
   title: {
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,

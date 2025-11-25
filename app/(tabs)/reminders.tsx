@@ -664,16 +664,18 @@ const styles = StyleSheet.create({
     width: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
     marginTop: 5,
     fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
   },
   photoBookCard: {
     backgroundColor: colors.card,

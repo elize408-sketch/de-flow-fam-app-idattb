@@ -20,6 +20,7 @@ interface TaskCompletionAnimationProps {
   visible: boolean;
   coins: number;
   onComplete: () => void;
+  showCoins?: boolean;
 }
 
 function CoinAnimation({ delay, index }: { delay: number; index: number }) {
@@ -83,6 +84,7 @@ export default function TaskCompletionAnimation({
   visible,
   coins,
   onComplete,
+  showCoins = true,
 }: TaskCompletionAnimationProps) {
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
@@ -130,8 +132,8 @@ export default function TaskCompletionAnimation({
 
   return (
     <View style={styles.overlay}>
-      {/* Flying coins */}
-      {Array.from({ length: 8 }).map((_, index) => (
+      {/* Flying coins - only show if showCoins is true */}
+      {showCoins && Array.from({ length: 8 }).map((_, index) => (
         <CoinAnimation key={index} delay={index * 100} index={index} />
       ))}
 
@@ -141,10 +143,12 @@ export default function TaskCompletionAnimation({
           <Text style={styles.bigSmiley}>😊</Text>
         </Animated.View>
         <Text style={styles.text}>Goed gedaan!</Text>
-        <View style={styles.coinsContainer}>
-          <Text style={styles.coinsText}>+{coins}</Text>
-          <Text style={styles.coinEmojiLarge}>🪙</Text>
-        </View>
+        {showCoins && (
+          <View style={styles.coinsContainer}>
+            <Text style={styles.coinsText}>+{coins}</Text>
+            <Text style={styles.coinEmojiLarge}>🪙</Text>
+          </View>
+        )}
       </Animated.View>
     </View>
   );

@@ -98,10 +98,11 @@ const styles = StyleSheet.create({
     width: 40,
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
