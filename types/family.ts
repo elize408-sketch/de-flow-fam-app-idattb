@@ -16,8 +16,11 @@ export interface Task {
   coins: number;
   assignedTo: string;
   completed: boolean;
-  recurring: 'daily' | 'weekly' | 'monthly' | 'none';
+  repeatType: 'daily' | 'weekly' | 'monthly' | 'none';
   completedCount: number;
+  dueDate?: Date;
+  time?: string;
+  createdBy?: string;
 }
 
 export interface Reward {
@@ -46,6 +49,8 @@ export interface HouseholdTask {
   assignedTo: string;
   completed: boolean;
   dueDate?: Date;
+  repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
+  icon?: string;
 }
 
 export interface Expense {
