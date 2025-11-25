@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 60,
+    paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   centerHeader: {
     alignItems: 'center',
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
@@ -452,10 +452,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sliderContainer: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   slider: {
-    marginBottom: 15,
+    marginBottom: 10,
   },
   slide: {
     paddingHorizontal: 10,
