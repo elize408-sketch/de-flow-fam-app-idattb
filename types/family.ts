@@ -62,6 +62,7 @@ export interface Income {
   id: string;
   name: string;
   amount: number;
+  type?: 'salary' | 'partner' | 'benefits' | 'other';
   date: Date;
   recurring: boolean;
   recurringFrequency?: 'weekly' | 'monthly' | 'yearly';
@@ -73,6 +74,14 @@ export interface Receipt {
   amount: number;
   date: Date;
   category?: string;
+  budgetPotId?: string;
+}
+
+export interface BudgetPot {
+  id: string;
+  name: string;
+  budget: number;
+  spent: number;
 }
 
 export interface Ingredient {
@@ -107,10 +116,12 @@ export interface Meal {
 export interface SavingsPot {
   id: string;
   name: string;
-  targetAmount: number;
+  goalAmount: number;
   currentAmount: number;
+  monthlyDeposit: number;
   color: string;
   icon: string;
+  photoUri?: string;
 }
 
 export interface Memory {

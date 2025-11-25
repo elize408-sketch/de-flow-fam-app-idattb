@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, Reminder, DailyScheduleItem, Notification, PantryItem, Ingredient, IngredientCategory } from '@/types/family';
+import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, Reminder, DailyScheduleItem, Notification, PantryItem, Ingredient, IngredientCategory, BudgetPot } from '@/types/family';
 import { initialFamilyMembers, initialTasks, initialRewards } from '@/data/familyData';
 import { savePantryItems, loadPantryItems, saveWeekPlanningServings, loadWeekPlanningServings } from '@/utils/localStorage';
 import { categorizeIngredient, parseIngredient, shouldNotScale } from '@/utils/ingredientCategories';
 import { Alert, Share } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface FamilyContextType {
   familyMembers: FamilyMember[];
@@ -24,6 +25,10 @@ interface FamilyContextType {
   reminders: Reminder[];
   dailySchedule: DailyScheduleItem[];
   notifications: Notification[];
+  budgetPots: BudgetPot[];
+  financeResetDay: number | null;
+  financeLastResetDate: Date | null;
+  financePreviousMonthLeftover: number | null;
   selectedMember: FamilyMember | null;
   currentUser: FamilyMember | null;
   financePasscode: string | null;
@@ -34,6 +39,8 @@ interface FamilyContextType {
   setFinancePasscode: (passcode: string) => void;
   setFinanceOnboardingComplete: (complete: boolean) => void;
   setWeekPlanningServings: (servings: number) => void;
+  setFinanceResetDay: (day: number) => void;
+  checkAndPerformMonthlyReset: () => void;
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   updateFamilyMember: (memberId: string, updates: Partial<FamilyMember>) => void;
   completeTask: (taskId: string) => void;
@@ -61,6 +68,9 @@ interface FamilyContextType {
   addSavingsPot: (pot: Omit<SavingsPot, 'id'>) => void;
   updateSavingsPot: (potId: string, updates: Partial<SavingsPot>) => void;
   deleteSavingsPot: (potId: string) => void;
+  addBudgetPot: (pot: Omit<BudgetPot, 'id'>) => void;
+  updateBudgetPot: (potId: string, updates: Partial<BudgetPot>) => void;
+  deleteBudgetPot: (potId: string) => void;
   addMemory: (memory: Omit<Memory, 'id'>) => void;
   updateMemory: (memoryId: string, updates: Partial<Memory>) => void;
   deleteMemory: (memoryId: string) => void;
@@ -93,6 +103,11 @@ interface FamilyContextType {
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 
+const BUDGET_POTS_KEY = '@flow_fam_budget_pots';
+const FINANCE_RESET_DAY_KEY = '@flow_fam_finance_reset_day';
+const FINANCE_LAST_RESET_DATE_KEY = '@flow_fam_finance_last_reset_date';
+const FINANCE_PREVIOUS_MONTH_LEFTOVER_KEY = '@flow_fam_finance_previous_month_leftover';
+
 export function FamilyProvider({ children }: { children: ReactNode }) {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialFamilyMembers);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -111,26 +126,180 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [dailySchedule, setDailySchedule] = useState<DailyScheduleItem[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [budgetPots, setBudgetPots] = useState<BudgetPot[]>([]);
+  const [financeResetDay, setFinanceResetDayState] = useState<number | null>(null);
+  const [financeLastResetDate, setFinanceLastResetDate] = useState<Date | null>(null);
+  const [financePreviousMonthLeftover, setFinancePreviousMonthLeftover] = useState<number | null>(null);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
   const [currentUser, setCurrentUser] = useState<FamilyMember | null>(familyMembers[0]);
   const [financePasscode, setFinancePasscode] = useState<string | null>(null);
   const [financeOnboardingComplete, setFinanceOnboardingComplete] = useState(false);
   const [weekPlanningServings, setWeekPlanningServingsState] = useState(2);
 
-  // Load pantry items and week planning servings on mount
+  // Load data on mount
   useEffect(() => {
     loadPantryItems().then(items => setPantryItems(items));
     loadWeekPlanningServings().then(servings => setWeekPlanningServingsState(servings));
+    loadBudgetPots();
+    loadFinanceResetDay();
+    loadFinanceLastResetDate();
+    loadFinancePreviousMonthLeftover();
   }, []);
 
-  // Save pantry items whenever they change
+  // Save data whenever they change
   useEffect(() => {
     savePantryItems(pantryItems);
   }, [pantryItems]);
 
+  useEffect(() => {
+    saveBudgetPots(budgetPots);
+  }, [budgetPots]);
+
+  useEffect(() => {
+    if (financeResetDay !== null) {
+      saveFinanceResetDay(financeResetDay);
+    }
+  }, [financeResetDay]);
+
+  useEffect(() => {
+    if (financeLastResetDate !== null) {
+      saveFinanceLastResetDate(financeLastResetDate);
+    }
+  }, [financeLastResetDate]);
+
+  useEffect(() => {
+    if (financePreviousMonthLeftover !== null) {
+      saveFinancePreviousMonthLeftover(financePreviousMonthLeftover);
+    }
+  }, [financePreviousMonthLeftover]);
+
+  const loadBudgetPots = async () => {
+    try {
+      const data = await AsyncStorage.getItem(BUDGET_POTS_KEY);
+      if (data) {
+        setBudgetPots(JSON.parse(data));
+      }
+    } catch (error) {
+      console.error('Error loading budget pots:', error);
+    }
+  };
+
+  const saveBudgetPots = async (pots: BudgetPot[]) => {
+    try {
+      await AsyncStorage.setItem(BUDGET_POTS_KEY, JSON.stringify(pots));
+    } catch (error) {
+      console.error('Error saving budget pots:', error);
+    }
+  };
+
+  const loadFinanceResetDay = async () => {
+    try {
+      const data = await AsyncStorage.getItem(FINANCE_RESET_DAY_KEY);
+      if (data) {
+        setFinanceResetDayState(parseInt(data, 10));
+      }
+    } catch (error) {
+      console.error('Error loading finance reset day:', error);
+    }
+  };
+
+  const saveFinanceResetDay = async (day: number) => {
+    try {
+      await AsyncStorage.setItem(FINANCE_RESET_DAY_KEY, day.toString());
+    } catch (error) {
+      console.error('Error saving finance reset day:', error);
+    }
+  };
+
+  const loadFinanceLastResetDate = async () => {
+    try {
+      const data = await AsyncStorage.getItem(FINANCE_LAST_RESET_DATE_KEY);
+      if (data) {
+        setFinanceLastResetDate(new Date(data));
+      }
+    } catch (error) {
+      console.error('Error loading finance last reset date:', error);
+    }
+  };
+
+  const saveFinanceLastResetDate = async (date: Date) => {
+    try {
+      await AsyncStorage.setItem(FINANCE_LAST_RESET_DATE_KEY, date.toISOString());
+    } catch (error) {
+      console.error('Error saving finance last reset date:', error);
+    }
+  };
+
+  const loadFinancePreviousMonthLeftover = async () => {
+    try {
+      const data = await AsyncStorage.getItem(FINANCE_PREVIOUS_MONTH_LEFTOVER_KEY);
+      if (data) {
+        setFinancePreviousMonthLeftover(parseFloat(data));
+      }
+    } catch (error) {
+      console.error('Error loading finance previous month leftover:', error);
+    }
+  };
+
+  const saveFinancePreviousMonthLeftover = async (amount: number) => {
+    try {
+      await AsyncStorage.setItem(FINANCE_PREVIOUS_MONTH_LEFTOVER_KEY, amount.toString());
+    } catch (error) {
+      console.error('Error saving finance previous month leftover:', error);
+    }
+  };
+
   const setWeekPlanningServings = (servings: number) => {
     setWeekPlanningServingsState(servings);
     saveWeekPlanningServings(servings);
+  };
+
+  const setFinanceResetDay = (day: number) => {
+    setFinanceResetDayState(day);
+    // Initialize last reset date to today if not set
+    if (!financeLastResetDate) {
+      setFinanceLastResetDate(new Date());
+    }
+  };
+
+  const checkAndPerformMonthlyReset = () => {
+    if (financeResetDay === null) return;
+
+    const today = new Date();
+    const currentDay = today.getDate();
+
+    // If we haven't reset yet, initialize
+    if (!financeLastResetDate) {
+      setFinanceLastResetDate(today);
+      return;
+    }
+
+    // Check if we've passed the reset day since last reset
+    const lastReset = new Date(financeLastResetDate);
+    const daysSinceLastReset = Math.floor((today.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24));
+
+    // If it's been at least a month and we've passed the reset day
+    if (daysSinceLastReset >= 28 && currentDay >= financeResetDay) {
+      // Calculate previous month leftover
+      const totalIncome = getTotalIncome();
+      const totalFixed = getTotalFixedExpenses();
+      const totalVariableSpent = budgetPots.reduce((sum, pot) => sum + pot.spent, 0);
+      const leftover = totalIncome - totalFixed - totalVariableSpent;
+
+      // Save leftover
+      setFinancePreviousMonthLeftover(leftover);
+
+      // Reset all budget pots
+      setBudgetPots(prev => prev.map(pot => ({ ...pot, spent: 0 })));
+
+      // Update last reset date
+      setFinanceLastResetDate(today);
+
+      console.log('Monthly reset performed:', {
+        leftover,
+        date: today.toISOString(),
+      });
+    }
   };
 
   const addFamilyMember = (member: Omit<FamilyMember, 'id'>) => {
@@ -365,6 +534,24 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const deleteSavingsPot = (potId: string) => {
     setSavingsPots(prev => prev.filter(pot => pot.id !== potId));
+  };
+
+  const addBudgetPot = (pot: Omit<BudgetPot, 'id'>) => {
+    const newPot: BudgetPot = {
+      ...pot,
+      id: Date.now().toString(),
+    };
+    setBudgetPots(prev => [...prev, newPot]);
+  };
+
+  const updateBudgetPot = (potId: string, updates: Partial<BudgetPot>) => {
+    setBudgetPots(prev =>
+      prev.map(pot => (pot.id === potId ? { ...pot, ...updates } : pot))
+    );
+  };
+
+  const deleteBudgetPot = (potId: string) => {
+    setBudgetPots(prev => prev.filter(pot => pot.id !== potId));
   };
 
   const addMemory = (memory: Omit<Memory, 'id'>) => {
@@ -657,6 +844,10 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         reminders,
         dailySchedule,
         notifications,
+        budgetPots,
+        financeResetDay,
+        financeLastResetDate,
+        financePreviousMonthLeftover,
         selectedMember,
         currentUser,
         financePasscode,
@@ -667,6 +858,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         setFinancePasscode,
         setFinanceOnboardingComplete,
         setWeekPlanningServings,
+        setFinanceResetDay,
+        checkAndPerformMonthlyReset,
         addFamilyMember,
         updateFamilyMember,
         completeTask,
@@ -694,6 +887,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         addSavingsPot,
         updateSavingsPot,
         deleteSavingsPot,
+        addBudgetPot,
+        updateBudgetPot,
+        deleteBudgetPot,
         addMemory,
         updateMemory,
         deleteMemory,

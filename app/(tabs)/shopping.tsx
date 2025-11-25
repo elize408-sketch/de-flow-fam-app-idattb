@@ -185,7 +185,7 @@ export default function ShoppingScreen() {
                 <IconSymbol
                   ios_icon_name="doc-text"
                   android_material_icon_name="picture-as-pdf"
-                  size={20}
+                  size={18}
                   color={colors.card}
                 />
                 <Text style={styles.actionButtonText}>Exporteer als PDF</Text>
@@ -198,7 +198,7 @@ export default function ShoppingScreen() {
                 <IconSymbol
                   ios_icon_name="square-and-arrow-up"
                   android_material_icon_name="share"
-                  size={20}
+                  size={18}
                   color={colors.card}
                 />
                 <Text style={styles.actionButtonText}>Deel lijst</Text>
@@ -212,7 +212,7 @@ export default function ShoppingScreen() {
               <IconSymbol
                 ios_icon_name="plus"
                 android_material_icon_name="add"
-                size={24}
+                size={22}
                 color={colors.card}
               />
               <Text style={styles.addButtonText}>Item toevoegen</Text>
@@ -351,7 +351,7 @@ export default function ShoppingScreen() {
               <IconSymbol
                 ios_icon_name="plus"
                 android_material_icon_name="add"
-                size={24}
+                size={22}
                 color={colors.card}
               />
               <Text style={styles.addButtonText}>Item toevoegen</Text>
@@ -557,10 +557,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.vibrantOrange,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
+    textAlign: 'center',
   },
   tabTextActive: {
     color: colors.card,
@@ -575,17 +576,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     borderRadius: 15,
     padding: 12,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
   actionButtonText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
     color: colors.card,
     fontFamily: 'Poppins_600SemiBold',
+    textAlign: 'center',
   },
   addButton: {
     backgroundColor: colors.vibrantOrange,
@@ -599,11 +601,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   addButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.card,
     marginLeft: 10,
     fontFamily: 'Poppins_600SemiBold',
+    textAlign: 'center',
   },
   emptyState: {
     backgroundColor: colors.card,

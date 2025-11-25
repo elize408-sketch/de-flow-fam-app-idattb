@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image, Picker } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -17,6 +17,10 @@ export default function FinancesScreen() {
     savingsPots,
     financePasscode,
     currentUser,
+    budgetPots,
+    financeResetDay,
+    financeLastResetDate,
+    financePreviousMonthLeftover,
     setFinancePasscode,
     addIncome,
     addExpense,
@@ -26,6 +30,11 @@ export default function FinancesScreen() {
     addSavingsPot,
     updateSavingsPot,
     deleteSavingsPot,
+    addBudgetPot,
+    updateBudgetPot,
+    deleteBudgetPot,
+    setFinanceResetDay,
+    checkAndPerformMonthlyReset,
     getTotalIncome,
     getTotalFixedExpenses,
     getTotalVariableExpenses,
@@ -42,7 +51,10 @@ export default function FinancesScreen() {
   const [showScanReceiptModal, setShowScanReceiptModal] = useState(false);
   const [showAddPotModal, setShowAddPotModal] = useState(false);
   const [showPotDetailsModal, setShowPotDetailsModal] = useState(false);
+  const [showAddBudgetPotModal, setShowAddBudgetPotModal] = useState(false);
+  const [showEditBudgetPotModal, setShowEditBudgetPotModal] = useState(false);
   const [selectedPot, setSelectedPot] = useState<any>(null);
+  const [selectedBudgetPot, setSelectedBudgetPot] = useState<any>(null);
   const [yearsToView, setYearsToView] = useState(1);
   const [newIncomeName, setNewIncomeName] = useState('');
   const [newIncomeAmount, setNewIncomeAmount] = useState('');
@@ -52,13 +64,25 @@ export default function FinancesScreen() {
   const [newExpenseCategory, setNewExpenseCategory] = useState<'fixed' | 'variable'>('fixed');
   const [newExpenseRecurring, setNewExpenseRecurring] = useState(true);
   const [receiptAmount, setReceiptAmount] = useState('');
+  const [receiptBudgetPot, setReceiptBudgetPot] = useState<string>('');
   const [newPotName, setNewPotName] = useState('');
   const [newPotGoal, setNewPotGoal] = useState('');
   const [newPotMonthly, setNewPotMonthly] = useState('');
   const [newPotIcon, setNewPotIcon] = useState('💰');
   const [newPotPhoto, setNewPotPhoto] = useState<string | undefined>(undefined);
+  const [newBudgetPotName, setNewBudgetPotName] = useState('');
+  const [newBudgetPotBudget, setNewBudgetPotBudget] = useState('');
+  const [editBudgetPotAmount, setEditBudgetPotAmount] = useState('');
+  const [resetDay, setResetDay] = useState<number>(1);
 
   const isParent = currentUser?.role === 'parent';
+
+  // Check for monthly reset on mount and when unlocked
+  useEffect(() => {
+    if (isUnlocked && financeResetDay) {
+      checkAndPerformMonthlyReset();
+    }
+  }, [isUnlocked, financeResetDay]);
 
   // Check if user needs to set or enter passcode
   if (!isParent) {
@@ -204,7 +228,7 @@ export default function FinancesScreen() {
     );
   }
 
-  const isFirstTime = incomes.length === 0 && expenses.length === 0;
+  const isOnboardingComplete = incomes.length > 0 && expenses.filter(e => e.category === 'fixed').length > 0 && budgetPots.length > 0 && financeResetDay !== null;
 
   const handleAddIncome = () => {
     if (!newIncomeName.trim() || !newIncomeAmount.trim()) {
@@ -222,6 +246,9 @@ export default function FinancesScreen() {
       name: newIncomeName.trim(),
       amount,
       type: newIncomeType,
+      date: new Date(),
+      recurring: true,
+      recurringFrequency: 'monthly',
     });
 
     setNewIncomeName('');
@@ -250,6 +277,7 @@ export default function FinancesScreen() {
       date: new Date(),
       paid: false,
       recurring: newExpenseRecurring,
+      recurringFrequency: 'monthly',
     });
 
     setNewExpenseName('');
@@ -281,14 +309,29 @@ export default function FinancesScreen() {
         return;
       }
 
+      if (!receiptBudgetPot) {
+        Alert.alert('Fout', 'Selecteer een budgetpotje');
+        return;
+      }
+
       addReceipt({
         imageUri: result.assets[0].uri,
         amount,
         date: new Date(),
-        category: 'Boodschappen',
+        category: 'Bonnetje',
+        budgetPotId: receiptBudgetPot,
       });
 
+      // Update budget pot spent amount
+      const pot = budgetPots.find(p => p.id === receiptBudgetPot);
+      if (pot) {
+        updateBudgetPot(pot.id, {
+          spent: pot.spent + amount,
+        });
+      }
+
       setReceiptAmount('');
+      setReceiptBudgetPot('');
       setShowScanReceiptModal(false);
       Alert.alert('Gelukt!', `Bonnetje van €${amount.toFixed(2)} toegevoegd`);
     }
@@ -347,6 +390,62 @@ export default function FinancesScreen() {
     Alert.alert('Gelukt!', 'Spaarpotje aangemaakt');
   };
 
+  const handleAddBudgetPot = () => {
+    if (!newBudgetPotName.trim() || !newBudgetPotBudget.trim()) {
+      Alert.alert('Fout', 'Vul alle velden in');
+      return;
+    }
+
+    const budget = parseFloat(newBudgetPotBudget);
+    if (isNaN(budget) || budget <= 0) {
+      Alert.alert('Fout', 'Vul een geldig bedrag in');
+      return;
+    }
+
+    addBudgetPot({
+      name: newBudgetPotName.trim(),
+      budget,
+      spent: 0,
+    });
+
+    setNewBudgetPotName('');
+    setNewBudgetPotBudget('');
+    setShowAddBudgetPotModal(false);
+    Alert.alert('Gelukt!', 'Variabel potje toegevoegd');
+  };
+
+  const handleEditBudgetPot = () => {
+    if (!selectedBudgetPot || !editBudgetPotAmount.trim()) {
+      Alert.alert('Fout', 'Vul een geldig bedrag in');
+      return;
+    }
+
+    const amount = parseFloat(editBudgetPotAmount);
+    if (isNaN(amount)) {
+      Alert.alert('Fout', 'Vul een geldig bedrag in');
+      return;
+    }
+
+    updateBudgetPot(selectedBudgetPot.id, {
+      spent: selectedBudgetPot.spent + amount,
+    });
+
+    setEditBudgetPotAmount('');
+    setSelectedBudgetPot(null);
+    setShowEditBudgetPotModal(false);
+    Alert.alert('Gelukt!', 'Bedrag aangepast');
+  };
+
+  const handleSetResetDay = () => {
+    if (resetDay < 1 || resetDay > 31) {
+      Alert.alert('Fout', 'Kies een dag tussen 1 en 31');
+      return;
+    }
+
+    setFinanceResetDay(resetDay);
+    Alert.alert('Gelukt!', `Resetdatum ingesteld op dag ${resetDay} van de maand`);
+  };
+
   const calculateFutureValue = (pot: any, years: number) => {
     return pot.currentAmount + (pot.monthlyDeposit * 12 * years);
   };
@@ -381,245 +480,447 @@ export default function FinancesScreen() {
           <View style={styles.placeholder} />
         </View>
 
-        {isFirstTime && (
-          <View style={styles.welcomeCard}>
-            <Text style={styles.welcomeEmoji}>💰</Text>
-            <Text style={styles.welcomeTitle}>Welkom bij Financiën!</Text>
-            <Text style={styles.welcomeText}>
-              Begin met het toevoegen van je inkomsten en vaste lasten om je budget te beheren.
-            </Text>
-          </View>
-        )}
-
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>💵 Totaal inkomen</Text>
-            <Text style={[styles.summaryAmount, styles.incomeAmount]}>€{totalIncome.toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>🏠 Vaste lasten</Text>
-            <Text style={[styles.summaryAmount, styles.expenseAmount]}>-€{totalFixed.toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>🛒 Variabele lasten</Text>
-            <Text style={[styles.summaryAmount, styles.expenseAmount]}>-€{totalVariable.toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabelBold}>📊 Over deze maand</Text>
-            <Text style={[styles.summaryAmountBold, remaining >= 0 ? styles.positiveAmount : styles.negativeAmount]}>
-              €{remaining.toFixed(2)}
-            </Text>
-          </View>
-          <Text style={styles.summaryNote}>
-            (Inkomen - Uitgaven: €{totalIncome.toFixed(2)} - €{totalExpenses.toFixed(2)})
+        <View style={styles.welcomeCard}>
+          <Text style={styles.welcomeEmoji}>💰</Text>
+          <Text style={styles.welcomeTitle}>Welkom bij Financiën!</Text>
+          <Text style={styles.welcomeText}>
+            Beheer je inkomsten, uitgaven en budgetpotjes op één plek.
           </Text>
         </View>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primary }]}
-            onPress={() => setShowAddIncomeModal(true)}
-          >
-            <IconSymbol
-              ios_icon_name="plus"
-              android_material_icon_name="add"
-              size={20}
-              color={colors.text}
-            />
-            <Text style={styles.actionButtonText}>Inkomen</Text>
-          </TouchableOpacity>
+        {!isOnboardingComplete && (
+          <View style={styles.onboardingSection}>
+            <Text style={styles.onboardingTitle}>📋 Stel je budget in</Text>
+            <Text style={styles.onboardingSubtitle}>
+              Vul de volgende stappen in om je budget te beheren:
+            </Text>
 
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.secondary }]}
-            onPress={() => setShowAddExpenseModal(true)}
-          >
-            <IconSymbol
-              ios_icon_name="plus"
-              android_material_icon_name="add"
-              size={20}
-              color={colors.text}
-            />
-            <Text style={styles.actionButtonText}>Uitgave</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.accent }]}
-            onPress={() => setShowScanReceiptModal(true)}
-          >
-            <IconSymbol
-              ios_icon_name="camera"
-              android_material_icon_name="camera-alt"
-              size={20}
-              color={colors.text}
-            />
-            <Text style={styles.actionButtonText}>Bonnetje</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Savings Pots Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Spaarpotjes</Text>
-            <TouchableOpacity onPress={() => setShowAddPotModal(true)}>
-              <IconSymbol
-                ios_icon_name="plus"
-                android_material_icon_name="add"
-                size={24}
-                color={colors.accent}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {savingsPots.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Nog geen spaarpotjes aangemaakt</Text>
+            {/* Step A: Inkomsten */}
+            <View style={styles.onboardingStep}>
+              <Text style={styles.onboardingStepTitle}>A. Inkomsten toevoegen</Text>
+              <Text style={styles.onboardingStepText}>
+                Voeg je maandelijkse inkomsten toe (salaris, toeslagen, etc.)
+              </Text>
+              <TouchableOpacity
+                style={styles.onboardingButton}
+                onPress={() => setShowAddIncomeModal(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="plus"
+                  android_material_icon_name="add"
+                  size={20}
+                  color={colors.card}
+                />
+                <Text style={styles.onboardingButtonText}>Inkomen toevoegen</Text>
+              </TouchableOpacity>
+              {incomes.length > 0 && (
+                <Text style={styles.onboardingStepComplete}>✅ {incomes.length} inkomen(s) toegevoegd</Text>
+              )}
             </View>
-          ) : (
-            savingsPots.map((pot, index) => {
-              const progress = (pot.currentAmount / pot.goalAmount) * 100;
-              return (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={styles.potCard}
-                    onPress={() => {
-                      setSelectedPot(pot);
-                      setYearsToView(1);
-                      setShowPotDetailsModal(true);
-                    }}
-                  >
-                    {pot.photoUri ? (
-                      <Image source={{ uri: pot.photoUri }} style={styles.potPhoto} />
-                    ) : (
-                      <Text style={styles.potIcon}>{pot.icon}</Text>
-                    )}
-                    <View style={styles.potInfo}>
-                      <Text style={styles.potName}>{pot.name}</Text>
-                      <View style={styles.progressBar}>
-                        <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%` }]} />
+
+            {/* Step B: Vaste lasten */}
+            <View style={styles.onboardingStep}>
+              <Text style={styles.onboardingStepTitle}>B. Vaste lasten toevoegen</Text>
+              <Text style={styles.onboardingStepText}>
+                Voeg je vaste maandelijkse uitgaven toe (huur, verzekeringen, etc.)
+              </Text>
+              <TouchableOpacity
+                style={styles.onboardingButton}
+                onPress={() => {
+                  setNewExpenseCategory('fixed');
+                  setShowAddExpenseModal(true);
+                }}
+              >
+                <IconSymbol
+                  ios_icon_name="plus"
+                  android_material_icon_name="add"
+                  size={20}
+                  color={colors.card}
+                />
+                <Text style={styles.onboardingButtonText}>Vaste last toevoegen</Text>
+              </TouchableOpacity>
+              {expenses.filter(e => e.category === 'fixed').length > 0 && (
+                <Text style={styles.onboardingStepComplete}>
+                  ✅ {expenses.filter(e => e.category === 'fixed').length} vaste last(en) toegevoegd
+                </Text>
+              )}
+            </View>
+
+            {/* Step C: Variabele potjes */}
+            <View style={styles.onboardingStep}>
+              <Text style={styles.onboardingStepTitle}>C. Variabele potjes toevoegen</Text>
+              <Text style={styles.onboardingStepText}>
+                Maak budgetpotjes aan voor variabele uitgaven (boodschappen, kleding, etc.)
+              </Text>
+              <TouchableOpacity
+                style={styles.onboardingButton}
+                onPress={() => setShowAddBudgetPotModal(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="plus"
+                  android_material_icon_name="add"
+                  size={20}
+                  color={colors.card}
+                />
+                <Text style={styles.onboardingButtonText}>Variabel potje toevoegen</Text>
+              </TouchableOpacity>
+              {budgetPots.length > 0 && (
+                <Text style={styles.onboardingStepComplete}>✅ {budgetPots.length} potje(s) toegevoegd</Text>
+              )}
+            </View>
+
+            {/* Step D: Resetdatum */}
+            <View style={styles.onboardingStep}>
+              <Text style={styles.onboardingStepTitle}>D. Resetdatum kiezen</Text>
+              <Text style={styles.onboardingStepText}>
+                Kies op welke dag van de maand je budget moet resetten
+              </Text>
+              <View style={styles.resetDaySelector}>
+                <Text style={styles.resetDayLabel}>Dag van de maand:</Text>
+                <TextInput
+                  style={styles.resetDayInput}
+                  placeholder="1-31"
+                  placeholderTextColor={colors.textSecondary}
+                  value={resetDay.toString()}
+                  onChangeText={(text) => {
+                    const day = parseInt(text) || 1;
+                    setResetDay(Math.max(1, Math.min(31, day)));
+                  }}
+                  keyboardType="numeric"
+                  maxLength={2}
+                />
+                <TouchableOpacity
+                  style={styles.resetDayButton}
+                  onPress={handleSetResetDay}
+                >
+                  <Text style={styles.resetDayButtonText}>Instellen</Text>
+                </TouchableOpacity>
+              </View>
+              {financeResetDay !== null && (
+                <Text style={styles.onboardingStepComplete}>✅ Resetdatum ingesteld op dag {financeResetDay}</Text>
+              )}
+            </View>
+
+            {isOnboardingComplete && (
+              <View style={styles.onboardingComplete}>
+                <Text style={styles.onboardingCompleteEmoji}>🎉</Text>
+                <Text style={styles.onboardingCompleteText}>
+                  Onboarding voltooid! Je kunt nu je budget beheren.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {isOnboardingComplete && (
+          <>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>💵 Totaal inkomen</Text>
+                <Text style={[styles.summaryAmount, styles.incomeAmount]}>€{totalIncome.toFixed(2)}</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>🏠 Vaste lasten</Text>
+                <Text style={[styles.summaryAmount, styles.expenseAmount]}>-€{totalFixed.toFixed(2)}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>🛒 Variabele lasten</Text>
+                <Text style={[styles.summaryAmount, styles.expenseAmount]}>-€{totalVariable.toFixed(2)}</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabelBold}>📊 Over deze maand</Text>
+                <Text style={[styles.summaryAmountBold, remaining >= 0 ? styles.positiveAmount : styles.negativeAmount]}>
+                  €{remaining.toFixed(2)}
+                </Text>
+              </View>
+              <Text style={styles.summaryNote}>
+                (Inkomen - Uitgaven: €{totalIncome.toFixed(2)} - €{totalExpenses.toFixed(2)})
+              </Text>
+            </View>
+
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                onPress={() => setShowAddIncomeModal(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="plus"
+                  android_material_icon_name="add"
+                  size={20}
+                  color={colors.text}
+                />
+                <Text style={styles.actionButtonText}>Inkomen</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.secondary }]}
+                onPress={() => setShowAddExpenseModal(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="plus"
+                  android_material_icon_name="add"
+                  size={20}
+                  color={colors.text}
+                />
+                <Text style={styles.actionButtonText}>Uitgave</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.accent }]}
+                onPress={() => setShowScanReceiptModal(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="camera"
+                  android_material_icon_name="camera-alt"
+                  size={20}
+                  color={colors.text}
+                />
+                <Text style={styles.actionButtonText}>Bonnetje</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Budget Pots Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Variabele Potjes</Text>
+                <TouchableOpacity onPress={() => setShowAddBudgetPotModal(true)}>
+                  <IconSymbol
+                    ios_icon_name="plus"
+                    android_material_icon_name="add"
+                    size={24}
+                    color={colors.accent}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {budgetPots.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>Nog geen budgetpotjes aangemaakt</Text>
+                </View>
+              ) : (
+                budgetPots.map((pot, index) => {
+                  const remaining = pot.budget - pot.spent;
+                  const progress = (pot.spent / pot.budget) * 100;
+                  return (
+                    <React.Fragment key={index}>
+                      <View style={styles.budgetPotCard}>
+                        <View style={styles.budgetPotHeader}>
+                          <Text style={styles.budgetPotName}>{pot.name}</Text>
+                          <TouchableOpacity
+                            onPress={() => {
+                              setSelectedBudgetPot(pot);
+                              setShowEditBudgetPotModal(true);
+                            }}
+                          >
+                            <IconSymbol
+                              ios_icon_name="pencil"
+                              android_material_icon_name="edit"
+                              size={20}
+                              color={colors.accent}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                        <View style={styles.budgetPotRow}>
+                          <Text style={styles.budgetPotLabel}>Budget per maand:</Text>
+                          <Text style={styles.budgetPotValue}>€{pot.budget.toFixed(2)}</Text>
+                        </View>
+                        <View style={styles.budgetPotRow}>
+                          <Text style={styles.budgetPotLabel}>Uitgegeven:</Text>
+                          <Text style={[styles.budgetPotValue, styles.expenseAmount]}>€{pot.spent.toFixed(2)}</Text>
+                        </View>
+                        <View style={styles.budgetPotRow}>
+                          <Text style={styles.budgetPotLabel}>Nog over:</Text>
+                          <Text style={[styles.budgetPotValue, remaining >= 0 ? styles.positiveAmount : styles.negativeAmount]}>
+                            €{remaining.toFixed(2)}
+                          </Text>
+                        </View>
+                        <View style={styles.progressBar}>
+                          <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%`, backgroundColor: progress > 100 ? '#F44336' : colors.accent }]} />
+                        </View>
+                        <Text style={styles.progressText}>{progress.toFixed(0)}% gebruikt</Text>
                       </View>
-                      <Text style={styles.potAmount}>
-                        €{pot.currentAmount.toFixed(2)} / €{pot.goalAmount.toFixed(2)}
-                      </Text>
-                      <Text style={styles.potMeta}>
-                        €{pot.monthlyDeposit.toFixed(2)} per maand
-                      </Text>
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </View>
+
+            {/* Previous Month Leftover */}
+            {financePreviousMonthLeftover !== null && (
+              <View style={styles.leftoverCard}>
+                <Text style={styles.leftoverTitle}>Vorige maand over:</Text>
+                <Text style={[styles.leftoverAmount, financePreviousMonthLeftover >= 0 ? styles.positiveAmount : styles.negativeAmount]}>
+                  €{financePreviousMonthLeftover.toFixed(2)}
+                </Text>
+              </View>
+            )}
+
+            {/* Savings Pots Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Spaarpotjes</Text>
+                <TouchableOpacity onPress={() => setShowAddPotModal(true)}>
+                  <IconSymbol
+                    ios_icon_name="plus"
+                    android_material_icon_name="add"
+                    size={24}
+                    color={colors.accent}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {savingsPots.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>Nog geen spaarpotjes aangemaakt</Text>
+                </View>
+              ) : (
+                savingsPots.map((pot, index) => {
+                  const progress = (pot.currentAmount / pot.goalAmount) * 100;
+                  return (
+                    <React.Fragment key={index}>
+                      <TouchableOpacity
+                        style={styles.potCard}
+                        onPress={() => {
+                          setSelectedPot(pot);
+                          setYearsToView(1);
+                          setShowPotDetailsModal(true);
+                        }}
+                      >
+                        {pot.photoUri ? (
+                          <Image source={{ uri: pot.photoUri }} style={styles.potPhoto} />
+                        ) : (
+                          <Text style={styles.potIcon}>{pot.icon}</Text>
+                        )}
+                        <View style={styles.potInfo}>
+                          <Text style={styles.potName}>{pot.name}</Text>
+                          <View style={styles.progressBar}>
+                            <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%` }]} />
+                          </View>
+                          <Text style={styles.potAmount}>
+                            €{pot.currentAmount.toFixed(2)} / €{pot.goalAmount.toFixed(2)}
+                          </Text>
+                          <Text style={styles.potMeta}>
+                            €{pot.monthlyDeposit.toFixed(2)} per maand
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Inkomsten</Text>
+              {incomes.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>Nog geen inkomsten toegevoegd</Text>
+                </View>
+              ) : (
+                incomes.map((income, index) => (
+                  <React.Fragment key={index}>
+                    <View style={styles.itemCard}>
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemName}>{income.name}</Text>
+                        <Text style={styles.itemMeta}>
+                          {income.type === 'salary' && '💼 Salaris'}
+                          {income.type === 'partner' && '👥 Partner'}
+                          {income.type === 'benefits' && '🎁 Toeslagen'}
+                          {income.type === 'other' && '📌 Overig'}
+                        </Text>
+                      </View>
+                      <Text style={[styles.itemAmount, styles.incomeAmount]}>€{income.amount.toFixed(2)}</Text>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => {
+                          Alert.alert(
+                            'Verwijderen?',
+                            `Weet je zeker dat je ${income.name} wilt verwijderen?`,
+                            [
+                              { text: 'Annuleren', style: 'cancel' },
+                              { text: 'Verwijderen', onPress: () => deleteIncome(income.id), style: 'destructive' },
+                            ]
+                          );
+                        }}
+                      >
+                        <IconSymbol
+                          ios_icon_name="trash"
+                          android_material_icon_name="delete"
+                          size={20}
+                          color={colors.textSecondary}
+                        />
+                      </TouchableOpacity>
                     </View>
-                  </TouchableOpacity>
-                </React.Fragment>
-              );
-            })
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Inkomsten</Text>
-          {incomes.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Nog geen inkomsten toegevoegd</Text>
+                  </React.Fragment>
+                ))
+              )}
             </View>
-          ) : (
-            incomes.map((income, index) => (
-              <React.Fragment key={index}>
-                <View style={styles.itemCard}>
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.itemName}>{income.name}</Text>
-                    <Text style={styles.itemMeta}>
-                      {income.type === 'salary' && '💼 Salaris'}
-                      {income.type === 'partner' && '👥 Partner'}
-                      {income.type === 'benefits' && '🎁 Toeslagen'}
-                      {income.type === 'other' && '📌 Overig'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.itemAmount, styles.incomeAmount]}>€{income.amount.toFixed(2)}</Text>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => {
-                      Alert.alert(
-                        'Verwijderen?',
-                        `Weet je zeker dat je ${income.name} wilt verwijderen?`,
-                        [
-                          { text: 'Annuleren', style: 'cancel' },
-                          { text: 'Verwijderen', onPress: () => deleteIncome(income.id), style: 'destructive' },
-                        ]
-                      );
-                    }}
-                  >
-                    <IconSymbol
-                      ios_icon_name="trash"
-                      android_material_icon_name="delete"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Uitgaven</Text>
+              {expenses.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>Nog geen uitgaven toegevoegd</Text>
                 </View>
-              </React.Fragment>
-            ))
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Uitgaven</Text>
-          {expenses.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Nog geen uitgaven toegevoegd</Text>
+              ) : (
+                expenses.map((expense, index) => (
+                  <React.Fragment key={index}>
+                    <View style={styles.itemCard}>
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemName}>{expense.name}</Text>
+                        <Text style={styles.itemMeta}>
+                          {expense.category === 'fixed' ? '🏠 Vast' : '🛒 Variabel'}
+                          {expense.recurring && ' • 🔄 Terugkerend'}
+                        </Text>
+                      </View>
+                      <Text style={[styles.itemAmount, styles.expenseAmount]}>€{expense.amount.toFixed(2)}</Text>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => {
+                          Alert.alert(
+                            'Verwijderen?',
+                            `Weet je zeker dat je ${expense.name} wilt verwijderen?`,
+                            [
+                              { text: 'Annuleren', style: 'cancel' },
+                              { text: 'Verwijderen', onPress: () => deleteExpense(expense.id), style: 'destructive' },
+                            ]
+                          );
+                        }}
+                      >
+                        <IconSymbol
+                          ios_icon_name="trash"
+                          android_material_icon_name="delete"
+                          size={20}
+                          color={colors.textSecondary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </React.Fragment>
+                ))
+              )}
             </View>
-          ) : (
-            expenses.map((expense, index) => (
-              <React.Fragment key={index}>
-                <View style={styles.itemCard}>
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.itemName}>{expense.name}</Text>
-                    <Text style={styles.itemMeta}>
-                      {expense.category === 'fixed' ? '🏠 Vast' : '🛒 Variabel'}
-                      {expense.recurring && ' • 🔄 Terugkerend'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.itemAmount, styles.expenseAmount]}>€{expense.amount.toFixed(2)}</Text>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => {
-                      Alert.alert(
-                        'Verwijderen?',
-                        `Weet je zeker dat je ${expense.name} wilt verwijderen?`,
-                        [
-                          { text: 'Annuleren', style: 'cancel' },
-                          { text: 'Verwijderen', onPress: () => deleteExpense(expense.id), style: 'destructive' },
-                        ]
-                      );
-                    }}
-                  >
-                    <IconSymbol
-                      ios_icon_name="trash"
-                      android_material_icon_name="delete"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
+
+            {receipts.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Bonnetjes ({receipts.length})</Text>
+                <View style={styles.receiptsGrid}>
+                  {receipts.map((receipt, index) => (
+                    <React.Fragment key={index}>
+                      <View style={styles.receiptCard}>
+                        <Text style={styles.receiptEmoji}>🧾</Text>
+                        <Text style={styles.receiptAmount}>€{receipt.amount.toFixed(2)}</Text>
+                        <Text style={styles.receiptDate}>
+                          {new Date(receipt.date).toLocaleDateString('nl-NL')}
+                        </Text>
+                      </View>
+                    </React.Fragment>
+                  ))}
                 </View>
-              </React.Fragment>
-            ))
-          )}
-        </View>
-
-        {receipts.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bonnetjes ({receipts.length})</Text>
-            <View style={styles.receiptsGrid}>
-              {receipts.map((receipt, index) => (
-                <React.Fragment key={index}>
-                  <View style={styles.receiptCard}>
-                    <Text style={styles.receiptEmoji}>🧾</Text>
-                    <Text style={styles.receiptAmount}>€{receipt.amount.toFixed(2)}</Text>
-                    <Text style={styles.receiptDate}>
-                      {new Date(receipt.date).toLocaleDateString('nl-NL')}
-                    </Text>
-                  </View>
-                </React.Fragment>
-              ))}
-            </View>
-          </View>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
@@ -831,6 +1132,34 @@ export default function FinancesScreen() {
               keyboardType="decimal-pad"
             />
 
+            {budgetPots.length > 0 && (
+              <>
+                <Text style={styles.inputLabel}>Selecteer budgetpotje:</Text>
+                <View style={styles.budgetPotSelector}>
+                  {budgetPots.map((pot, index) => (
+                    <React.Fragment key={index}>
+                      <TouchableOpacity
+                        style={[
+                          styles.budgetPotOption,
+                          receiptBudgetPot === pot.id && styles.budgetPotOptionActive,
+                        ]}
+                        onPress={() => setReceiptBudgetPot(pot.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.budgetPotOptionText,
+                            receiptBudgetPot === pot.id && styles.budgetPotOptionTextActive,
+                          ]}
+                        >
+                          {pot.name}
+                        </Text>
+                      </TouchableOpacity>
+                    </React.Fragment>
+                  ))}
+                </View>
+              </>
+            )}
+
             <TouchableOpacity
               style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10 }]}
               onPress={handleScanReceipt}
@@ -851,10 +1180,110 @@ export default function FinancesScreen() {
               onPress={() => {
                 setShowScanReceiptModal(false);
                 setReceiptAmount('');
+                setReceiptBudgetPot('');
               }}
             >
               <Text style={styles.modalButtonText}>Annuleren</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Budget Pot Modal */}
+      <Modal
+        visible={showAddBudgetPotModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddBudgetPotModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Variabel potje toevoegen</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Naam (bijv. Boodschappen)"
+              placeholderTextColor={colors.textSecondary}
+              value={newBudgetPotName}
+              onChangeText={setNewBudgetPotName}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Maandbudget (€)"
+              placeholderTextColor={colors.textSecondary}
+              value={newBudgetPotBudget}
+              onChangeText={setNewBudgetPotBudget}
+              keyboardType="decimal-pad"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setShowAddBudgetPotModal(false);
+                  setNewBudgetPotName('');
+                  setNewBudgetPotBudget('');
+                }}
+              >
+                <Text style={styles.modalButtonText}>Annuleren</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleAddBudgetPot}
+              >
+                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Budget Pot Modal */}
+      <Modal
+        visible={showEditBudgetPotModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditBudgetPotModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Bedrag aanpassen</Text>
+            <Text style={styles.modalSubtitle}>
+              {selectedBudgetPot?.name}
+            </Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Bedrag (bijv. 25.50)"
+              placeholderTextColor={colors.textSecondary}
+              value={editBudgetPotAmount}
+              onChangeText={setEditBudgetPotAmount}
+              keyboardType="decimal-pad"
+            />
+
+            <Text style={styles.helperText}>
+              Positief bedrag = uitgave, negatief bedrag = correctie
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setShowEditBudgetPotModal(false);
+                  setEditBudgetPotAmount('');
+                  setSelectedBudgetPot(null);
+                }}
+              >
+                <Text style={styles.modalButtonText}>Annuleren</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleEditBudgetPot}
+              >
+                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1221,6 +1650,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 10,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
   },
   welcomeText: {
     fontSize: 14,
@@ -1228,6 +1658,117 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     fontFamily: 'Nunito_400Regular',
+  },
+  onboardingSection: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  onboardingTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 10,
+    fontFamily: 'Poppins_700Bold',
+  },
+  onboardingSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    fontFamily: 'Nunito_400Regular',
+  },
+  onboardingStep: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+  },
+  onboardingStepTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  onboardingStepText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 12,
+    fontFamily: 'Nunito_400Regular',
+  },
+  onboardingButton: {
+    backgroundColor: colors.accent,
+    borderRadius: 15,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  onboardingButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.card,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  onboardingStepComplete: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
+    marginTop: 10,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  resetDaySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  resetDayLabel: {
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
+  resetDayInput: {
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 16,
+    color: colors.text,
+    width: 60,
+    textAlign: 'center',
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  resetDayButton: {
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    padding: 10,
+    paddingHorizontal: 20,
+  },
+  resetDayButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.card,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  onboardingComplete: {
+    backgroundColor: colors.primary,
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+  },
+  onboardingCompleteEmoji: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  onboardingCompleteText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    fontFamily: 'Poppins_600SemiBold',
   },
   summaryCard: {
     backgroundColor: colors.card,
@@ -1336,6 +1877,82 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
   },
+  budgetPotCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 12,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  budgetPotHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  budgetPotName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  budgetPotRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  budgetPotLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  budgetPotValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: colors.background,
+    borderRadius: 4,
+    marginVertical: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.accent,
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontFamily: 'Nunito_400Regular',
+  },
+  leftoverCard: {
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  leftoverTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  leftoverAmount: {
+    fontSize: 28,
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+  },
   potCard: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -1365,18 +1982,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
     fontFamily: 'Poppins_600SemiBold',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: colors.background,
-    borderRadius: 4,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.accent,
-    borderRadius: 4,
   },
   potAmount: {
     fontSize: 14,
@@ -1583,6 +2188,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     fontFamily: 'Nunito_400Regular',
+  },
+  budgetPotSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  budgetPotOption: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 12,
+    flex: 1,
+    minWidth: '45%',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  budgetPotOptionActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.primary,
+  },
+  budgetPotOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  budgetPotOptionTextActive: {
+    color: colors.text,
+  },
+  helperText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
   },
   photoButton: {
     backgroundColor: colors.background,
