@@ -4,6 +4,7 @@ export interface FamilyMember {
   name: string;
   role: 'parent' | 'child';
   avatar?: string;
+  photoUri?: string;
   coins: number;
   color: string;
 }
@@ -31,9 +32,10 @@ export interface Appointment {
   title: string;
   date: Date;
   time: string;
+  endTime?: string;
   assignedTo: string[];
   color: string;
-  recurring: 'none' | 'daily' | 'weekly' | 'monthly';
+  repeatType: 'none' | 'daily' | 'weekly' | 'monthly';
   location?: string;
   notes?: string;
 }
@@ -179,6 +181,7 @@ export interface DailyScheduleItem {
   activity: string;
   assignedTo: string[];
   recurring: boolean;
+  repeatType?: 'none' | 'daily' | 'weekly' | 'monthly';
 }
 
 export interface Notification {

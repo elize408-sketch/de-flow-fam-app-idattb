@@ -55,6 +55,7 @@ export default function AgendaScreen() {
       repeatType: newAppointmentRepeat,
     });
 
+    // Reset form and close modal
     setNewAppointmentTitle('');
     setNewAppointmentDate(new Date());
     setNewAppointmentTime('10:00');
@@ -62,6 +63,7 @@ export default function AgendaScreen() {
     setNewAppointmentAssignedTo([]);
     setNewAppointmentRepeat('none');
     setShowAddModal(false);
+    
     Alert.alert('Gelukt!', 'Afspraak toegevoegd');
   };
 
@@ -479,6 +481,17 @@ export default function AgendaScreen() {
         >
           <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
             <View style={styles.calendarPickerHeader}>
+              <TouchableOpacity
+                style={styles.calendarBackButton}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Ionicons name="chevron-back" size={26} color="#333" />
+              </TouchableOpacity>
+              <Text style={styles.calendarPickerTitle}>Selecteer datum</Text>
+              <View style={styles.calendarHeaderSpacer} />
+            </View>
+
+            <View style={styles.calendarMonthNav}>
               <TouchableOpacity onPress={() => changeMonth('prev')} style={styles.calendarNavButton}>
                 <Ionicons name="chevron-back" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -938,6 +951,31 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   calendarPickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  calendarBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calendarPickerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  calendarHeaderSpacer: {
+    width: 40,
+  },
+  calendarMonthNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

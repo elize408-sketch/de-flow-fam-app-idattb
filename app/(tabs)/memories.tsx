@@ -10,6 +10,7 @@ import * as MailComposer from 'expo-mail-composer';
 import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel } from 'docx';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function MemoriesScreen() {
   const { memories, addMemory, deleteMemory, familyMembers } = useFamily();
@@ -369,7 +370,23 @@ export default function MemoriesScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Nieuwe herinnering</Text>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => {
+                    setShowAddModal(false);
+                    setNewTitle('');
+                    setNewDescription('');
+                    setNewPhoto(undefined);
+                    setNewDate(new Date());
+                    setNewAssignedTo('');
+                  }}
+                >
+                  <Ionicons name="chevron-back" size={26} color="#333" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Nieuwe herinnering</Text>
+                <View style={styles.modalHeaderSpacer} />
+              </View>
 
               <TextInput
                 style={styles.input}
@@ -514,7 +531,20 @@ export default function MemoriesScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Fotoboek bestellen</Text>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => {
+                    setShowPhotoBookModal(false);
+                    setSelectedMemberForPhotoBook('');
+                  }}
+                >
+                  <Ionicons name="chevron-back" size={26} color="#333" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Fotoboek bestellen</Text>
+                <View style={styles.modalHeaderSpacer} />
+              </View>
+
               <Text style={styles.modalSubtitle}>
                 Selecteer voor wie het fotoboek is
               </Text>
@@ -814,13 +844,30 @@ const styles = StyleSheet.create({
     boxShadow: `0px 8px 24px ${colors.shadow}`,
     elevation: 5,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 10,
-    textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  modalHeaderSpacer: {
+    width: 40,
   },
   modalSubtitle: {
     fontSize: 14,

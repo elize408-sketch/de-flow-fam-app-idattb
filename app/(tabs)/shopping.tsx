@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -8,6 +8,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { ShoppingItem, PantryItem, IngredientCategory } from '@/types/family';
 import { CATEGORY_ORDER, CATEGORY_LABELS, categorizeIngredient, parseIngredient } from '@/utils/ingredientCategories';
 import { generateShoppingListPDF } from '@/utils/pdfGenerator';
+import { Ionicons } from '@expo/vector-icons';
 
 type TabType = 'shopping' | 'pantry';
 
@@ -399,65 +400,97 @@ export default function ShoppingScreen() {
         animationType="slide"
         onRequestClose={() => setShowAddModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {activeTab === 'shopping' ? 'Nieuw boodschappen item' : 'Nieuw voorraad item'}
-            </Text>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowAddModal(false)}
+          >
+            <View 
+              style={styles.modalContent}
+              onStartShouldSetResponder={() => true}
+            >
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => {
+                    setShowAddModal(false);
+                    setNewItemName('');
+                    setNewItemQuantity('');
+                    setNewItemUnit('');
+                  }}
+                >
+                  <Ionicons name="chevron-back" size={26} color="#333" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>
+                  {activeTab === 'shopping' ? 'Nieuw boodschappen item' : 'Nieuw voorraad item'}
+                </Text>
+                <View style={styles.modalHeaderSpacer} />
+              </View>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Naam (bijv. Melk, Brood, Eieren)"
-              placeholderTextColor={colors.textSecondary}
-              value={newItemName}
-              onChangeText={setNewItemName}
-              autoFocus
-            />
-
-            <View style={styles.quantityRow}>
-              <TextInput
-                style={[styles.input, styles.quantityInput]}
-                placeholder="Aantal"
-                placeholderTextColor={colors.textSecondary}
-                value={newItemQuantity}
-                onChangeText={setNewItemQuantity}
-                keyboardType="numeric"
-              />
-              
-              <TextInput
-                style={[styles.input, styles.unitInput]}
-                placeholder="Eenheid"
-                placeholderTextColor={colors.textSecondary}
-                value={newItemUnit}
-                onChangeText={setNewItemUnit}
-              />
-            </View>
-
-            <Text style={styles.helperText}>
-              Bijvoorbeeld: 1 liter, 500 gram, 2 stuks
-            </Text>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => {
-                  setShowAddModal(false);
-                  setNewItemName('');
-                  setNewItemQuantity('');
-                  setNewItemUnit('');
-                }}
+              <ScrollView 
+                style={styles.modalScrollView}
+                contentContainerStyle={styles.modalScrollContent}
+                keyboardShouldPersistTaps="handled"
               >
-                <Text style={styles.modalButtonText}>Annuleren</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleAddItem}
-              >
-                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
-              </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Naam (bijv. Melk, Brood, Eieren)"
+                  placeholderTextColor={colors.textSecondary}
+                  value={newItemName}
+                  onChangeText={setNewItemName}
+                  autoFocus
+                />
+
+                <View style={styles.quantityRow}>
+                  <TextInput
+                    style={[styles.input, styles.quantityInput]}
+                    placeholder="Aantal"
+                    placeholderTextColor={colors.textSecondary}
+                    value={newItemQuantity}
+                    onChangeText={setNewItemQuantity}
+                    keyboardType="numeric"
+                  />
+                  
+                  <TextInput
+                    style={[styles.input, styles.unitInput]}
+                    placeholder="Eenheid"
+                    placeholderTextColor={colors.textSecondary}
+                    value={newItemUnit}
+                    onChangeText={setNewItemUnit}
+                  />
+                </View>
+
+                <Text style={styles.helperText}>
+                  Bijvoorbeeld: 1 liter, 500 gram, 2 stuks
+                </Text>
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonCancel]}
+                    onPress={() => {
+                      setShowAddModal(false);
+                      setNewItemName('');
+                      setNewItemQuantity('');
+                      setNewItemUnit('');
+                    }}
+                  >
+                    <Text style={styles.modalButtonText}>Annuleren</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonConfirm]}
+                    onPress={handleAddItem}
+                  >
+                    <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -674,26 +707,47 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    padding: 20,
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: colors.card,
-    borderRadius: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-    boxShadow: `0px 8px 24px ${colors.shadow}`,
+    maxHeight: '80%',
+    boxShadow: `0px -4px 24px ${colors.shadow}`,
     elevation: 5,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 20,
-    textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  modalHeaderSpacer: {
+    width: 40,
+  },
+  modalScrollView: {
+    maxHeight: 500,
+  },
+  modalScrollContent: {
+    paddingBottom: 20,
   },
   input: {
     backgroundColor: colors.background,
@@ -707,6 +761,7 @@ const styles = StyleSheet.create({
   quantityRow: {
     flexDirection: 'row',
     gap: 10,
+    marginBottom: 0,
   },
   quantityInput: {
     flex: 1,
