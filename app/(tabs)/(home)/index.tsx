@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import TodayScreen from './today';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -97,6 +98,9 @@ export default function HomeScreen() {
 
   const menuSections = isParent ? allMenuSections : childMenuSections;
 
+  // Number of slides: Today + Tasks + (Agenda for parents)
+  const totalSlides = isParent ? 3 : 2;
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -132,7 +136,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Slider with 2 slides - Only show tasks for children */}
+        {/* Slider with Today, Tasks, and Agenda */}
         <View style={styles.sliderContainer}>
           <ScrollView
             ref={scrollViewRef}
@@ -143,7 +147,12 @@ export default function HomeScreen() {
             scrollEventThrottle={16}
             style={styles.slider}
           >
-            {/* Slide 1: Tasks */}
+            {/* Slide 1: Today Overview */}
+            <View style={[styles.slide, { width: screenWidth - 40 }]}>
+              <TodayScreen />
+            </View>
+
+            {/* Slide 2: Tasks */}
             <View style={[styles.slide, { width: screenWidth - 40 }]}>
               <View style={styles.slideCard}>
                 <View style={styles.slideHeader}>
@@ -202,7 +211,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Slide 2: Agenda - Only for parents */}
+            {/* Slide 3: Agenda - Only for parents */}
             {isParent && (
               <View style={[styles.slide, { width: screenWidth - 40 }]}>
                 <View style={styles.slideCard}>
@@ -246,21 +255,19 @@ export default function HomeScreen() {
             )}
           </ScrollView>
 
-          {/* Slide indicators - Only show for parents with 2 slides */}
-          {isParent && (
-            <View style={styles.slideIndicators}>
-              {[0, 1].map((index) => (
-                <React.Fragment key={index}>
-                  <View
-                    style={[
-                      styles.slideIndicator,
-                      currentSlide === index && styles.slideIndicatorActive,
-                    ]}
-                  />
-                </React.Fragment>
-              ))}
-            </View>
-          )}
+          {/* Slide indicators */}
+          <View style={styles.slideIndicators}>
+            {Array.from({ length: totalSlides }).map((_, index) => (
+              <React.Fragment key={index}>
+                <View
+                  style={[
+                    styles.slideIndicator,
+                    currentSlide === index && styles.slideIndicatorActive,
+                  ]}
+                />
+              </React.Fragment>
+            ))}
+          </View>
         </View>
 
         {/* Menu sections below slider */}
