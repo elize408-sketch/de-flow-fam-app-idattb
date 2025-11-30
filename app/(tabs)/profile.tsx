@@ -23,14 +23,33 @@ const AVAILABLE_COLORS = [
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { familyMembers, addFamilyMember, updateFamilyMember, currentUser, setCurrentUser, tasks, deleteTask, updateTask, appointments, addAppointment, updateAppointment, deleteAppointment } = useFamily();
+  const { 
+    familyMembers, 
+    addFamilyMember, 
+    updateFamilyMember, 
+    deleteFamilyMember,
+    currentUser, 
+    setCurrentUser, 
+    tasks, 
+    deleteTask, 
+    updateTask, 
+    appointments, 
+    addAppointment, 
+    updateAppointment, 
+    deleteAppointment,
+    shareFamilyInvite,
+    familyCode,
+  } = useFamily();
+  
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showEditMemberModal, setShowEditMemberModal] = useState(false);
   const [showManageChildTasksModal, setShowManageChildTasksModal] = useState(false);
   const [showManageChildPlanningModal, setShowManageChildPlanningModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
   const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
   const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
+  const [editingMember, setEditingMember] = useState<any>(null);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<'parent' | 'child'>('child');
   const [newMemberColor, setNewMemberColor] = useState(AVAILABLE_COLORS[0].value);
@@ -109,6 +128,55 @@ export default function ProfileScreen() {
     setNewMemberPhoto(null);
     setShowAddMemberModal(false);
     Alert.alert('Gelukt!', `${newMemberName} is toegevoegd aan het gezin`);
+  };
+
+  const openEditMemberModal = (member: any) => {
+    setEditingMember(member);
+    setNewMemberName(member.name);
+    setNewMemberRole(member.role);
+    setNewMemberColor(member.color);
+    setNewMemberPhoto(member.photoUri || null);
+    setShowEditMemberModal(true);
+  };
+
+  const handleEditMember = () => {
+    if (!newMemberName.trim()) {
+      Alert.alert('Fout', 'Vul een naam in');
+      return;
+    }
+
+    updateFamilyMember(editingMember.id, {
+      name: newMemberName.trim(),
+      role: newMemberRole,
+      color: newMemberColor,
+      photoUri: newMemberPhoto || undefined,
+    });
+
+    setEditingMember(null);
+    setNewMemberName('');
+    setNewMemberRole('child');
+    setNewMemberColor(AVAILABLE_COLORS[0].value);
+    setNewMemberPhoto(null);
+    setShowEditMemberModal(false);
+    Alert.alert('Gelukt!', 'Gezinslid bijgewerkt');
+  };
+
+  const handleDeleteMember = (memberId: string, memberName: string) => {
+    Alert.alert(
+      'Gezinslid verwijderen',
+      `Weet je zeker dat je ${memberName} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Verwijderen',
+          style: 'destructive',
+          onPress: () => {
+            deleteFamilyMember(memberId);
+            Alert.alert('Gelukt!', `${memberName} is verwijderd`);
+          },
+        },
+      ]
+    );
   };
 
   const handleDeleteTask = (taskId: string, taskName: string) => {
@@ -221,6 +289,15 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleShareInvite = async () => {
+    try {
+      await shareFamilyInvite();
+    } catch (error) {
+      console.error('Error sharing invite:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het delen van de uitnodiging');
+    }
+  };
+
   const children = familyMembers.filter(m => m.role === 'child');
   const childTasks = tasks.filter(t => children.some(c => c.id === t.assignedTo));
   const childAppointments = appointments.filter(apt => 
@@ -305,41 +382,92 @@ export default function ProfileScreen() {
                     <Text style={styles.coinEmoji}>🪙</Text>
                   </View>
                 )}
+                {isParent && (
+                  <View style={styles.memberActions}>
+                    <TouchableOpacity
+                      style={styles.editMemberButton}
+                      onPress={() => openEditMemberModal(member)}
+                    >
+                      <IconSymbol
+                        ios_icon_name="pencil"
+                        android_material_icon_name="edit"
+                        size={20}
+                        color={colors.card}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteMemberButton}
+                      onPress={() => handleDeleteMember(member.id, member.name)}
+                    >
+                      <IconSymbol
+                        ios_icon_name="trash"
+                        android_material_icon_name="delete"
+                        size={20}
+                        color={colors.card}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </React.Fragment>
           ))}
         </View>
 
         {isParent && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Kinderen beheren</Text>
-            
-            <TouchableOpacity
-              style={styles.manageButton}
-              onPress={() => setShowManageChildTasksModal(true)}
-            >
-              <IconSymbol
-                ios_icon_name="list-bullet"
-                android_material_icon_name="list"
-                size={24}
-                color={colors.card}
-              />
-              <Text style={styles.manageButtonText}>Taken van kinderen beheren</Text>
-            </TouchableOpacity>
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Partner uitnodigen</Text>
+              <TouchableOpacity
+                style={styles.inviteButton}
+                onPress={handleShareInvite}
+              >
+                <IconSymbol
+                  ios_icon_name="person-add"
+                  android_material_icon_name="person-add"
+                  size={24}
+                  color={colors.card}
+                />
+                <Text style={styles.inviteButtonText}>Nodig je partner uit</Text>
+              </TouchableOpacity>
+              {familyCode && (
+                <View style={styles.codeCard}>
+                  <Text style={styles.codeLabel}>Jouw gezinscode:</Text>
+                  <Text style={styles.codeText}>{familyCode}</Text>
+                  <Text style={styles.codeHint}>Deel deze code met je partner om samen de app te gebruiken</Text>
+                </View>
+              )}
+            </View>
 
-            <TouchableOpacity
-              style={[styles.manageButton, { backgroundColor: colors.vibrantOrange }]}
-              onPress={() => setShowManageChildPlanningModal(true)}
-            >
-              <IconSymbol
-                ios_icon_name="calendar"
-                android_material_icon_name="calendar-today"
-                size={24}
-                color={colors.card}
-              />
-              <Text style={styles.manageButtonText}>Planning van kinderen beheren</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Kinderen beheren</Text>
+              
+              <TouchableOpacity
+                style={styles.manageButton}
+                onPress={() => setShowManageChildTasksModal(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="list-bullet"
+                  android_material_icon_name="list"
+                  size={24}
+                  color={colors.card}
+                />
+                <Text style={styles.manageButtonText}>Taken van kinderen beheren</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.manageButton, { backgroundColor: colors.vibrantOrange }]}
+                onPress={() => setShowManageChildPlanningModal(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="calendar"
+                  android_material_icon_name="calendar-today"
+                  size={24}
+                  color={colors.card}
+                />
+                <Text style={styles.manageButtonText}>Planning van kinderen beheren</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
 
         <View style={styles.section}>
@@ -559,6 +687,130 @@ export default function ProfileScreen() {
                   onPress={handleAddMember}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Edit Member Modal */}
+      <Modal
+        visible={showEditMemberModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditMemberModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Gezinslid bewerken</Text>
+
+              <TouchableOpacity style={styles.photoPickerButton} onPress={handlePickImage}>
+                {newMemberPhoto ? (
+                  <Image source={{ uri: newMemberPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <IconSymbol
+                      ios_icon_name="camera"
+                      android_material_icon_name="camera-alt"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.photoPlaceholderText}>Foto toevoegen</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Naam"
+                placeholderTextColor={colors.textSecondary}
+                value={newMemberName}
+                onChangeText={setNewMemberName}
+              />
+
+              <Text style={styles.inputLabel}>Rol:</Text>
+              <View style={styles.roleSelector}>
+                <TouchableOpacity
+                  style={[styles.roleButton, newMemberRole === 'child' && styles.roleButtonActive]}
+                  onPress={() => setNewMemberRole('child')}
+                >
+                  <Text style={[styles.roleButtonText, newMemberRole === 'child' && styles.roleButtonTextActive]}>
+                    👶 Kind
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.roleButton, newMemberRole === 'parent' && styles.roleButtonActive]}
+                  onPress={() => setNewMemberRole('parent')}
+                >
+                  <Text style={[styles.roleButtonText, newMemberRole === 'parent' && styles.roleButtonTextActive]}>
+                    👨‍👩‍👧‍👦 Ouder
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.inputLabel}>Kies een kleur:</Text>
+              <Text style={styles.colorHint}>Deze kleur wordt gebruikt in de agenda voor afspraken</Text>
+              <View style={styles.colorSelector}>
+                {AVAILABLE_COLORS.map((colorOption, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.colorOption,
+                        { backgroundColor: colorOption.value },
+                        newMemberColor === colorOption.value && styles.colorOptionActive,
+                      ]}
+                      onPress={() => setNewMemberColor(colorOption.value)}
+                    >
+                      {newMemberColor === colorOption.value && (
+                        <View style={styles.colorCheckmark}>
+                          <IconSymbol
+                            ios_icon_name="checkmark"
+                            android_material_icon_name="check"
+                            size={20}
+                            color={colors.card}
+                          />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.previewCard}>
+                <Text style={styles.previewLabel}>Voorbeeld:</Text>
+                <View style={[styles.previewAvatar, { backgroundColor: newMemberColor }]}>
+                  {newMemberPhoto ? (
+                    <Image source={{ uri: newMemberPhoto }} style={styles.previewPhoto} />
+                  ) : (
+                    <Text style={styles.previewAvatarText}>
+                      {newMemberName ? newMemberName.charAt(0).toUpperCase() : '?'}
+                    </Text>
+                  )}
+                </View>
+                <Text style={styles.previewName}>{newMemberName || 'Naam'}</Text>
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowEditMemberModal(false);
+                    setEditingMember(null);
+                    setNewMemberName('');
+                    setNewMemberRole('child');
+                    setNewMemberColor(AVAILABLE_COLORS[0].value);
+                    setNewMemberPhoto(null);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleEditMember}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1063,6 +1315,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 15,
+    marginRight: 8,
   },
   coinsText: {
     fontSize: 16,
@@ -1073,6 +1326,72 @@ const styles = StyleSheet.create({
   },
   coinEmoji: {
     fontSize: 16,
+  },
+  memberActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editMemberButton: {
+    backgroundColor: colors.vibrantOrange,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteMemberButton: {
+    backgroundColor: '#E74C3C',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inviteButton: {
+    backgroundColor: colors.vibrantGreen,
+    borderRadius: 20,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+    marginBottom: 15,
+  },
+  inviteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.card,
+    marginLeft: 10,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  codeCard: {
+    backgroundColor: colors.card,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  codeLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 8,
+    fontFamily: 'Nunito_400Regular',
+  },
+  codeText: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.accent,
+    letterSpacing: 4,
+    fontFamily: 'Poppins_700Bold',
+    marginBottom: 8,
+  },
+  codeHint: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontFamily: 'Nunito_400Regular',
   },
   manageButton: {
     backgroundColor: colors.secondary,

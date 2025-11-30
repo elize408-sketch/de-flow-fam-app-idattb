@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, Reminder, DailyScheduleItem, Notification, PantryItem, Ingredient, IngredientCategory, BudgetPot } from '@/types/family';
 import { initialFamilyMembers, initialTasks, initialRewards } from '@/data/familyData';
-import { savePantryItems, loadPantryItems, saveWeekPlanningServings, loadWeekPlanningServings } from '@/utils/localStorage';
+import { savePantryItems, loadPantryItems, saveWeekPlanningServings, loadWeekPlanningServings, saveCurrentUserId, loadCurrentUserId, saveFamilyMembers, loadFamilyMembers, saveFamilyCode, loadFamilyCode } from '@/utils/localStorage';
 import { categorizeIngredient, parseIngredient, shouldNotScale } from '@/utils/ingredientCategories';
 import { Alert, Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,6 +34,7 @@ interface FamilyContextType {
   financePasscode: string | null;
   financeOnboardingComplete: boolean;
   weekPlanningServings: number;
+  familyCode: string | null;
   setSelectedMember: (member: FamilyMember | null) => void;
   setCurrentUser: (user: FamilyMember | null) => void;
   setFinancePasscode: (passcode: string) => void;
@@ -43,6 +44,7 @@ interface FamilyContextType {
   checkAndPerformMonthlyReset: () => void;
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   updateFamilyMember: (memberId: string, updates: Partial<FamilyMember>) => void;
+  deleteFamilyMember: (memberId: string) => void;
   completeTask: (taskId: string) => void;
   addCoins: (memberId: string, amount: number) => void;
   redeemReward: (memberId: string, rewardId: string) => void;
@@ -99,6 +101,9 @@ interface FamilyContextType {
   addIngredientsToShoppingList: (ingredients: string[]) => void;
   addRecipeIngredientsToShoppingList: (meal: Meal) => Promise<{ added: number; skipped: string[] }>;
   shareShoppingListText: () => Promise<void>;
+  generateFamilyInviteCode: () => Promise<string>;
+  shareFamilyInvite: () => Promise<void>;
+  getVisibleFamilyMembers: () => FamilyMember[];
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -131,20 +136,74 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [financeLastResetDate, setFinanceLastResetDate] = useState<Date | null>(null);
   const [financePreviousMonthLeftover, setFinancePreviousMonthLeftover] = useState<number | null>(null);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
-  const [currentUser, setCurrentUser] = useState<FamilyMember | null>(familyMembers[0]);
+  const [currentUser, setCurrentUserState] = useState<FamilyMember | null>(null);
   const [financePasscode, setFinancePasscode] = useState<string | null>(null);
   const [financeOnboardingComplete, setFinanceOnboardingComplete] = useState(false);
   const [weekPlanningServings, setWeekPlanningServingsState] = useState(2);
+  const [familyCode, setFamilyCode] = useState<string | null>(null);
 
   // Load data on mount
   useEffect(() => {
-    loadPantryItems().then(items => setPantryItems(items));
-    loadWeekPlanningServings().then(servings => setWeekPlanningServingsState(servings));
-    loadBudgetPots();
-    loadFinanceResetDay();
-    loadFinanceLastResetDate();
-    loadFinancePreviousMonthLeftover();
+    loadInitialData();
   }, []);
+
+  const loadInitialData = async () => {
+    try {
+      // Load family members
+      const loadedMembers = await loadFamilyMembers();
+      if (loadedMembers.length > 0) {
+        setFamilyMembers(loadedMembers);
+      }
+
+      // Load current user
+      const userId = await loadCurrentUserId();
+      if (userId && loadedMembers.length > 0) {
+        const user = loadedMembers.find(m => m.id === userId);
+        if (user) {
+          setCurrentUserState(user);
+        }
+      }
+
+      // Load family code
+      const code = await loadFamilyCode();
+      if (code) {
+        setFamilyCode(code);
+      }
+
+      // Load other data
+      const items = await loadPantryItems();
+      setPantryItems(items);
+      
+      const servings = await loadWeekPlanningServings();
+      setWeekPlanningServingsState(servings);
+      
+      await loadBudgetPots();
+      await loadFinanceResetDay();
+      await loadFinanceLastResetDate();
+      await loadFinancePreviousMonthLeftover();
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    }
+  };
+
+  // Save family members whenever they change
+  useEffect(() => {
+    saveFamilyMembers(familyMembers);
+  }, [familyMembers]);
+
+  // Save current user whenever it changes
+  useEffect(() => {
+    if (currentUser) {
+      saveCurrentUserId(currentUser.id);
+    }
+  }, [currentUser]);
+
+  // Save family code whenever it changes
+  useEffect(() => {
+    if (familyCode) {
+      saveFamilyCode(familyCode);
+    }
+  }, [familyCode]);
 
   // Save data whenever they change
   useEffect(() => {
@@ -254,6 +313,10 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     saveWeekPlanningServings(servings);
   };
 
+  const setCurrentUser = (user: FamilyMember | null) => {
+    setCurrentUserState(user);
+  };
+
   const setFinanceResetDay = (day: number) => {
     setFinanceResetDayState(day);
     // Initialize last reset date to today if not set
@@ -316,6 +379,20 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         member.id === memberId ? { ...member, ...updates } : member
       )
     );
+    
+    // Update current user if it's the one being updated
+    if (currentUser?.id === memberId) {
+      setCurrentUserState(prev => prev ? { ...prev, ...updates } : null);
+    }
+  };
+
+  const deleteFamilyMember = (memberId: string) => {
+    setFamilyMembers(prev => prev.filter(member => member.id !== memberId));
+    
+    // If deleting current user, clear current user
+    if (currentUser?.id === memberId) {
+      setCurrentUserState(null);
+    }
   };
 
   const completeTask = (taskId: string) => {
@@ -824,6 +901,44 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const generateFamilyInviteCode = async (): Promise<string> => {
+    // Generate a unique 6-character code
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setFamilyCode(code);
+    return code;
+  };
+
+  const shareFamilyInvite = async () => {
+    try {
+      let code = familyCode;
+      if (!code) {
+        code = await generateFamilyInviteCode();
+      }
+
+      const message = `👨‍👩‍👧‍👦 Je bent uitgenodigd om deel te nemen aan ons gezin in Flow Fam!\n\nGebruik deze code om je aan te sluiten: ${code}\n\nDownload de app en voer de code in tijdens het instellen.`;
+
+      await Share.share({
+        message,
+        title: 'Flow Fam Uitnodiging',
+      });
+    } catch (error) {
+      console.error('Error sharing family invite:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het delen van de uitnodiging');
+    }
+  };
+
+  const getVisibleFamilyMembers = (): FamilyMember[] => {
+    if (!currentUser) return familyMembers;
+    
+    // Parents see all members
+    if (currentUser.role === 'parent') {
+      return familyMembers;
+    }
+    
+    // Children only see themselves
+    return familyMembers.filter(m => m.id === currentUser.id);
+  };
+
   return (
     <FamilyContext.Provider
       value={{
@@ -853,6 +968,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         financePasscode,
         financeOnboardingComplete,
         weekPlanningServings,
+        familyCode,
         setSelectedMember,
         setCurrentUser,
         setFinancePasscode,
@@ -862,6 +978,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         checkAndPerformMonthlyReset,
         addFamilyMember,
         updateFamilyMember,
+        deleteFamilyMember,
         completeTask,
         addCoins,
         redeemReward,
@@ -918,6 +1035,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         addIngredientsToShoppingList,
         addRecipeIngredientsToShoppingList,
         shareShoppingListText,
+        generateFamilyInviteCode,
+        shareFamilyInvite,
+        getVisibleFamilyMembers,
       }}
     >
       {children}
