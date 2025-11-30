@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
-import TodayScreen from './today';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -98,8 +97,8 @@ export default function HomeScreen() {
 
   const menuSections = isParent ? allMenuSections : childMenuSections;
 
-  // Number of slides: Today + Tasks + (Agenda for parents)
-  const totalSlides = isParent ? 3 : 2;
+  // Number of slides: Tasks + Agenda (for parents only)
+  const totalSlides = isParent ? 2 : 1;
 
   return (
     <View style={styles.container}>
@@ -136,7 +135,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Slider with Today, Tasks, and Agenda */}
+        {/* Slider with Tasks and Agenda */}
         <View style={styles.sliderContainer}>
           <ScrollView
             ref={scrollViewRef}
@@ -147,12 +146,7 @@ export default function HomeScreen() {
             scrollEventThrottle={16}
             style={styles.slider}
           >
-            {/* Slide 1: Today Overview */}
-            <View style={[styles.slide, { width: screenWidth - 40 }]}>
-              <TodayScreen />
-            </View>
-
-            {/* Slide 2: Tasks */}
+            {/* Slide 1: Tasks */}
             <View style={[styles.slide, { width: screenWidth - 40 }]}>
               <View style={styles.slideCard}>
                 <View style={styles.slideHeader}>
@@ -211,7 +205,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Slide 3: Agenda - Only for parents */}
+            {/* Slide 2: Agenda - Only for parents */}
             {isParent && (
               <View style={[styles.slide, { width: screenWidth - 40 }]}>
                 <View style={styles.slideCard}>
