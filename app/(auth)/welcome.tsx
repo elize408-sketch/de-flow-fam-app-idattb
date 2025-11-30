@@ -16,7 +16,11 @@ export default function WelcomeScreen() {
       <View style={styles.content}>
         {/* Logo/Icon */}
         <View style={styles.logoContainer}>
-          <Text style={styles.logoEmoji}>👨‍👩‍👧‍👦</Text>
+          <Image
+            source={require('@/assets/images/flow-fam-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>Welkom bij Flow Fam</Text>
           <Text style={styles.subtitle}>Rust, overzicht en liefde voor je gezin</Text>
         </View>
@@ -66,8 +70,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 60,
   },
-  logoEmoji: {
-    fontSize: 100,
+  logo: {
+    width: 120,
+    height: 120,
     marginBottom: 20,
   },
   title: {
