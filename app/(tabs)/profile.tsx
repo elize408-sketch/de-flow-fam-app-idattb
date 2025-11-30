@@ -470,18 +470,7 @@ export default function ProfileScreen() {
           </>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App informatie</Text>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoText}>Flow Fam App</Text>
-            <Text style={styles.infoSubtext}>Versie 1.0.0</Text>
-            <Text style={styles.infoNote}>
-              💡 Deze app kan door beide ouders geïnstalleerd worden op hun eigen telefoon voor gezamenlijk gebruik.
-            </Text>
-          </View>
-        </View>
-
-        {/* Profile Switcher Section - Last item */}
+        {/* Profile Switcher Section - Moved above App Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Profiel wisselen</Text>
           <TouchableOpacity
@@ -508,6 +497,18 @@ export default function ProfileScreen() {
               color={colors.textSecondary}
             />
           </TouchableOpacity>
+        </View>
+
+        {/* App Information Section - Moved below Profile Switcher */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>App informatie</Text>
+          <View style={styles.infoCard}>
+            <Text style={styles.infoText}>Flow Fam App</Text>
+            <Text style={styles.infoSubtext}>Versie 1.0.0</Text>
+            <Text style={styles.infoNote}>
+              💡 Deze app kan door beide ouders geïnstalleerd worden op hun eigen telefoon voor gezamenlijk gebruik.
+            </Text>
+          </View>
         </View>
       </ScrollView>
 

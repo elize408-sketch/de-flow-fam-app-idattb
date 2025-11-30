@@ -70,7 +70,10 @@ export default function DocumentsScreen() {
   }, [currentUser]);
 
   const loadDocuments = async () => {
-    if (!currentFamily) return;
+    if (!currentFamily) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -90,6 +93,7 @@ export default function DocumentsScreen() {
 
       if (error) {
         console.error('Load documents error:', error);
+        setLoading(false);
         return;
       }
 
@@ -394,9 +398,9 @@ export default function DocumentsScreen() {
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyEmoji}>📄</Text>
           <Text style={styles.emptyText}>Nog geen documenten</Text>
-          <Text style={styles.emptySubtext}>
-            Tik op + om een document te uploaden
-          </Text>
+          <TouchableOpacity style={styles.emptyButton} onPress={handlePickDocument}>
+            <Text style={styles.emptyButtonText}>Document toevoegen</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -697,14 +701,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 20,
     fontFamily: 'Poppins_600SemiBold',
   },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    fontFamily: 'Nunito_400Regular',
+  emptyButton: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  emptyButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.card,
+    fontFamily: 'Poppins_600SemiBold',
   },
   scrollContent: {
     paddingHorizontal: 20,
