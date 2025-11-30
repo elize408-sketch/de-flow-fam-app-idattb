@@ -20,6 +20,7 @@ export default function AgendaScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const toggleMemberSelection = (memberId: string) => {
     setNewAppointmentAssignedTo(prev => {
@@ -162,6 +163,9 @@ export default function AgendaScreen() {
     return days;
   };
 
+  // Get appointments for the selected date
+  const selectedDateAppointments = getAppointmentsForDate(selectedDate);
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -223,13 +227,33 @@ export default function AgendaScreen() {
                 day.getDate() === new Date().getDate() &&
                 day.getMonth() === new Date().getMonth() &&
                 day.getFullYear() === new Date().getFullYear();
+              const isSelected = day &&
+                day.getDate() === selectedDate.getDate() &&
+                day.getMonth() === selectedDate.getMonth() &&
+                day.getFullYear() === selectedDate.getFullYear();
 
               return (
                 <React.Fragment key={index}>
-                  <View style={[styles.dayCell, isToday && styles.dayCellToday]}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.dayCell, 
+                      isToday && styles.dayCellToday,
+                      isSelected && styles.dayCellSelected
+                    ]}
+                    onPress={() => {
+                      if (day) {
+                        setSelectedDate(day);
+                      }
+                    }}
+                    disabled={!day}
+                  >
                     {day && (
                       <>
-                        <Text style={[styles.dayNumber, isToday && styles.dayNumberToday]}>
+                        <Text style={[
+                          styles.dayNumber, 
+                          isToday && styles.dayNumberToday,
+                          isSelected && styles.dayNumberSelected
+                        ]}>
                           {day.getDate()}
                         </Text>
                         {dayAppointments.length > 0 && (
@@ -243,7 +267,7 @@ export default function AgendaScreen() {
                         )}
                       </>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 </React.Fragment>
               );
             })}
@@ -251,15 +275,17 @@ export default function AgendaScreen() {
         </View>
 
         <View style={styles.appointmentsList}>
-          <Text style={styles.sectionTitle}>Aankomende afspraken</Text>
-          {appointments.length === 0 ? (
+          <Text style={styles.sectionTitle}>
+            Afspraken op {selectedDate.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}
+          </Text>
+          {selectedDateAppointments.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateEmoji}>📅</Text>
-              <Text style={styles.emptyStateText}>Nog geen afspraken</Text>
+              <Text style={styles.emptyStateText}>Geen afspraken op deze dag</Text>
             </View>
           ) : (
-            appointments
-              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            selectedDateAppointments
+              .sort((a, b) => a.time.localeCompare(b.time))
               .map((appointment, index) => {
                 const members = familyMembers.filter(m => appointment.assignedTo.includes(m.id));
                 return (
@@ -268,7 +294,7 @@ export default function AgendaScreen() {
                       <View style={styles.appointmentInfo}>
                         <Text style={styles.appointmentTitle}>{appointment.title}</Text>
                         <Text style={styles.appointmentMeta}>
-                          📅 {new Date(appointment.date).toLocaleDateString('nl-NL')} om {appointment.time}
+                          🕐 {appointment.time}
                           {appointment.endTime && ` - ${appointment.endTime}`}
                         </Text>
                         <View style={styles.membersRow}>
@@ -643,12 +669,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 10,
   },
+  dayCellSelected: {
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+  },
   dayNumber: {
     fontSize: 14,
     color: colors.text,
     fontFamily: 'Nunito_400Regular',
   },
   dayNumberToday: {
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+  },
+  dayNumberSelected: {
+    color: colors.card,
     fontWeight: '700',
     fontFamily: 'Poppins_700Bold',
   },

@@ -442,7 +442,6 @@ export default function ShoppingScreen() {
                   placeholderTextColor={colors.textSecondary}
                   value={newItemName}
                   onChangeText={setNewItemName}
-                  autoFocus
                 />
 
                 <View style={styles.quantityRow}>

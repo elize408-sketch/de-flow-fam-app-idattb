@@ -606,9 +606,9 @@ export default function TasksScreen() {
                       <Text style={styles.inputLabel}>Herhaling:</Text>
                       <View style={styles.repeatSelector}>
                         {[
-                          { value: 'daily', label: 'Dagelijks', icon: 'sun.max' },
-                          { value: 'weekly', label: 'Wekelijks', icon: 'calendar' },
-                          { value: 'monthly', label: 'Maandelijks', icon: 'calendar.badge.clock' },
+                          { value: 'daily', label: 'Dagelijks' },
+                          { value: 'weekly', label: 'Wekelijks' },
+                          { value: 'monthly', label: 'Maandelijks' },
                         ].map((option, index) => (
                           <React.Fragment key={index}>
                             <TouchableOpacity
@@ -618,12 +618,6 @@ export default function TasksScreen() {
                               ]}
                               onPress={() => setNewTaskRepeatType(option.value as any)}
                             >
-                              <IconSymbol
-                                ios_icon_name={option.icon}
-                                android_material_icon_name="event_repeat"
-                                size={24}
-                                color={newTaskRepeatType === option.value ? colors.accent : colors.textSecondary}
-                              />
                               <Text
                                 style={[
                                   styles.repeatOptionText,
@@ -1066,7 +1060,7 @@ const styles = StyleSheet.create({
     padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
