@@ -21,6 +21,7 @@ export default function TabLayout() {
         <Stack.Screen key="finances" name="finances" />
         <Stack.Screen key="shopping" name="shopping" />
         <Stack.Screen key="notes" name="notes" />
+        <Stack.Screen key="documents" name="documents" />
         <Stack.Screen key="memories" name="memories" />
         <Stack.Screen key="reminders" name="reminders" />
         <Stack.Screen key="shop" name="shop" />

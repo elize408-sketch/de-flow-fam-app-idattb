@@ -17,6 +17,7 @@ export const colors = {
   vibrantOrange: '#F5A623',   // Vibrant Orange
   vibrantPurple: '#9013FE',   // Vibrant Purple
   vibrantTeal: '#50E3C2',     // Vibrant Teal
+  vibrantRed: '#FF3B30',      // Vibrant Red
 };
 
 export const buttonStyles = StyleSheet.create({

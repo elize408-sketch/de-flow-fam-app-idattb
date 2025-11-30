@@ -7,6 +7,11 @@ import { categorizeIngredient, parseIngredient, shouldNotScale } from '@/utils/i
 import { Alert, Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+interface Family {
+  id: string;
+  family_code: string;
+}
+
 interface FamilyContextType {
   familyMembers: FamilyMember[];
   tasks: Task[];
@@ -31,6 +36,7 @@ interface FamilyContextType {
   financePreviousMonthLeftover: number | null;
   selectedMember: FamilyMember | null;
   currentUser: FamilyMember | null;
+  currentFamily: Family | null;
   financePasscode: string | null;
   financeOnboardingComplete: boolean;
   weekPlanningServings: number;
@@ -141,6 +147,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [financeOnboardingComplete, setFinanceOnboardingComplete] = useState(false);
   const [weekPlanningServings, setWeekPlanningServingsState] = useState(2);
   const [familyCode, setFamilyCode] = useState<string | null>(null);
+  const [currentFamily, setCurrentFamily] = useState<Family | null>(null);
 
   // Load data on mount
   useEffect(() => {
@@ -161,6 +168,14 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         const user = loadedMembers.find(m => m.id === userId);
         if (user) {
           setCurrentUserState(user);
+          
+          // Load current family from database
+          const { getFamilyByUserId } = await import('@/utils/familyService');
+          const familyResult = await getFamilyByUserId(user.userId);
+          if (familyResult.success && familyResult.family) {
+            setCurrentFamily(familyResult.family);
+            setFamilyCode(familyResult.family.family_code);
+          }
         }
       }
 
@@ -965,6 +980,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         financePreviousMonthLeftover,
         selectedMember,
         currentUser,
+        currentFamily,
         financePasscode,
         financeOnboardingComplete,
         weekPlanningServings,

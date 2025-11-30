@@ -86,8 +86,12 @@ export default function CreateFamilyScreen() {
       }
 
       if (!result.session) {
-        // Email confirmation required
+        // Email confirmation required - redirect to verification
         setLoading(false);
+        router.push({
+          pathname: '/(auth)/verify-email',
+          params: { email, name, flow: 'create' },
+        });
         return;
       }
 

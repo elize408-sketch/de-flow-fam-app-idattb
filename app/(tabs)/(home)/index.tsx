@@ -86,6 +86,7 @@ export default function HomeScreen() {
     { icon: 'notifications', label: 'Fotoboek', route: '/(tabs)/reminders', color: colors.vibrantPurple },
     { icon: 'restaurant', label: 'Maaltijden', route: '/(tabs)/meals', color: colors.vibrantPink },
     { icon: 'folder', label: 'Notities', route: '/(tabs)/notes', color: colors.vibrantOrange },
+    { icon: 'description', label: 'Documenten', route: '/(tabs)/documents', color: colors.vibrantTeal },
     { icon: 'shopping-bag', label: 'Shop', route: '/(tabs)/shop', color: colors.vibrantTeal },
     { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
   ];
