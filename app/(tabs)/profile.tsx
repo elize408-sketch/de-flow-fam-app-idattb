@@ -163,8 +163,8 @@ export default function ProfileScreen() {
 
   const handleDeleteMember = (memberId: string, memberName: string) => {
     Alert.alert(
-      'Gezinslid verwijderen',
-      `Weet je zeker dat je ${memberName} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+      'Weet je het zeker?',
+      `Weet je zeker dat je ${memberName} wilt verwijderen?`,
       [
         { text: 'Annuleren', style: 'cancel' },
         {

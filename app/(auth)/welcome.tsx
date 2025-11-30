@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: colors.text,
+    color: '#0D1A2D', // Marine blue color
     marginBottom: 10,
     fontFamily: 'Poppins_700Bold',
     textAlign: 'center',
