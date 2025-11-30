@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
         {/* Logo/Icon */}
         <View style={styles.logoContainer}>
           <Image
-            source={require('@/assets/images/flow-fam-logo.png')}
+            source={require('@/assets/images/a3876905-0be2-4827-bf7c-0b05f4f36aff.jpeg')}
             style={styles.logo}
             resizeMode="contain"
           />
