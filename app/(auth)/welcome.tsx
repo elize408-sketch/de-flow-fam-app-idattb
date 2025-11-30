@@ -3,16 +3,12 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <LinearGradient
-      colors={[colors.background, colors.accent + '20']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.content}>
         {/* Logo/Icon */}
         <View style={styles.logoContainer}>
@@ -52,13 +48,14 @@ export default function WelcomeScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF', // Pure white background for the welcome screen
   },
   content: {
     flex: 1,
