@@ -7,6 +7,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import IconPicker from '@/components/IconPicker';
 import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '@/utils/supabase';
 
 const AVAILABLE_COLORS = [
   { name: 'Blush Roze', value: '#F5D9CF' },
@@ -164,7 +165,7 @@ export default function ProfileScreen() {
   const handleDeleteMember = (memberId: string, memberName: string) => {
     Alert.alert(
       'Weet je het zeker?',
-      `Weet je zeker dat je ${memberName} wilt verwijderen?`,
+      `Weet je zeker dat je dit gezinslid wilt verwijderen?`,
       [
         { text: 'Annuleren', style: 'cancel' },
         {
@@ -173,6 +174,67 @@ export default function ProfileScreen() {
           onPress: () => {
             deleteFamilyMember(memberId);
             Alert.alert('Gelukt!', `${memberName} is verwijderd`);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Account verwijderen',
+      'Weet je zeker dat je je account wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Verwijderen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase.auth.signOut();
+              if (error) {
+                Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van je account');
+                return;
+              }
+              router.replace('/(auth)/welcome');
+            } catch (error) {
+              console.error('Delete account error:', error);
+              Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van je account');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAllData = () => {
+    Alert.alert(
+      'Alle gegevens verwijderen',
+      'Weet je zeker dat je alle persoonlijke gegevens wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Verwijderen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Clear all local data
+              const AsyncStorage = await import('@react-native-async-storage/async-storage');
+              await AsyncStorage.default.clear();
+              
+              // Sign out
+              const { error } = await supabase.auth.signOut();
+              if (error) {
+                Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van je gegevens');
+                return;
+              }
+              
+              Alert.alert('Gelukt', 'Alle gegevens zijn verwijderd');
+              router.replace('/(auth)/welcome');
+            } catch (error) {
+              console.error('Delete all data error:', error);
+              Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van je gegevens');
+            }
           },
         },
       ]
@@ -510,6 +572,39 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Delete Account Section - Only for parents */}
+        {isParent && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account beheer</Text>
+            
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDeleteAccount}
+            >
+              <IconSymbol
+                ios_icon_name="trash"
+                android_material_icon_name="delete"
+                size={20}
+                color={colors.card}
+              />
+              <Text style={styles.deleteButtonText}>Account verwijderen</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.deleteButton, { marginTop: 10 }]}
+              onPress={handleDeleteAllData}
+            >
+              <IconSymbol
+                ios_icon_name="trash"
+                android_material_icon_name="delete-forever"
+                size={20}
+                color={colors.card}
+              />
+              <Text style={styles.deleteButtonText}>Alle persoonlijke gegevens verwijderen</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       {/* Profile Switcher Modal */}
@@ -1439,6 +1534,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     fontFamily: 'Nunito_400Regular',
+  },
+  deleteButton: {
+    backgroundColor: '#E74C3C',
+    borderRadius: 20,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.card,
+    marginLeft: 10,
+    fontFamily: 'Poppins_600SemiBold',
   },
   profileSwitcherButton: {
     backgroundColor: colors.card,

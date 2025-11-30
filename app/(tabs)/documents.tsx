@@ -223,7 +223,9 @@ export default function DocumentsScreen() {
       setSelectedPermissions({});
       
       Alert.alert('Gelukt!', 'Document is geüpload');
-      loadDocuments();
+      
+      // Reload documents to show the new one immediately
+      await loadDocuments();
     } catch (error: any) {
       console.error('Upload error:', error);
       Alert.alert('Fout', 'Er ging iets mis bij het uploaden: ' + error.message);

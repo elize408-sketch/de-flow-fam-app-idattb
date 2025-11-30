@@ -10,7 +10,7 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { familyMembers, currentUser, setCurrentUser, tasks, appointments } = useFamily();
+  const { familyMembers, currentUser, setCurrentUser, tasks, appointments, completeTask } = useFamily();
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -59,9 +59,9 @@ export default function HomeScreen() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Get today's tasks (max 2 for slider)
+  // Get today's tasks
   const myTasks = tasks.filter(t => t.assignedTo === currentUser.id && !t.completed);
-  const todayTasks = myTasks.slice(0, 2);
+  const todayTasks = isParent ? myTasks.slice(0, 2) : myTasks; // Show all tasks for children
   const totalTasksCount = myTasks.length;
 
   // Get today's appointments
@@ -75,6 +75,10 @@ export default function HomeScreen() {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
     const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
     setCurrentSlide(index);
+  };
+
+  const handleCompleteTask = (taskId: string, coins: number) => {
+    completeTask(taskId);
   };
 
   // Menu sections - filter based on user role
@@ -91,18 +95,34 @@ export default function HomeScreen() {
     { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
   ];
 
-  // Children only see: Profiel
-  const childMenuSections = [
-    { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
-  ];
+  // Children only see: Profiel (moved to top-right corner)
+  const childMenuSections = allMenuSections.filter(s => s.label !== 'Profiel');
 
   const menuSections = isParent ? allMenuSections : childMenuSections;
 
   // Number of slides: Tasks + Agenda (for parents only)
   const totalSlides = isParent ? 2 : 1;
 
+  // Fun color palette for children
+  const funColors = [colors.vibrantPink, colors.vibrantBlue, colors.vibrantGreen, colors.vibrantOrange, colors.vibrantPurple, colors.vibrantTeal];
+
   return (
     <View style={styles.container}>
+      {/* Settings icon in top-right for children */}
+      {!isParent && (
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => router.push('/(tabs)/profile')}
+        >
+          <IconSymbol
+            ios_icon_name="gear"
+            android_material_icon_name="settings"
+            size={24}
+            color={colors.text}
+          />
+        </TouchableOpacity>
+      )}
+
       <ScrollView contentContainerStyle={styles.contentContainer}>
         {/* Header with Flow Fam centered */}
         <View style={styles.header}>
@@ -137,77 +157,68 @@ export default function HomeScreen() {
         </View>
 
         {/* Slider with Tasks and Agenda */}
-        <View style={styles.sliderContainer}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            style={styles.slider}
-          >
-            {/* Slide 1: Tasks */}
-            <View style={[styles.slide, { width: screenWidth - 40 }]}>
-              <View style={styles.slideCard}>
-                <View style={styles.slideHeader}>
-                  <Text style={styles.slideTitle}>✅ Taken vandaag</Text>
-                  <View style={styles.taskBadge}>
-                    <Text style={styles.taskBadgeText}>{totalTasksCount}</Text>
+        {isParent ? (
+          <View style={styles.sliderContainer}>
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              style={styles.slider}
+            >
+              {/* Slide 1: Tasks */}
+              <View style={[styles.slide, { width: screenWidth - 40 }]}>
+                <View style={styles.slideCard}>
+                  <View style={styles.slideHeader}>
+                    <Text style={styles.slideTitle}>✅ Taken vandaag</Text>
+                    <View style={styles.taskBadge}>
+                      <Text style={styles.taskBadgeText}>{totalTasksCount}</Text>
+                    </View>
                   </View>
-                </View>
-                
-                {todayTasks.length === 0 ? (
-                  <View style={styles.emptySlide}>
-                    <Text style={styles.emptyEmoji}>✨</Text>
-                    <Text style={styles.emptyText}>Geen taken voor vandaag!</Text>
-                  </View>
-                ) : (
-                  <>
-                    {todayTasks.map((task, index) => (
-                      <React.Fragment key={index}>
-                        <View style={styles.taskItem}>
-                          <View style={[styles.taskIcon, { backgroundColor: memberColor }]}>
-                            {task.icon === 'brush' ? (
-                              <Image
-                                source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
-                                style={[styles.taskCustomIcon, { tintColor: colors.card }]}
-                                resizeMode="contain"
-                              />
-                            ) : (
-                              <IconSymbol
-                                ios_icon_name={task.icon}
-                                android_material_icon_name={task.icon as any}
-                                size={20}
-                                color={colors.card}
-                              />
+                  
+                  {todayTasks.length === 0 ? (
+                    <View style={styles.emptySlide}>
+                      <Text style={styles.emptyEmoji}>✨</Text>
+                      <Text style={styles.emptyText}>Geen taken voor vandaag!</Text>
+                    </View>
+                  ) : (
+                    <>
+                      {todayTasks.map((task, index) => (
+                        <React.Fragment key={index}>
+                          <View style={styles.taskItem}>
+                            <View style={[styles.taskIcon, { backgroundColor: memberColor }]}>
+                              {task.icon === 'brush' ? (
+                                <Image
+                                  source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
+                                  style={[styles.taskCustomIcon, { tintColor: colors.card }]}
+                                  resizeMode="contain"
+                                />
+                              ) : (
+                                <IconSymbol
+                                  ios_icon_name={task.icon}
+                                  android_material_icon_name={task.icon as any}
+                                  size={20}
+                                  color={colors.card}
+                                />
+                              )}
+                            </View>
+                            <Text style={styles.taskItemName}>{task.name}</Text>
+                            {!isParent && (
+                              <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
+                                <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
+                              </View>
                             )}
                           </View>
-                          <Text style={styles.taskItemName}>{task.name}</Text>
-                          {!isParent && (
-                            <View style={[styles.taskCoins, { backgroundColor: memberColor }]}>
-                              <Text style={styles.taskCoinsText}>{task.coins}🪙</Text>
-                            </View>
-                          )}
-                        </View>
-                      </React.Fragment>
-                    ))}
-                    
-                    {!isParent && (
-                      <TouchableOpacity
-                        style={[styles.slideButton, { backgroundColor: memberColor }]}
-                        onPress={() => router.push('/(tabs)/tasks')}
-                      >
-                        <Text style={styles.slideButtonText}>Zie de rest van je taken</Text>
-                      </TouchableOpacity>
-                    )}
-                  </>
-                )}
+                        </React.Fragment>
+                      ))}
+                    </>
+                  )}
+                </View>
               </View>
-            </View>
 
-            {/* Slide 2: Agenda - Only for parents */}
-            {isParent && (
+              {/* Slide 2: Agenda - Only for parents */}
               <View style={[styles.slide, { width: screenWidth - 40 }]}>
                 <View style={styles.slideCard}>
                   <View style={styles.slideHeader}>
@@ -247,23 +258,83 @@ export default function HomeScreen() {
                   )}
                 </View>
               </View>
-            )}
-          </ScrollView>
+            </ScrollView>
 
-          {/* Slide indicators */}
-          <View style={styles.slideIndicators}>
-            {Array.from({ length: totalSlides }).map((_, index) => (
-              <React.Fragment key={index}>
-                <View
-                  style={[
-                    styles.slideIndicator,
-                    currentSlide === index && styles.slideIndicatorActive,
-                  ]}
-                />
-              </React.Fragment>
-            ))}
+            {/* Slide indicators */}
+            <View style={styles.slideIndicators}>
+              {Array.from({ length: totalSlides }).map((_, index) => (
+                <React.Fragment key={index}>
+                  <View
+                    style={[
+                      styles.slideIndicator,
+                      currentSlide === index && styles.slideIndicatorActive,
+                    ]}
+                  />
+                </React.Fragment>
+              ))}
+            </View>
           </View>
-        </View>
+        ) : (
+          // Child view: Show all tasks in a fun, playful way
+          <View style={styles.childTasksContainer}>
+            <View style={styles.childTasksHeader}>
+              <Text style={styles.childTasksTitle}>🎯 Jouw taken</Text>
+              <View style={styles.taskBadge}>
+                <Text style={styles.taskBadgeText}>{totalTasksCount}</Text>
+              </View>
+            </View>
+
+            {todayTasks.length === 0 ? (
+              <View style={styles.emptyChildTasks}>
+                <Text style={styles.emptyEmoji}>🎉</Text>
+                <Text style={styles.emptyText}>Geen taken! Geniet van je dag!</Text>
+              </View>
+            ) : (
+              todayTasks.map((task, index) => {
+                const taskColor = funColors[index % funColors.length];
+                return (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[styles.childTaskCard, { borderLeftColor: taskColor, borderLeftWidth: 6 }]}
+                      onPress={() => handleCompleteTask(task.id, task.coins)}
+                    >
+                      <View style={[styles.childTaskIcon, { backgroundColor: taskColor }]}>
+                        {task.icon === 'brush' ? (
+                          <Image
+                            source={require('@/assets/images/37e069f3-3725-4165-ba07-912d50e9b6e8.png')}
+                            style={[styles.taskCustomIcon, { tintColor: colors.card }]}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <IconSymbol
+                            ios_icon_name={task.icon}
+                            android_material_icon_name={task.icon as any}
+                            size={32}
+                            color={colors.card}
+                          />
+                        )}
+                      </View>
+                      <View style={styles.childTaskInfo}>
+                        <Text style={styles.childTaskName}>{task.name}</Text>
+                        <View style={styles.childTaskCoins}>
+                          <Text style={styles.childTaskCoinsText}>🪙 {task.coins} muntjes</Text>
+                        </View>
+                      </View>
+                      <View style={styles.childTaskCheckbox}>
+                        <IconSymbol
+                          ios_icon_name="checkmark.circle"
+                          android_material_icon_name="check-circle"
+                          size={36}
+                          color={taskColor}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })
+            )}
+          </View>
+        )}
 
         {/* Menu sections below slider */}
         <View style={styles.menuGrid}>
@@ -303,6 +374,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 3,
+    zIndex: 10,
   },
   contentContainer: {
     paddingTop: 40,
@@ -599,6 +684,70 @@ const styles = StyleSheet.create({
   slideIndicatorActive: {
     backgroundColor: colors.vibrantOrange,
     opacity: 1,
+  },
+  childTasksContainer: {
+    marginBottom: 20,
+  },
+  childTasksHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  childTasksTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  emptyChildTasks: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  childTaskCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  childTaskIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  childTaskInfo: {
+    flex: 1,
+  },
+  childTaskName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 6,
+    fontFamily: 'Poppins_700Bold',
+  },
+  childTaskCoins: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  childTaskCoinsText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  childTaskCheckbox: {
+    marginLeft: 10,
   },
   menuGrid: {
     flexDirection: 'row',
