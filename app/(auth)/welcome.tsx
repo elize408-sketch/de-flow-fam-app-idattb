@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,9 +16,11 @@ export default function WelcomeScreen() {
       <View style={styles.content}>
         {/* Logo/Icon */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>FF</Text>
-          </View>
+          <Image
+            source={require('@/assets/images/flow-fam-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>Welkom bij Flow Fam</Text>
           <Text style={styles.subtitle}>Rust, overzicht en liefde voor je gezin</Text>
         </View>
@@ -68,22 +70,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 60,
   },
-  logoCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logo: {
+    width: 140,
+    height: 140,
     marginBottom: 20,
-    boxShadow: `0px 6px 20px ${colors.shadow}`,
-    elevation: 5,
-  },
-  logoText: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
   },
   title: {
     fontSize: 32,
