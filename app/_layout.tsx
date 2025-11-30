@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { ThemeProvider, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { useColorScheme } from 'react-native';
 import * as Font from 'expo-font';
@@ -16,6 +16,8 @@ import {
 } from '@expo-google-fonts/nunito';
 import { colors } from '@/styles/commonStyles';
 import { FamilyProvider } from '@/contexts/FamilyContext';
+import { supabase } from '@/utils/supabase';
+import { Session } from '@supabase/supabase-js';
 
 const CustomLightTheme = {
   ...DefaultTheme,
@@ -40,6 +42,81 @@ const CustomDarkTheme = {
     border: colors.primary,
   },
 };
+
+function RootLayoutNav() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!session && !inAuthGroup) {
+      // Redirect to welcome if not authenticated
+      router.replace('/(auth)/welcome');
+    } else if (session && inAuthGroup) {
+      // Redirect to home if authenticated and in auth group
+      router.replace('/(tabs)/(home)');
+    }
+  }, [session, segments, loading]);
+
+  if (loading) {
+    return null;
+  }
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="modal"
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          title: 'Modal',
+        }}
+      />
+      <Stack.Screen
+        name="formsheet"
+        options={{
+          presentation: 'formSheet',
+          headerShown: true,
+          title: 'Form Sheet',
+        }}
+      />
+      <Stack.Screen
+        name="transparent-modal"
+        options={{
+          presentation: 'transparentModal',
+          animation: 'fade',
+          headerShown: false,
+        }}
+      />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -71,37 +148,7 @@ export default function RootLayout() {
   return (
     <FamilyProvider>
       <ThemeProvider value={CustomLightTheme}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: 'modal',
-              headerShown: true,
-              title: 'Modal',
-            }}
-          />
-          <Stack.Screen
-            name="formsheet"
-            options={{
-              presentation: 'formSheet',
-              headerShown: true,
-              title: 'Form Sheet',
-            }}
-          />
-          <Stack.Screen
-            name="transparent-modal"
-            options={{
-              presentation: 'transparentModal',
-              animation: 'fade',
-              headerShown: false,
-            }}
-          />
-        </Stack>
+        <RootLayoutNav />
       </ThemeProvider>
     </FamilyProvider>
   );
