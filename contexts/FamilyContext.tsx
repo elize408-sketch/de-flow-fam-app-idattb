@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { FamilyMember, Task, Reward, Appointment, HouseholdTask, Expense, Income, Receipt, Meal, SavingsPot, Memory, ShoppingItem, FamilyNote, Reminder, DailyScheduleItem, Notification, PantryItem, Ingredient, IngredientCategory, BudgetPot } from '@/types/family';
 import { initialFamilyMembers, initialTasks, initialRewards } from '@/data/familyData';
 import { savePantryItems, loadPantryItems, saveWeekPlanningServings, loadWeekPlanningServings, saveCurrentUserId, loadCurrentUserId, saveFamilyMembers, loadFamilyMembers, saveFamilyCode, loadFamilyCode } from '@/utils/localStorage';
@@ -149,12 +149,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [familyCode, setFamilyCode] = useState<string | null>(null);
   const [currentFamily, setCurrentFamily] = useState<Family | null>(null);
 
-  // Load data on mount
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       // Load family members
       const loadedMembers = await loadFamilyMembers();
@@ -199,7 +194,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error loading initial data:', error);
     }
-  };
+  }, []);
+
+  // Load data on mount
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   // Save family members whenever they change
   useEffect(() => {

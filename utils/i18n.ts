@@ -1,7 +1,7 @@
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import * as Localization from 'expo-localization';
+import { getLocales } from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import nl from '../locales/nl.json';
@@ -11,8 +11,12 @@ const LANGUAGE_STORAGE_KEY = '@flow_fam_language';
 
 // Get device language
 const getDeviceLanguage = () => {
-  const deviceLanguage = Localization.locale.split('-')[0]; // Get 'nl' from 'nl-NL'
-  return deviceLanguage;
+  const locales = getLocales();
+  if (locales && locales.length > 0) {
+    const deviceLanguage = locales[0].languageCode || 'en';
+    return deviceLanguage;
+  }
+  return 'en';
 };
 
 // Get stored language or device language

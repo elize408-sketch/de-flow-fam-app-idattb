@@ -5,7 +5,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme as useRNColorScheme } from 'react-native';
 import { FamilyProvider } from '@/contexts/FamilyContext';
 import { WidgetProvider } from '@/contexts/WidgetContext';
 import { 
@@ -24,7 +24,7 @@ import '@/utils/i18n'; // Initialize i18n
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useRNColorScheme();
   const [loaded] = useFonts({
     Poppins_400Regular,
     Poppins_600SemiBold,

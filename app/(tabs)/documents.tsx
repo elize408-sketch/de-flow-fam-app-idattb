@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -63,13 +63,7 @@ export default function DocumentsScreen() {
   // Only show parents
   const parents = familyMembers.filter(m => m.role === 'parent');
 
-  useEffect(() => {
-    if (currentUser?.role === 'parent') {
-      loadDocuments();
-    }
-  }, [currentUser]);
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     if (!currentFamily) {
       setLoading(false);
       return;
@@ -103,7 +97,13 @@ export default function DocumentsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentFamily]);
+
+  useEffect(() => {
+    if (currentUser?.role === 'parent') {
+      loadDocuments();
+    }
+  }, [currentUser, loadDocuments]);
 
   const handlePickDocument = async () => {
     try {

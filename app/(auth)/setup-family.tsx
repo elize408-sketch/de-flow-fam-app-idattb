@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -13,11 +13,7 @@ export default function SetupFamilyScreen() {
   const name = params.name as string;
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setupFamily();
-  }, []);
-
-  const setupFamily = async () => {
+  const setupFamily = useCallback(async () => {
     try {
       const user = await getCurrentUser();
       
@@ -71,7 +67,11 @@ export default function SetupFamilyScreen() {
       Alert.alert('Fout', 'Er ging iets mis bij het aanmaken van het gezin');
       router.replace('/(auth)/welcome');
     }
-  };
+  }, [name, router]);
+
+  useEffect(() => {
+    setupFamily();
+  }, [setupFamily]);
 
   return (
     <View style={styles.container}>

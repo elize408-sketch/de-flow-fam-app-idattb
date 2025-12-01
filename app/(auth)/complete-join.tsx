@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -13,11 +13,7 @@ export default function CompleteJoinScreen() {
   const familyId = params.familyId as string;
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    completeJoin();
-  }, []);
-
-  const completeJoin = async () => {
+  const completeJoin = useCallback(async () => {
     try {
       const user = await getCurrentUser();
       
@@ -66,7 +62,11 @@ export default function CompleteJoinScreen() {
       Alert.alert('Fout', 'Er ging iets mis bij het toevoegen aan het gezin');
       router.replace('/(auth)/welcome');
     }
-  };
+  }, [name, familyId, router]);
+
+  useEffect(() => {
+    completeJoin();
+  }, [completeJoin]);
 
   return (
     <View style={styles.container}>
