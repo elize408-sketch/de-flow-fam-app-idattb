@@ -20,6 +20,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from '@/utils/supabase';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
 
 interface DocumentPermission {
   family_member_id: string;
@@ -43,6 +44,7 @@ interface Document {
 
 export default function DocumentsScreen() {
   const router = useRouter();
+  const { setModule, accentColor } = useModuleTheme();
   const { familyMembers, currentUser, currentFamily } = useFamily();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +61,11 @@ export default function DocumentsScreen() {
       can_delete: boolean;
     };
   }>({});
+
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('documents' as ModuleName);
+  }, [setModule]);
 
   // Only show parents
   const parents = familyMembers.filter(m => m.role === 'parent');
@@ -561,7 +568,7 @@ export default function DocumentsScreen() {
                         <TouchableOpacity
                           style={[
                             styles.permissionToggle,
-                            selectedPermissions[parent.id]?.can_view && styles.permissionToggleActive,
+                            selectedPermissions[parent.id]?.can_view && [styles.permissionToggleActive, { backgroundColor: accentColor }],
                           ]}
                           onPress={() => {
                             setSelectedPermissions(prev => ({
@@ -584,7 +591,7 @@ export default function DocumentsScreen() {
                         <TouchableOpacity
                           style={[
                             styles.permissionToggle,
-                            selectedPermissions[parent.id]?.can_download && styles.permissionToggleActive,
+                            selectedPermissions[parent.id]?.can_download && [styles.permissionToggleActive, { backgroundColor: accentColor }],
                           ]}
                           onPress={() => {
                             setSelectedPermissions(prev => ({
@@ -607,7 +614,7 @@ export default function DocumentsScreen() {
                         <TouchableOpacity
                           style={[
                             styles.permissionToggle,
-                            selectedPermissions[parent.id]?.can_delete && styles.permissionToggleActive,
+                            selectedPermissions[parent.id]?.can_delete && [styles.permissionToggleActive, { backgroundColor: accentColor }],
                           ]}
                           onPress={() => {
                             setSelectedPermissions(prev => ({
@@ -638,7 +645,7 @@ export default function DocumentsScreen() {
             </ScrollView>
 
             <TouchableOpacity
-              style={[styles.uploadButton, uploading && styles.uploadButtonDisabled]}
+              style={[styles.uploadButton, { backgroundColor: accentColor }, uploading && styles.uploadButtonDisabled]}
               onPress={handleUpload}
               disabled={uploading}
             >
@@ -896,7 +903,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   permissionToggleActive: {
-    backgroundColor: colors.accent,
   },
   permissionHint: {
     fontSize: 12,
@@ -905,7 +911,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
   },
   uploadButton: {
-    backgroundColor: colors.accent,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

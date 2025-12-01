@@ -1,10 +1,11 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import { MODULE_COLORS, ModuleName } from '@/contexts/ThemeContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -82,17 +83,18 @@ export default function HomeScreen() {
   };
 
   // Menu sections - filter based on user role
+  // Use MODULE_COLORS to ensure consistency with the theme system
   const allMenuSections = [
-    { icon: 'calendar-today', label: 'Agenda', route: '/(tabs)/agenda', color: colors.vibrantBlue },
-    { icon: 'check-circle', label: 'Taken', route: '/(tabs)/tasks', color: colors.vibrantGreen },
-    { icon: 'list', label: 'Boodschappen', route: '/(tabs)/shopping', color: colors.vibrantOrange },
-    { icon: 'custom-euro', label: 'Financiën', route: '/(tabs)/finances', color: colors.vibrantGreen },
-    { icon: 'notifications', label: 'Fotoboek', route: '/(tabs)/reminders', color: colors.vibrantPurple },
-    { icon: 'restaurant', label: 'Maaltijden', route: '/(tabs)/meals', color: colors.vibrantPink },
-    { icon: 'folder', label: 'Notities', route: '/(tabs)/notes', color: colors.vibrantOrange },
-    { icon: 'description', label: 'Documenten', route: '/(tabs)/documents', color: colors.vibrantTeal },
-    { icon: 'shopping-bag', label: 'Shop', route: '/(tabs)/shop', color: colors.vibrantTeal },
-    { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: colors.textSecondary },
+    { icon: 'calendar-today', label: 'Agenda', route: '/(tabs)/agenda', color: MODULE_COLORS.agenda },
+    { icon: 'check-circle', label: 'Taken', route: '/(tabs)/tasks', color: MODULE_COLORS.tasks },
+    { icon: 'list', label: 'Boodschappen', route: '/(tabs)/shopping', color: MODULE_COLORS.shopping },
+    { icon: 'custom-euro', label: 'Financiën', route: '/(tabs)/finances', color: MODULE_COLORS.finances },
+    { icon: 'notifications', label: 'Fotoboek', route: '/(tabs)/reminders', color: MODULE_COLORS.memories },
+    { icon: 'restaurant', label: 'Maaltijden', route: '/(tabs)/meals', color: MODULE_COLORS.meals },
+    { icon: 'folder', label: 'Notities', route: '/(tabs)/notes', color: MODULE_COLORS.notes },
+    { icon: 'description', label: 'Documenten', route: '/(tabs)/documents', color: MODULE_COLORS.documents },
+    { icon: 'shopping-bag', label: 'Shop', route: '/(tabs)/shop', color: MODULE_COLORS.shop },
+    { icon: 'settings', label: 'Profiel', route: '/(tabs)/profile', color: MODULE_COLORS.profile },
   ];
 
   // Children only see: Profiel (moved to top-right corner)

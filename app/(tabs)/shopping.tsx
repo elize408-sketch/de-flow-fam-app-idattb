@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -9,11 +9,15 @@ import { ShoppingItem, PantryItem, IngredientCategory } from '@/types/family';
 import { CATEGORY_ORDER, CATEGORY_LABELS, categorizeIngredient, parseIngredient } from '@/utils/ingredientCategories';
 import { generateShoppingListPDF } from '@/utils/pdfGenerator';
 import { Ionicons } from '@expo/vector-icons';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
+import ThemedButton from '@/components/ThemedButton';
 
 type TabType = 'shopping' | 'pantry';
 
 export default function ShoppingScreen() {
   const router = useRouter();
+  const { setModule, accentColor } = useModuleTheme();
   const { 
     shoppingList, 
     addShoppingItem, 
@@ -32,6 +36,11 @@ export default function ShoppingScreen() {
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
   const [newItemUnit, setNewItemUnit] = useState('');
+
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('shopping' as ModuleName);
+  }, [setModule]);
 
   const handleAddItem = () => {
     if (!newItemName.trim()) {
@@ -120,32 +129,16 @@ export default function ShoppingScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.push('/(tabs)/(home)')}
-          >
-            <IconSymbol
-              ios_icon_name="house"
-              android_material_icon_name="home"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-          
-          <View style={styles.header}>
-            <Text style={styles.title}>Boodschappen</Text>
-            <Text style={styles.subtitle}>Gezamenlijke boodschappenlijst</Text>
-          </View>
-          
-          <View style={styles.placeholder} />
-        </View>
+      <ModuleHeader
+        title="Boodschappen"
+        subtitle="Gezamenlijke boodschappenlijst"
+      />
 
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         {/* Tabs */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'shopping' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'shopping' && [styles.tabActive, { backgroundColor: accentColor }]]}
             onPress={() => setActiveTab('shopping')}
           >
             <Text style={[styles.tabText, activeTab === 'shopping' && styles.tabTextActive]}>
@@ -154,7 +147,7 @@ export default function ShoppingScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'pantry' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'pantry' && [styles.tabActive, { backgroundColor: accentColor }]]}
             onPress={() => setActiveTab('pantry')}
           >
             <Text style={[styles.tabText, activeTab === 'pantry' && styles.tabTextActive]}>
@@ -182,18 +175,13 @@ export default function ShoppingScreen() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={styles.addButton}
+            <ThemedButton
+              title="Item toevoegen"
               onPress={() => setShowAddModal(true)}
-            >
-              <IconSymbol
-                ios_icon_name="plus"
-                android_material_icon_name="add"
-                size={22}
-                color={colors.card}
-              />
-              <Text style={styles.addButtonText}>Item toevoegen</Text>
-            </TouchableOpacity>
+              icon="plus"
+              androidIcon="add"
+              style={styles.addButton}
+            />
 
             {shoppingList.length === 0 ? (
               <View style={styles.emptyState}>
@@ -222,7 +210,7 @@ export default function ShoppingScreen() {
                                     style={styles.checkbox}
                                     onPress={() => toggleShoppingItem(item.id)}
                                   >
-                                    <View style={styles.checkboxInner}>
+                                    <View style={[styles.checkboxInner, { borderColor: accentColor }]}>
                                       {(item as ShoppingItem).completed && (
                                         <IconSymbol
                                           ios_icon_name="checkmark"
@@ -281,7 +269,7 @@ export default function ShoppingScreen() {
                             style={styles.checkbox}
                             onPress={() => toggleShoppingItem(item.id)}
                           >
-                            <View style={[styles.checkboxInner, styles.checkboxChecked]}>
+                            <View style={[styles.checkboxInner, styles.checkboxChecked, { backgroundColor: accentColor, borderColor: accentColor }]}>
                               <IconSymbol
                                 ios_icon_name="checkmark"
                                 android_material_icon_name="check"
@@ -321,18 +309,13 @@ export default function ShoppingScreen() {
 
         {activeTab === 'pantry' && (
           <>
-            <TouchableOpacity
-              style={styles.addButton}
+            <ThemedButton
+              title="Item toevoegen"
               onPress={() => setShowAddModal(true)}
-            >
-              <IconSymbol
-                ios_icon_name="plus"
-                android_material_icon_name="add"
-                size={22}
-                color={colors.card}
-              />
-              <Text style={styles.addButtonText}>Item toevoegen</Text>
-            </TouchableOpacity>
+              icon="plus"
+              androidIcon="add"
+              style={styles.addButton}
+            />
 
             {pantryItems.length === 0 ? (
               <View style={styles.emptyState}>
@@ -480,7 +463,7 @@ export default function ShoppingScreen() {
                     <Text style={styles.modalButtonText}>Annuleren</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.modalButtonConfirm]}
+                    style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                     onPress={handleAddItem}
                   >
                     <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -501,46 +484,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 140,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  header: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  placeholder: {
-    width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
   },
   tabContainer: {
     flexDirection: 'row',
@@ -561,7 +506,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   tabActive: {
-    backgroundColor: colors.vibrantOrange,
   },
   tabText: {
     fontSize: 13,
@@ -596,23 +540,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addButton: {
-    backgroundColor: colors.vibrantOrange,
-    borderRadius: 20,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  addButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.card,
-    marginLeft: 10,
-    fontFamily: 'Poppins_600SemiBold',
-    textAlign: 'center',
   },
   emptyState: {
     backgroundColor: colors.card,
@@ -680,12 +608,10 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     borderWidth: 2,
-    borderColor: colors.vibrantOrange,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: colors.vibrantOrange,
   },
   itemInfo: {
     flex: 1,
@@ -789,7 +715,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   modalButtonConfirm: {
-    backgroundColor: colors.vibrantOrange,
   },
   modalButtonText: {
     fontSize: 16,

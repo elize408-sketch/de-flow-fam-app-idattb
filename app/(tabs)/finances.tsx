@@ -7,9 +7,13 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import * as ImagePicker from 'expo-image-picker';
 import Slider from '@react-native-community/slider';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
+import ThemedButton from '@/components/ThemedButton';
 
 export default function FinancesScreen() {
   const router = useRouter();
+  const { setModule, accentColor } = useModuleTheme();
   const {
     incomes,
     expenses,
@@ -76,6 +80,11 @@ export default function FinancesScreen() {
 
   const isParent = currentUser?.role === 'parent';
 
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('finances' as ModuleName);
+  }, [setModule]);
+
   // Check for monthly reset on mount and when unlocked
   useEffect(() => {
     if (isUnlocked && financeResetDay) {
@@ -108,7 +117,7 @@ export default function FinancesScreen() {
             Stel een pincode in om je financiële gegevens te beschermen
           </Text>
           <TouchableOpacity
-            style={styles.setupButton}
+            style={[styles.setupButton, { backgroundColor: accentColor }]}
             onPress={() => setShowSetPasscodeModal(true)}
           >
             <Text style={styles.setupButtonText}>Pincode instellen</Text>
@@ -162,7 +171,7 @@ export default function FinancesScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={() => {
                     if (newPasscode.length !== 4) {
                       Alert.alert('Fout', 'Pincode moet 4 cijfers zijn');
@@ -209,7 +218,7 @@ export default function FinancesScreen() {
             />
           </View>
           <TouchableOpacity
-            style={styles.unlockButton}
+            style={[styles.unlockButton, { backgroundColor: accentColor }]}
             onPress={() => {
               if (passcodeInput === financePasscode) {
                 setIsUnlocked(true);
@@ -373,7 +382,7 @@ export default function FinancesScreen() {
       goalAmount: goal,
       currentAmount: 0,
       monthlyDeposit: monthly,
-      color: colors.accent,
+      color: accentColor,
       icon: newPotIcon,
       photoUri: newPotPhoto,
     });
@@ -455,28 +464,12 @@ export default function FinancesScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.push('/(tabs)/(home)')}
-          >
-            <IconSymbol
-              ios_icon_name="house"
-              android_material_icon_name="home"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-          
-          <View style={styles.header}>
-            <Text style={styles.title}>Financiën</Text>
-            <Text style={styles.subtitle}>Beheer je gezinsbudget</Text>
-          </View>
-          
-          <View style={styles.placeholder} />
-        </View>
+      <ModuleHeader
+        title="Financiën"
+        subtitle="Beheer je gezinsbudget"
+      />
 
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.welcomeCard}>
           <Text style={styles.welcomeEmoji}>💰</Text>
           <Text style={styles.welcomeTitle}>Welkom bij Financiën!</Text>
@@ -499,7 +492,7 @@ export default function FinancesScreen() {
                 Voeg je maandelijkse inkomsten toe (salaris, toeslagen, etc.)
               </Text>
               <TouchableOpacity
-                style={styles.onboardingButton}
+                style={[styles.onboardingButton, { backgroundColor: accentColor }]}
                 onPress={() => setShowAddIncomeModal(true)}
               >
                 <IconSymbol
@@ -522,7 +515,7 @@ export default function FinancesScreen() {
                 Voeg je vaste maandelijkse uitgaven toe (huur, verzekeringen, etc.)
               </Text>
               <TouchableOpacity
-                style={styles.onboardingButton}
+                style={[styles.onboardingButton, { backgroundColor: accentColor }]}
                 onPress={() => setShowAddExpenseModal(true)}
               >
                 <IconSymbol
@@ -547,7 +540,7 @@ export default function FinancesScreen() {
                 Maak budgetpotjes aan voor variabele uitgaven (boodschappen, kleding, etc.)
               </Text>
               <TouchableOpacity
-                style={styles.onboardingButton}
+                style={[styles.onboardingButton, { backgroundColor: accentColor }]}
                 onPress={() => setShowAddBudgetPotModal(true)}
               >
                 <IconSymbol
@@ -584,7 +577,7 @@ export default function FinancesScreen() {
                   maxLength={2}
                 />
                 <TouchableOpacity
-                  style={styles.resetDayButton}
+                  style={[styles.resetDayButton, { backgroundColor: accentColor }]}
                   onPress={handleSetResetDay}
                 >
                   <Text style={styles.resetDayButtonText}>Instellen</Text>
@@ -617,29 +610,24 @@ export default function FinancesScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.settingsButton}
+            <ThemedButton
+              title="Instellingen"
               onPress={() => setShowSettingsModal(true)}
-            >
-              <IconSymbol
-                ios_icon_name="gear"
-                android_material_icon_name="settings"
-                size={20}
-                color={colors.card}
-              />
-              <Text style={styles.settingsButtonText}>Instellingen</Text>
-            </TouchableOpacity>
+              icon="gear"
+              androidIcon="settings"
+              style={styles.settingsButton}
+            />
 
             <View style={styles.actionButtons}>
               <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: colors.accent }]}
+                style={[styles.actionButton, { backgroundColor: accentColor }]}
                 onPress={() => setShowScanReceiptModal(true)}
               >
                 <IconSymbol
                   ios_icon_name="camera"
                   android_material_icon_name="camera-alt"
                   size={20}
-                  color={colors.text}
+                  color={colors.card}
                 />
                 <Text style={styles.actionButtonText}>Bonnetje</Text>
               </TouchableOpacity>
@@ -654,7 +642,7 @@ export default function FinancesScreen() {
                     ios_icon_name="plus"
                     android_material_icon_name="add"
                     size={24}
-                    color={colors.accent}
+                    color={accentColor}
                   />
                 </TouchableOpacity>
               </View>
@@ -682,7 +670,7 @@ export default function FinancesScreen() {
                               ios_icon_name="pencil"
                               android_material_icon_name="edit"
                               size={20}
-                              color={colors.accent}
+                              color={accentColor}
                             />
                           </TouchableOpacity>
                         </View>
@@ -701,7 +689,7 @@ export default function FinancesScreen() {
                           </Text>
                         </View>
                         <View style={styles.progressBar}>
-                          <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%`, backgroundColor: progress > 100 ? '#F44336' : colors.accent }]} />
+                          <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%`, backgroundColor: progress > 100 ? '#F44336' : accentColor }]} />
                         </View>
                         <Text style={styles.progressText}>{progress.toFixed(0)}% gebruikt</Text>
                       </View>
@@ -730,7 +718,7 @@ export default function FinancesScreen() {
                     ios_icon_name="plus"
                     android_material_icon_name="add"
                     size={24}
-                    color={colors.accent}
+                    color={accentColor}
                   />
                 </TouchableOpacity>
               </View>
@@ -760,7 +748,7 @@ export default function FinancesScreen() {
                         <View style={styles.potInfo}>
                           <Text style={styles.potName}>{pot.name}</Text>
                           <View style={styles.progressBar}>
-                            <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%` }]} />
+                            <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%`, backgroundColor: accentColor }]} />
                           </View>
                           <Text style={styles.potAmount}>
                             €{pot.currentAmount.toFixed(2)} / €{pot.goalAmount.toFixed(2)}
@@ -798,7 +786,7 @@ export default function FinancesScreen() {
         )}
       </ScrollView>
 
-      {/* Settings Modal */}
+      {/* Settings Modal - Abbreviated for space, includes all modals with themed buttons */}
       <Modal
         visible={showSettingsModal}
         transparent
@@ -822,7 +810,7 @@ export default function FinancesScreen() {
                       ios_icon_name="plus"
                       android_material_icon_name="add"
                       size={24}
-                      color={colors.accent}
+                      color={accentColor}
                     />
                   </TouchableOpacity>
                 </View>
@@ -873,7 +861,7 @@ export default function FinancesScreen() {
                       ios_icon_name="plus"
                       android_material_icon_name="add"
                       size={24}
-                      color={colors.accent}
+                      color={accentColor}
                     />
                   </TouchableOpacity>
                 </View>
@@ -924,7 +912,7 @@ export default function FinancesScreen() {
                       ios_icon_name="plus"
                       android_material_icon_name="add"
                       size={24}
-                      color={colors.accent}
+                      color={accentColor}
                     />
                   </TouchableOpacity>
                 </View>
@@ -1014,7 +1002,7 @@ export default function FinancesScreen() {
                   <TouchableOpacity
                     style={[
                       styles.typeOption,
-                      newIncomeType === option.value && styles.typeOptionActive,
+                      newIncomeType === option.value && [styles.typeOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
                     ]}
                     onPress={() => setNewIncomeType(option.value as any)}
                   >
@@ -1044,7 +1032,7 @@ export default function FinancesScreen() {
                 <Text style={styles.modalButtonText}>Annuleren</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
+                style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                 onPress={handleAddIncome}
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -1094,7 +1082,7 @@ export default function FinancesScreen() {
                 <Text style={styles.modalButtonText}>Annuleren</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
+                style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                 onPress={handleAddExpense}
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -1136,7 +1124,7 @@ export default function FinancesScreen() {
                       <TouchableOpacity
                         style={[
                           styles.budgetPotOption,
-                          receiptBudgetPot === pot.id && styles.budgetPotOptionActive,
+                          receiptBudgetPot === pot.id && [styles.budgetPotOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
                         ]}
                         onPress={() => setReceiptBudgetPot(pot.id)}
                       >
@@ -1156,7 +1144,7 @@ export default function FinancesScreen() {
             )}
 
             <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10 }]}
+              style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10, backgroundColor: accentColor }]}
               onPress={handleScanReceipt}
             >
               <IconSymbol
@@ -1224,7 +1212,7 @@ export default function FinancesScreen() {
                 <Text style={styles.modalButtonText}>Annuleren</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
+                style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                 onPress={handleAddBudgetPot}
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -1273,7 +1261,7 @@ export default function FinancesScreen() {
                 <Text style={styles.modalButtonText}>Annuleren</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
+                style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                 onPress={handleEditBudgetPot}
               >
                 <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
@@ -1348,7 +1336,7 @@ export default function FinancesScreen() {
                     <TouchableOpacity
                       style={[
                         styles.iconOption,
-                        newPotIcon === icon && styles.iconOptionActive,
+                        newPotIcon === icon && [styles.iconOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
                       ]}
                       onPress={() => setNewPotIcon(icon)}
                     >
@@ -1373,7 +1361,7 @@ export default function FinancesScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleAddPot}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Aanmaken</Text>
@@ -1429,9 +1417,9 @@ export default function FinancesScreen() {
                       step={1}
                       value={yearsToView}
                       onValueChange={setYearsToView}
-                      minimumTrackTintColor={colors.accent}
+                      minimumTrackTintColor={accentColor}
                       maximumTrackTintColor={colors.secondary}
-                      thumbTintColor={colors.accent}
+                      thumbTintColor={accentColor}
                     />
                     <View style={styles.sliderLabels}>
                       <Text style={styles.sliderLabelText}>1 jaar</Text>
@@ -1439,7 +1427,7 @@ export default function FinancesScreen() {
                     </View>
                   </View>
 
-                  <View style={styles.projectionCard}>
+                  <View style={[styles.projectionCard, { backgroundColor: accentColor + '20' }]}>
                     <Text style={styles.projectionLabel}>
                       Spaarsaldo na {yearsToView} {yearsToView === 1 ? 'jaar' : 'jaar'}:
                     </Text>
@@ -1475,46 +1463,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 120,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  header: {
-    alignItems: 'center',
-    flex: 1,
-  },
   placeholder: {
     width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
   },
   lockedContainer: {
     flex: 1,
@@ -1568,7 +1521,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
   },
   setupButton: {
-    backgroundColor: colors.accent,
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 25,
@@ -1615,7 +1567,6 @@ const styles = StyleSheet.create({
     letterSpacing: 10,
   },
   unlockButton: {
-    backgroundColor: colors.accent,
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 25,
@@ -1696,7 +1647,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
   },
   onboardingButton: {
-    backgroundColor: colors.accent,
     borderRadius: 15,
     padding: 12,
     flexDirection: 'row',
@@ -1738,7 +1688,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
   },
   resetDayButton: {
-    backgroundColor: colors.accent,
     borderRadius: 10,
     padding: 10,
     paddingHorizontal: 20,
@@ -1801,22 +1750,7 @@ const styles = StyleSheet.create({
     color: '#F44336',
   },
   settingsButton: {
-    backgroundColor: colors.vibrantBlue,
-    borderRadius: 15,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  settingsButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.card,
-    marginLeft: 10,
-    fontFamily: 'Poppins_600SemiBold',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -1834,7 +1768,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.card,
     marginTop: 5,
     fontFamily: 'Poppins_600SemiBold',
   },
@@ -1912,7 +1846,6 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.accent,
     borderRadius: 4,
   },
   progressText: {
@@ -2082,8 +2015,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   typeOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
   },
   typeOptionText: {
     fontSize: 14,
@@ -2111,8 +2042,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   budgetPotOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
   },
   budgetPotOptionText: {
     fontSize: 14,
@@ -2169,8 +2098,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   iconOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
   },
   iconOptionEmoji: {
     fontSize: 32,
@@ -2231,7 +2158,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
   },
   projectionCard: {
-    backgroundColor: colors.primary,
     borderRadius: 15,
     padding: 20,
     marginBottom: 20,
@@ -2318,7 +2244,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   modalButtonConfirm: {
-    backgroundColor: colors.accent,
   },
   modalButtonText: {
     fontSize: 16,

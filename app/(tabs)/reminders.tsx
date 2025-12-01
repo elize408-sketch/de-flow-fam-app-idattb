@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -7,9 +7,13 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import * as ImagePicker from 'expo-image-picker';
 import * as MailComposer from 'expo-mail-composer';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
+import ThemedButton from '@/components/ThemedButton';
 
 export default function RemindersScreen() {
   const router = useRouter();
+  const { setModule, accentColor } = useModuleTheme();
   const { reminders, addReminder, updateReminder, deleteReminder, currentUser, familyMembers } = useFamily();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newReminderTitle, setNewReminderTitle] = useState('');
@@ -23,6 +27,11 @@ export default function RemindersScreen() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const isParent = currentUser?.role === 'parent';
+
+  // Set module theme on mount (this is the Fotoboek/memories module)
+  useEffect(() => {
+    setModule('memories' as ModuleName);
+  }, [setModule]);
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -232,29 +241,12 @@ export default function RemindersScreen() {
 
   return (
     <View style={styles.container}>
+      <ModuleHeader
+        title="Herinneringen"
+        subtitle={isParent ? 'Alle gezinsherinneringen' : 'Vergeet niets meer'}
+      />
+
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.push('/(tabs)/(home)')}
-          >
-            <IconSymbol
-              ios_icon_name="house"
-              android_material_icon_name="home"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-          
-          <View style={styles.header}>
-            <Text style={styles.title}>Herinneringen</Text>
-            <Text style={styles.subtitle}>
-              {isParent ? 'Alle gezinsherinneringen' : 'Vergeet niets meer'}
-            </Text>
-          </View>
-          
-          <View style={styles.placeholder} />
-        </View>
 
         {isParent && (
           <View style={styles.photoBookCard}>
@@ -269,7 +261,7 @@ export default function RemindersScreen() {
             </Text>
             {photoCount > 0 && (
               <TouchableOpacity
-                style={styles.orderButton}
+                style={[styles.orderButton, { backgroundColor: accentColor }]}
                 onPress={handleOrderPhotoBook}
               >
                 <IconSymbol
@@ -284,18 +276,13 @@ export default function RemindersScreen() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={styles.addButton}
+        <ThemedButton
+          title="Herinnering toevoegen"
           onPress={() => setShowAddModal(true)}
-        >
-          <IconSymbol
-            ios_icon_name="plus"
-            android_material_icon_name="add"
-            size={24}
-            color={colors.card}
-          />
-          <Text style={styles.addButtonText}>Herinnering toevoegen</Text>
-        </TouchableOpacity>
+          icon="plus"
+          androidIcon="add"
+          style={styles.addButton}
+        />
 
         {activeReminders.length === 0 && completedReminders.length === 0 ? (
           <View style={styles.emptyState}>
@@ -562,7 +549,7 @@ export default function RemindersScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleAddReminder}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -636,46 +623,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 140,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  header: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  placeholder: {
-    width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
   },
   photoBookCard: {
     backgroundColor: colors.card,
@@ -710,7 +659,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
   },
   orderButton: {
-    backgroundColor: colors.vibrantOrange,
     borderRadius: 15,
     padding: 15,
     flexDirection: 'row',
@@ -725,22 +673,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
   },
   addButton: {
-    backgroundColor: colors.vibrantPurple,
-    borderRadius: 20,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.card,
-    marginLeft: 10,
-    fontFamily: 'Poppins_600SemiBold',
   },
   emptyState: {
     backgroundColor: colors.card,
@@ -797,12 +730,10 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     borderWidth: 2,
-    borderColor: colors.vibrantPurple,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: colors.vibrantPurple,
   },
   reminderInfo: {
     flex: 1,
@@ -1023,7 +954,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   modalButtonConfirm: {
-    backgroundColor: colors.vibrantPurple,
   },
   modalButtonText: {
     fontSize: 16,
@@ -1098,7 +1028,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   calendarDaySelected: {
-    backgroundColor: colors.vibrantPurple,
+    backgroundColor: colors.accent,
   },
   calendarDayText: {
     fontSize: 14,

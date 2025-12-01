@@ -1,16 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useTranslation } from 'react-i18next';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
+import ThemedButton from '@/components/ThemedButton';
 
 export default function AgendaScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { appointments, familyMembers, addAppointment, deleteAppointment } = useFamily();
+  const { setModule, accentColor } = useModuleTheme();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newAppointmentTitle, setNewAppointmentTitle] = useState('');
   const [newAppointmentDate, setNewAppointmentDate] = useState(new Date());
@@ -22,6 +26,11 @@ export default function AgendaScreen() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('agenda' as ModuleName);
+  }, [setModule]);
 
   const toggleMemberSelection = (memberId: string) => {
     setNewAppointmentAssignedTo(prev => {
@@ -153,13 +162,13 @@ export default function AgendaScreen() {
           style={[
             styles.dayCell,
             styles.dayCellActive,
-            isToday && styles.dayCellToday,
+            isToday && [styles.dayCellToday, { borderColor: accentColor }],
           ]}
           onPress={() => {
             setSelectedDay(date);
           }}
         >
-          <Text style={[styles.dayNumber, isToday && styles.dayNumberToday]}>
+          <Text style={[styles.dayNumber, isToday && [styles.dayNumberToday, { color: accentColor }]]}>
             {day}
           </Text>
           <View style={styles.appointmentsContainer}>
@@ -214,7 +223,7 @@ export default function AgendaScreen() {
           style={[
             styles.calendarDay,
             styles.calendarDayActive,
-            isSelected && styles.calendarDaySelected
+            isSelected && [styles.calendarDaySelected, { backgroundColor: accentColor }]
           ]}
           onPress={() => {
             setNewAppointmentDate(date);
@@ -236,30 +245,19 @@ export default function AgendaScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.push('/(tabs)/(home)')}
-          >
-            <Ionicons name="chevron-back" size={26} color="#333" />
-          </TouchableOpacity>
-          
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('agenda.title')}</Text>
-            <Text style={styles.subtitle}>{t('agenda.subtitle')}</Text>
-          </View>
-          
-          <View style={styles.placeholder} />
-        </View>
+      <ModuleHeader
+        title={t('agenda.title')}
+        subtitle={t('agenda.subtitle')}
+      />
 
-        <TouchableOpacity
-          style={styles.addButton}
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <ThemedButton
+          title={t('agenda.addAppointment')}
           onPress={() => setShowAddModal(true)}
-        >
-          <Ionicons name="add" size={24} color={colors.card} />
-          <Text style={styles.addButtonText}>{t('agenda.addAppointment')}</Text>
-        </TouchableOpacity>
+          icon="plus"
+          androidIcon="add"
+          style={styles.addButton}
+        />
 
         {/* Monthly Calendar View */}
         <View style={styles.monthlyCalendar}>
@@ -480,7 +478,7 @@ export default function AgendaScreen() {
                     <TouchableOpacity
                       style={[
                         styles.memberOption,
-                        newAppointmentAssignedTo.includes(member.id) && styles.memberOptionActive,
+                        newAppointmentAssignedTo.includes(member.id) && [styles.memberOptionActive, { borderColor: accentColor }],
                       ]}
                       onPress={() => toggleMemberSelection(member.id)}
                     >
@@ -489,8 +487,8 @@ export default function AgendaScreen() {
                       </View>
                       <Text style={styles.memberName}>{member.name}</Text>
                       {newAppointmentAssignedTo.includes(member.id) && (
-                        <View style={styles.checkmark}>
-                          <Ionicons name="checkmark" size={16} color={colors.accent} />
+                        <View style={[styles.checkmark, { backgroundColor: accentColor }]}>
+                          <Ionicons name="checkmark" size={16} color={colors.card} />
                         </View>
                       )}
                     </TouchableOpacity>
@@ -510,7 +508,7 @@ export default function AgendaScreen() {
                     <TouchableOpacity
                       style={[
                         styles.repeatOption,
-                        newAppointmentRepeat === option.value && styles.repeatOptionActive,
+                        newAppointmentRepeat === option.value && [styles.repeatOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
                       ]}
                       onPress={() => setNewAppointmentRepeat(option.value as any)}
                     >
@@ -543,7 +541,7 @@ export default function AgendaScreen() {
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleAddAppointment}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
@@ -637,64 +635,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  header: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  placeholder: {
-    width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
-  },
   addButton: {
-    backgroundColor: colors.accent,
-    borderRadius: 20,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.card,
-    marginLeft: 10,
-    fontFamily: 'Poppins_600SemiBold',
   },
   monthlyCalendar: {
     backgroundColor: colors.card,
@@ -749,7 +694,6 @@ const styles = StyleSheet.create({
   dayCellToday: {
     backgroundColor: colors.primary,
     borderWidth: 2,
-    borderColor: colors.accent,
   },
   dayNumber: {
     fontSize: 14,
@@ -759,7 +703,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   dayNumberToday: {
-    color: colors.accent,
     fontWeight: '700',
     fontFamily: 'Poppins_700Bold',
   },
@@ -986,7 +929,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   memberOptionActive: {
-    borderColor: colors.accent,
     backgroundColor: colors.primary,
   },
   memberAvatar: {
@@ -1013,7 +955,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 5,
     right: 5,
-    backgroundColor: colors.card,
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -1037,8 +978,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   repeatOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
   },
   repeatOptionText: {
     fontSize: 14,
@@ -1063,7 +1002,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   modalButtonConfirm: {
-    backgroundColor: colors.accent,
   },
   modalButtonText: {
     fontSize: 16,
@@ -1158,7 +1096,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   calendarDaySelected: {
-    backgroundColor: colors.accent,
   },
   calendarDayText: {
     fontSize: 14,

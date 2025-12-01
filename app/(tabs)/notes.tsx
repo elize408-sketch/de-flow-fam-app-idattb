@@ -1,13 +1,17 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
+import ThemedButton from '@/components/ThemedButton';
 
 export default function NotesScreen() {
   const router = useRouter();
+  const { setModule, accentColor } = useModuleTheme();
   const { familyNotes, addFamilyNote, updateFamilyNote, deleteFamilyNote, currentUser, familyMembers } = useFamily();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -15,6 +19,11 @@ export default function NotesScreen() {
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteContent, setNewNoteContent] = useState('');
   const [selectedViewers, setSelectedViewers] = useState<string[]>([]);
+
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('notes' as ModuleName);
+  }, [setModule]);
 
   const handleAddNote = () => {
     if (!newNoteTitle.trim()) {
@@ -112,40 +121,19 @@ export default function NotesScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.push('/(tabs)/(home)')}
-          >
-            <IconSymbol
-              ios_icon_name="house"
-              android_material_icon_name="home"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-          
-          <View style={styles.header}>
-            <Text style={styles.title}>Notities</Text>
-            <Text style={styles.subtitle}>Deel belangrijke informatie</Text>
-          </View>
-          
-          <View style={styles.placeholder} />
-        </View>
+      <ModuleHeader
+        title="Notities"
+        subtitle="Deel belangrijke informatie"
+      />
 
-        <TouchableOpacity
-          style={styles.addButton}
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <ThemedButton
+          title="Notitie toevoegen"
           onPress={() => setShowAddModal(true)}
-        >
-          <IconSymbol
-            ios_icon_name="plus"
-            android_material_icon_name="add"
-            size={24}
-            color={colors.card}
-          />
-          <Text style={styles.addButtonText}>Notitie toevoegen</Text>
-        </TouchableOpacity>
+          icon="plus"
+          androidIcon="add"
+          style={styles.addButton}
+        />
 
         {visibleNotes.length === 0 ? (
           <View style={styles.emptyState}>
@@ -174,7 +162,7 @@ export default function NotesScreen() {
                             ios_icon_name="pencil"
                             android_material_icon_name="edit"
                             size={20}
-                            color={colors.vibrantOrange}
+                            color={accentColor}
                           />
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -302,7 +290,7 @@ export default function NotesScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleAddNote}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -392,7 +380,7 @@ export default function NotesScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleEditNote}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
@@ -412,64 +400,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 140,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  header: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  placeholder: {
-    width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
-  },
   addButton: {
-    backgroundColor: colors.vibrantOrange,
-    borderRadius: 20,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.card,
-    marginLeft: 10,
-    fontFamily: 'Poppins_600SemiBold',
   },
   emptyState: {
     backgroundColor: colors.card,
@@ -693,7 +628,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   modalButtonConfirm: {
-    backgroundColor: colors.vibrantOrange,
   },
   modalButtonText: {
     fontSize: 16,

@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 import { FamilyProvider } from '@/contexts/FamilyContext';
 import { WidgetProvider } from '@/contexts/WidgetContext';
+import { ModuleThemeProvider } from '@/contexts/ThemeContext';
 import { 
   Poppins_400Regular, 
   Poppins_600SemiBold, 
@@ -46,17 +47,19 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <FamilyProvider>
-        <WidgetProvider>
-          <Stack>
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="formsheet" options={{ presentation: 'formSheet', headerShown: false }} />
-            <Stack.Screen name="transparent-modal" options={{ presentation: 'transparentModal', headerShown: false }} />
-          </Stack>
-        </WidgetProvider>
-      </FamilyProvider>
+      <ModuleThemeProvider>
+        <FamilyProvider>
+          <WidgetProvider>
+            <Stack>
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
+              <Stack.Screen name="formsheet" options={{ presentation: 'formSheet', headerShown: false }} />
+              <Stack.Screen name="transparent-modal" options={{ presentation: 'transparentModal', headerShown: false }} />
+            </Stack>
+          </WidgetProvider>
+        </FamilyProvider>
+      </ModuleThemeProvider>
     </ThemeProvider>
   );
 }

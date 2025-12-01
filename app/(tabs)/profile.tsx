@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,8 @@ import IconPicker from '@/components/IconPicker';
 import LanguageSelector from '@/components/LanguageSelector';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/utils/supabase';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
 
 const AVAILABLE_COLORS = [
   { name: 'Blush Roze', value: '#F5D9CF' },
@@ -27,6 +29,7 @@ const AVAILABLE_COLORS = [
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { setModule, accentColor } = useModuleTheme();
   const { 
     familyMembers, 
     addFamilyMember, 
@@ -44,6 +47,11 @@ export default function ProfileScreen() {
     shareFamilyInvite,
     familyCode,
   } = useFamily();
+
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('profile' as ModuleName);
+  }, [setModule]);
   
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showEditMemberModal, setShowEditMemberModal] = useState(false);
@@ -410,35 +418,19 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.push('/(tabs)/(home)')}
-        >
-          <IconSymbol
-            ios_icon_name="house"
-            android_material_icon_name="home"
-            size={24}
-            color={colors.text}
-          />
-        </TouchableOpacity>
-        
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('profile.title')}</Text>
-        </View>
-        
-        <View style={styles.placeholder} />
-      </View>
+      <ModuleHeader
+        title={t('profile.title')}
+        subtitle={t('profile.subtitle')}
+      />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.subtitle}>{t('profile.subtitle')}</Text>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('profile.familyMembers')}</Text>
             {isParent && (
               <TouchableOpacity
-                style={styles.addButton}
+                style={[styles.addButton, { backgroundColor: accentColor }]}
                 onPress={() => setShowAddMemberModal(true)}
               >
                 <IconSymbol
@@ -853,7 +845,7 @@ export default function ProfileScreen() {
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleAddMember}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.add')}</Text>
@@ -977,7 +969,7 @@ export default function ProfileScreen() {
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleEditMember}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.save')}</Text>
@@ -1326,7 +1318,7 @@ export default function ProfileScreen() {
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleEditTask}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.save')}</Text>
@@ -1345,49 +1337,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  header: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  placeholder: {
-    width: 40,
-  },
   contentContainer: {
     paddingHorizontal: 20,
     paddingBottom: 140,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 5,
-    marginBottom: 20,
-    textAlign: 'center',
-    fontFamily: 'Nunito_400Regular',
   },
   section: {
     marginBottom: 30,
@@ -1414,7 +1366,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   addButton: {
-    backgroundColor: colors.accent,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -1935,7 +1886,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   modalButtonConfirm: {
-    backgroundColor: colors.accent,
   },
   modalButtonText: {
     fontSize: 16,

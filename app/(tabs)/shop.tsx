@@ -1,12 +1,20 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
 
 export default function ShopScreen() {
   const router = useRouter();
+  const { setModule, accentColor } = useModuleTheme();
+
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('shop' as ModuleName);
+  }, [setModule]);
 
   const handleOpenShop = async () => {
     const url = 'https://www.flowfam.nl';
@@ -21,26 +29,10 @@ export default function ShopScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.push('/(tabs)/(home)')}
-        >
-          <IconSymbol
-            ios_icon_name="house"
-            android_material_icon_name="home"
-            size={24}
-            color={colors.text}
-          />
-        </TouchableOpacity>
-        
-        <View style={styles.header}>
-          <Text style={styles.title}>🛍️ Shop</Text>
-          <Text style={styles.subtitle}>Flow Fam Webshop</Text>
-        </View>
-        
-        <View style={styles.placeholder} />
-      </View>
+      <ModuleHeader
+        title="🛍️ Shop"
+        subtitle="Flow Fam Webshop"
+      />
 
       <View style={styles.content}>
         <Text style={styles.shopTitle}>Welkom bij de Flow Fam Shop!</Text>
@@ -49,7 +41,7 @@ export default function ShopScreen() {
         </Text>
 
         <TouchableOpacity
-          style={styles.shopButton}
+          style={[styles.shopButton, { backgroundColor: accentColor }]}
           onPress={handleOpenShop}
         >
           <IconSymbol
@@ -71,45 +63,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: 48,
-    paddingHorizontal: 20,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 40,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  header: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  placeholder: {
-    width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
   },
   content: {
     flex: 1,
@@ -135,7 +88,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
   },
   shopButton: {
-    backgroundColor: colors.accent,
     borderRadius: 25,
     paddingHorizontal: 40,
     paddingVertical: 18,

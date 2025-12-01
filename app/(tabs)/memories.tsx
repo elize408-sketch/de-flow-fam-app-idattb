@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image, Linking } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -11,8 +11,12 @@ import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingL
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
+import ThemedButton from '@/components/ThemedButton';
 
 export default function MemoriesScreen() {
+  const { setModule, accentColor } = useModuleTheme();
   const { memories, addMemory, deleteMemory, familyMembers } = useFamily();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -25,6 +29,11 @@ export default function MemoriesScreen() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showPhotoBookModal, setShowPhotoBookModal] = useState(false);
   const [selectedMemberForPhotoBook, setSelectedMemberForPhotoBook] = useState<string>('');
+
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('memories' as ModuleName);
+  }, [setModule]);
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -268,15 +277,15 @@ export default function MemoriesScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Fotoboek</Text>
-          <Text style={styles.subtitle}>Alle gezinsherinneringen</Text>
-        </View>
+      <ModuleHeader
+        title="Fotoboek"
+        subtitle="Alle gezinsherinneringen"
+      />
 
+      <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.accent, flex: 2 }]}
+            style={[styles.actionButton, { backgroundColor: accentColor, flex: 2 }]}
             onPress={() => setShowAddModal(true)}
           >
             <IconSymbol
@@ -510,7 +519,7 @@ export default function MemoriesScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleAddMemory}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -596,7 +605,7 @@ export default function MemoriesScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleOrderPhotoBook}
                   disabled={!selectedMemberForPhotoBook}
                 >
@@ -693,27 +702,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 120,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -996,7 +986,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   photoBookMemberOptionActive: {
-    borderColor: colors.highlight,
+    borderColor: colors.accent,
     backgroundColor: colors.primary,
   },
   photoBookMemberAvatar: {
@@ -1057,7 +1047,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   modalButtonConfirm: {
-    backgroundColor: colors.accent,
   },
   modalButtonText: {
     fontSize: 16,

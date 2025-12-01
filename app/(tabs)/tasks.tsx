@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -9,9 +9,13 @@ import TaskCompletionAnimation from '@/components/TaskCompletionAnimation';
 import IconPicker from '@/components/IconPicker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
+import ThemedButton from '@/components/ThemedButton';
 
 export default function TasksScreen() {
   const router = useRouter();
+  const { setModule, accentColor } = useModuleTheme();
   const { 
     tasks, 
     householdTasks,
@@ -36,6 +40,11 @@ export default function TasksScreen() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
 
   const isParent = currentUser?.role === 'parent';
+
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('tasks' as ModuleName);
+  }, [setModule]);
 
   // Helper functions for date comparison
   const isToday = (date: Date) => {
@@ -203,7 +212,7 @@ export default function TasksScreen() {
           onPress={() => !task.completed && handleCompleteTask(task.id, task.coins)}
           disabled={task.completed}
         >
-          <View style={[styles.checkboxInner, task.completed && styles.checkboxChecked]}>
+          <View style={[styles.checkboxInner, { borderColor: accentColor }, task.completed && [styles.checkboxChecked, { backgroundColor: accentColor }]]}>
             {task.completed && (
               <IconSymbol
                 ios_icon_name="checkmark"
@@ -215,12 +224,12 @@ export default function TasksScreen() {
           </View>
         </TouchableOpacity>
 
-        <View style={styles.taskIcon}>
+        <View style={[styles.taskIcon, { backgroundColor: accentColor + '20' }]}>
           <IconSymbol
             ios_icon_name={task.icon}
             android_material_icon_name={task.icon as any}
             size={28}
-            color={task.completed ? colors.textSecondary : colors.accent}
+            color={task.completed ? colors.textSecondary : accentColor}
           />
         </View>
 
@@ -245,7 +254,7 @@ export default function TasksScreen() {
 
         {showExecuteButton && !task.completed && (
           <TouchableOpacity
-            style={styles.executeButton}
+            style={[styles.executeButton, { backgroundColor: accentColor }]}
             onPress={() => handleAddRecurringTaskToToday(task)}
           >
             <Text style={styles.executeButtonText}>Vandaag uitvoeren</Text>
@@ -260,17 +269,17 @@ export default function TasksScreen() {
     
     return (
       <View key={task.id} style={styles.recurringTaskCard}>
-        <View style={styles.recurringTaskIcon}>
+        <View style={[styles.recurringTaskIcon, { backgroundColor: accentColor + '20' }]}>
           <IconSymbol
             ios_icon_name={task.icon}
             android_material_icon_name={task.icon as any}
             size={24}
-            color={colors.accent}
+            color={accentColor}
           />
         </View>
 
         <View style={styles.recurringTaskInfo}>
-          <Text style={styles.recurringTaskFrequency}>{frequency}</Text>
+          <Text style={[styles.recurringTaskFrequency, { color: accentColor }]}>{frequency}</Text>
           <Text style={styles.recurringTaskName}>{task.name}</Text>
           {task.time && (
             <Text style={styles.recurringTaskTime}>🕐 {task.time}</Text>
@@ -288,16 +297,16 @@ export default function TasksScreen() {
         )}
 
         <TouchableOpacity
-          style={styles.addTodayButton}
+          style={[styles.addTodayButton, { backgroundColor: accentColor + '20' }]}
           onPress={() => handleAddRecurringTaskToToday(task)}
         >
           <IconSymbol
             ios_icon_name="plus.circle.fill"
             android_material_icon_name="add_circle"
             size={20}
-            color={colors.accent}
+            color={accentColor}
           />
-          <Text style={styles.addTodayButtonText}>Vandaag</Text>
+          <Text style={[styles.addTodayButtonText, { color: accentColor }]}>Vandaag</Text>
         </TouchableOpacity>
       </View>
     );
@@ -305,38 +314,11 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.push('/(tabs)/(home)')}
-        >
-          <IconSymbol
-            ios_icon_name="house"
-            android_material_icon_name="home"
-            size={24}
-            color={colors.text}
-          />
-        </TouchableOpacity>
-        
-        <View style={styles.headerCenter}>
-          <Text style={styles.title}>Taken</Text>
-        </View>
-        
-        {isParent && (
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowAddTaskModal(true)}
-          >
-            <IconSymbol
-              ios_icon_name="plus"
-              android_material_icon_name="add"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-        )}
-        {!isParent && <View style={styles.placeholder} />}
-      </View>
+      <ModuleHeader
+        title="Taken"
+        showAddButton={isParent}
+        onAddPress={() => setShowAddTaskModal(true)}
+      />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
         {/* Vandaag Block */}
@@ -476,14 +458,14 @@ export default function TasksScreen() {
                 // Step 1: Choose task type
                 <View style={styles.taskTypeSelection}>
                   <TouchableOpacity
-                    style={styles.taskTypeCard}
+                    style={[styles.taskTypeCard, { borderColor: accentColor + '40' }]}
                     onPress={() => setTaskMode('one-time')}
                   >
                     <IconSymbol
                       ios_icon_name="calendar"
                       android_material_icon_name="event"
                       size={48}
-                      color={colors.accent}
+                      color={accentColor}
                     />
                     <Text style={styles.taskTypeCardTitle}>Eenmalige taak</Text>
                     <Text style={styles.taskTypeCardDescription}>
@@ -492,14 +474,14 @@ export default function TasksScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.taskTypeCard}
+                    style={[styles.taskTypeCard, { borderColor: accentColor + '40' }]}
                     onPress={() => setTaskMode('recurring')}
                   >
                     <IconSymbol
                       ios_icon_name="arrow.clockwise"
                       android_material_icon_name="refresh"
                       size={48}
-                      color={colors.accent}
+                      color={accentColor}
                     />
                     <Text style={styles.taskTypeCardTitle}>Herhalende taak</Text>
                     <Text style={styles.taskTypeCardDescription}>
@@ -540,7 +522,7 @@ export default function TasksScreen() {
                         <TouchableOpacity
                           style={[
                             styles.memberOption,
-                            newTaskAssignedTo === member.id && styles.memberOptionActive,
+                            newTaskAssignedTo === member.id && [styles.memberOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
                             validationErrors.assignedTo && !newTaskAssignedTo && styles.memberOptionError,
                           ]}
                           onPress={() => {
@@ -614,7 +596,7 @@ export default function TasksScreen() {
                             <TouchableOpacity
                               style={[
                                 styles.repeatOption,
-                                newTaskRepeatType === option.value && styles.repeatOptionActive,
+                                newTaskRepeatType === option.value && [styles.repeatOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
                               ]}
                               onPress={() => setNewTaskRepeatType(option.value as any)}
                             >
@@ -643,7 +625,7 @@ export default function TasksScreen() {
                   />
 
                   <TouchableOpacity
-                    style={styles.submitButton}
+                    style={[styles.submitButton, { backgroundColor: accentColor }]}
                     onPress={handleAddTask}
                   >
                     <Text style={styles.submitButtonText}>Taak toevoegen</Text>
@@ -663,51 +645,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  placeholder: {
-    width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
   contentContainer: {
     paddingHorizontal: 20,
     paddingBottom: 120,
+  },
+  placeholder: {
+    width: 40,
   },
   block: {
     backgroundColor: colors.card,
@@ -762,18 +705,15 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: colors.accent,
   },
   taskIcon: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -817,7 +757,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
   },
   executeButton: {
-    backgroundColor: colors.accent,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -841,7 +780,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -852,7 +790,6 @@ const styles = StyleSheet.create({
   recurringTaskFrequency: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.accent,
     fontFamily: 'Poppins_600SemiBold',
     marginBottom: 2,
   },
@@ -890,7 +827,6 @@ const styles = StyleSheet.create({
   addTodayButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
@@ -899,7 +835,6 @@ const styles = StyleSheet.create({
   addTodayButtonText: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.accent,
     fontFamily: 'Poppins_600SemiBold',
     marginLeft: 4,
   },
@@ -953,7 +888,6 @@ const styles = StyleSheet.create({
     padding: 25,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'transparent',
   },
   taskTypeCardTitle: {
     fontSize: 18,
@@ -1007,8 +941,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   memberOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
   },
   memberOptionError: {
     borderColor: '#E74C3C',
@@ -1065,8 +997,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   repeatOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
   },
   repeatOptionText: {
     fontSize: 16,
@@ -1078,7 +1008,6 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   submitButton: {
-    backgroundColor: colors.accent,
     borderRadius: 15,
     padding: 18,
     alignItems: 'center',

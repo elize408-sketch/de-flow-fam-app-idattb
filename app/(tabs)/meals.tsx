@@ -11,6 +11,9 @@ import * as Calendar from 'expo-calendar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ingredient, IngredientCategory } from '@/types/family';
 import { categorizeIngredient, parseIngredient } from '@/utils/ingredientCategories';
+import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
+import ModuleHeader from '@/components/ModuleHeader';
+import ThemedButton from '@/components/ThemedButton';
 
 const DAYS_OF_WEEK = [
   { key: 'monday', label: 'Maandag' },
@@ -24,6 +27,7 @@ const DAYS_OF_WEEK = [
 
 export default function MealsScreen() {
   const router = useRouter();
+  const { setModule, accentColor } = useModuleTheme();
   const { 
     meals, 
     addMeal, 
@@ -33,6 +37,11 @@ export default function MealsScreen() {
     weekPlanningServings,
     setWeekPlanningServings,
   } = useFamily();
+  
+  // Set module theme on mount
+  useEffect(() => {
+    setModule('meals' as ModuleName);
+  }, [setModule]);
   const [showAddMealModal, setShowAddMealModal] = useState(false);
   const [showSpinnerModal, setShowSpinnerModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
@@ -384,40 +393,25 @@ export default function MealsScreen() {
 
   return (
     <View style={styles.container}>
+      <ModuleHeader
+        title="Maaltijden"
+        subtitle="Recepten en maaltijdplanning"
+      />
+
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.push('/(tabs)/(home)')}
-          >
-            <IconSymbol
-              ios_icon_name="house"
-              android_material_icon_name="home"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-          
-          <View style={styles.header}>
-            <Text style={styles.title}>Maaltijden</Text>
-            <Text style={styles.subtitle}>Recepten en maaltijdplanning</Text>
-          </View>
-          
-          <View style={styles.placeholder} />
-        </View>
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primary }]}
+            style={[styles.actionButton, { backgroundColor: accentColor }]}
             onPress={() => setShowAddMealModal(true)}
           >
             <IconSymbol
               ios_icon_name="plus"
               android_material_icon_name="add"
               size={24}
-              color={colors.text}
+              color={colors.card}
             />
-            <Text style={styles.actionButtonText}>Recept toevoegen</Text>
+            <Text style={[styles.actionButtonText, { color: colors.card }]}>Recept toevoegen</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -434,7 +428,7 @@ export default function MealsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.accent }]}
+            style={[styles.actionButton, { backgroundColor: colors.primary }]}
             onPress={() => setShowAIModal(true)}
           >
             <IconSymbol
@@ -599,16 +593,16 @@ export default function MealsScreen() {
                       
                       <View style={styles.recipeActions}>
                         <TouchableOpacity
-                          style={styles.addIngredientsButton}
+                          style={[styles.addIngredientsButton, { borderColor: accentColor }]}
                           onPress={() => handleAddIngredientsToShoppingList(assignedRecipe)}
                         >
                           <IconSymbol
                             ios_icon_name="cart-badge-plus"
                             android_material_icon_name="add-shopping-cart"
                             size={20}
-                            color={colors.vibrantOrange}
+                            color={accentColor}
                           />
-                          <Text style={styles.addIngredientsButtonText}>
+                          <Text style={[styles.addIngredientsButtonText, { color: accentColor }]}>
                             Voeg ingrediënten toe aan boodschappenlijstje
                           </Text>
                         </TouchableOpacity>
@@ -763,7 +757,7 @@ export default function MealsScreen() {
                   )}
                   
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10 }]}
+                    style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10, backgroundColor: accentColor }]}
                     onPress={() => {
                       handleAddIngredientsToShoppingList(selectedMealForDetail);
                       setShowDetailModal(false);
@@ -799,7 +793,7 @@ export default function MealsScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.modalButton, { marginBottom: 10, backgroundColor: colors.vibrantOrange }]}
+                    style={[styles.modalButton, { marginBottom: 10, backgroundColor: accentColor }]}
                     onPress={() => {
                       setShowDetailModal(false);
                       openEditModal(selectedMealForDetail);
@@ -888,7 +882,7 @@ export default function MealsScreen() {
               </TouchableOpacity>
               <Animated.View style={{ flex: 1, transform: [{ scale: buttonScale }] }}>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={confirmPlanInAgenda}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -969,7 +963,7 @@ export default function MealsScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleAddMeal}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -1051,7 +1045,7 @@ export default function MealsScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleUpdateMeal}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
@@ -1130,7 +1124,7 @@ export default function MealsScreen() {
             )}
 
             <TouchableOpacity
-              style={[styles.spinButton, isSpinning && styles.spinButtonDisabled]}
+              style={[styles.spinButton, { backgroundColor: accentColor }, isSpinning && styles.spinButtonDisabled]}
               onPress={spinWheel}
               disabled={isSpinning}
             >
@@ -1183,7 +1177,7 @@ export default function MealsScreen() {
             )}
 
             <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10 }]}
+              style={[styles.modalButton, styles.modalButtonConfirm, { marginBottom: 10, backgroundColor: accentColor }]}
               onPress={generateAISuggestion}
             >
               <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
@@ -1214,46 +1208,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 120,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  header: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  placeholder: {
-    width: 40,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
   },
   actionButtons: {
     flexDirection: 'row',
