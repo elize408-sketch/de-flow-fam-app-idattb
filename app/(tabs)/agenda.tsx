@@ -230,7 +230,8 @@ export default function AgendaScreen() {
       date.setHours(0, 0, 0, 0);
       const dayAppointments = getAppointmentsForDate(date);
       const isToday = date.getTime() === today.getTime();
-      const extraCount = dayAppointments.length > 3 ? dayAppointments.length - 3 : 0;
+      const totalCount = dayAppointments.length;
+      const showBadge = totalCount > 3;
 
       days.push(
         <TouchableOpacity
@@ -248,9 +249,9 @@ export default function AgendaScreen() {
             <Text style={[styles.dayNumber, isToday && [styles.dayNumberToday, { color: accentColor }]]}>
               {day}
             </Text>
-            {extraCount > 0 && (
+            {showBadge && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>+{extraCount}</Text>
+                <Text style={styles.badgeText}>{totalCount}</Text>
               </View>
             )}
           </View>
