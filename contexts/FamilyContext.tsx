@@ -91,7 +91,7 @@ interface FamilyContextType {
   deletePantryItem: (itemId: string) => Promise<void>;
   addFamilyNote: (note: Omit<FamilyNote, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateFamilyNote: (noteId: string, updates: Partial<FamilyNote>) => void;
-  deleteFamilyNote: (noteId: string) => void;
+  deleteFamilyNote: (noteId: string) => Promise<void>;
   addReminder: (reminder: Omit<Reminder, 'id'>) => void;
   updateReminder: (reminderId: string, updates: Partial<Reminder>) => void;
   deleteReminder: (reminderId: string) => void;
@@ -582,7 +582,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteFamilyMember = async (memberId: string) => {
+  const deleteFamilyMember = async (memberId: string): Promise<void> => {
     try {
       console.log('Deleting family member:', memberId);
       
@@ -595,6 +595,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Error deleting family member from DB:', error);
+          Alert.alert('Fout', `Kon gezinslid niet verwijderen: ${error.message}`);
           throw error;
         }
         console.log('Family member deleted from DB');
@@ -609,7 +610,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       }
       
       console.log('Family member deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting family member:', error);
       throw error;
     }
@@ -704,7 +705,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const deleteTask = async (taskId: string) => {
+  const deleteTask = async (taskId: string): Promise<void> => {
     try {
       console.log('Deleting task:', taskId);
       
@@ -717,6 +718,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Error deleting task from DB:', error);
+          Alert.alert('Fout', `Kon taak niet verwijderen: ${error.message}`);
           throw error;
         }
         console.log('Task deleted from DB');
@@ -725,7 +727,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       // Delete from local state
       setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
       console.log('Task deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting task:', error);
       throw error;
     }
@@ -776,7 +778,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const deleteAppointment = async (appointmentId: string, deleteSeries: boolean = false) => {
+  const deleteAppointment = async (appointmentId: string, deleteSeries: boolean = false): Promise<void> => {
     try {
       console.log('Deleting appointment:', appointmentId, 'deleteSeries:', deleteSeries);
       
@@ -789,6 +791,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Error deleting appointment from DB:', error);
+          Alert.alert('Fout', `Kon afspraak niet verwijderen: ${error.message}`);
           throw error;
         }
         console.log('Appointment deleted from DB');
@@ -797,7 +800,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       // Delete from local state
       setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
       console.log('Appointment deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting appointment:', error);
       throw error;
     }
@@ -1020,7 +1023,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteShoppingItem = async (itemId: string) => {
+  const deleteShoppingItem = async (itemId: string): Promise<void> => {
     try {
       console.log('Deleting shopping item:', itemId);
       
@@ -1033,6 +1036,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Error deleting shopping item from DB:', error);
+          Alert.alert('Fout', `Kon boodschappen item niet verwijderen: ${error.message}`);
           throw error;
         }
         console.log('Shopping item deleted from DB');
@@ -1041,7 +1045,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       // Delete from local state
       setShoppingList(prev => prev.filter(item => item.id !== itemId));
       console.log('Shopping item deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting shopping item:', error);
       throw error;
     }
@@ -1080,7 +1084,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const deletePantryItem = async (itemId: string) => {
+  const deletePantryItem = async (itemId: string): Promise<void> => {
     try {
       console.log('Deleting pantry item:', itemId);
       
@@ -1093,6 +1097,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Error deleting pantry item from DB:', error);
+          Alert.alert('Fout', `Kon voorraad item niet verwijderen: ${error.message}`);
           throw error;
         }
         console.log('Pantry item deleted from DB');
@@ -1101,7 +1106,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       // Delete from local state
       setPantryItems(prev => prev.filter(item => item.id !== itemId));
       console.log('Pantry item deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting pantry item:', error);
       throw error;
     }
@@ -1167,7 +1172,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteFamilyNote = async (noteId: string) => {
+  const deleteFamilyNote = async (noteId: string): Promise<void> => {
     try {
       console.log('Deleting note:', noteId);
       
@@ -1180,6 +1185,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Error deleting note from DB:', error);
+          Alert.alert('Fout', `Kon notitie niet verwijderen: ${error.message}`);
           throw error;
         }
         console.log('Note deleted from DB');
@@ -1188,7 +1194,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       // Delete from local state
       setFamilyNotes(prev => prev.filter(note => note.id !== noteId));
       console.log('Note deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting note:', error);
       throw error;
     }
