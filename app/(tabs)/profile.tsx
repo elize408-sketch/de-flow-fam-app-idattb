@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import IconPicker from '@/components/IconPicker';
+import LanguageSelector from '@/components/LanguageSelector';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/utils/supabase';
 
@@ -24,6 +26,7 @@ const AVAILABLE_COLORS = [
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { 
     familyMembers, 
     addFamilyMember, 
@@ -49,6 +52,7 @@ export default function ProfileScreen() {
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
   const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
   const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [editingMember, setEditingMember] = useState<any>(null);
   const [newMemberName, setNewMemberName] = useState('');
@@ -72,7 +76,7 @@ export default function ProfileScreen() {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (permissionResult.granted === false) {
-      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s om een profielfoto te kunnen toevoegen.');
+      Alert.alert(t('profile.permissionRequired'), t('profile.photoPermissionMessage'));
       return;
     }
 
@@ -92,7 +96,7 @@ export default function ProfileScreen() {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (permissionResult.granted === false) {
-      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s om een profielfoto te kunnen toevoegen.');
+      Alert.alert(t('profile.permissionRequired'), t('profile.photoPermissionMessage'));
       return;
     }
 
@@ -105,13 +109,13 @@ export default function ProfileScreen() {
 
     if (!result.canceled && result.assets[0]) {
       updateFamilyMember(memberId, { photoUri: result.assets[0].uri });
-      Alert.alert('Gelukt!', 'Profielfoto bijgewerkt');
+      Alert.alert(t('profile.success'), t('profile.memberUpdated'));
     }
   };
 
   const handleAddMember = () => {
     if (!newMemberName.trim()) {
-      Alert.alert('Fout', 'Vul een naam in');
+      Alert.alert(t('common.error'), t('profile.fillName'));
       return;
     }
 
@@ -128,7 +132,7 @@ export default function ProfileScreen() {
     setNewMemberColor(AVAILABLE_COLORS[0].value);
     setNewMemberPhoto(null);
     setShowAddMemberModal(false);
-    Alert.alert('Gelukt!', `${newMemberName} is toegevoegd aan het gezin`);
+    Alert.alert(t('common.success'), t('profile.memberAdded', { name: newMemberName }));
   };
 
   const openEditMemberModal = (member: any) => {
@@ -142,7 +146,7 @@ export default function ProfileScreen() {
 
   const handleEditMember = () => {
     if (!newMemberName.trim()) {
-      Alert.alert('Fout', 'Vul een naam in');
+      Alert.alert(t('common.error'), t('profile.fillName'));
       return;
     }
 
@@ -159,21 +163,21 @@ export default function ProfileScreen() {
     setNewMemberColor(AVAILABLE_COLORS[0].value);
     setNewMemberPhoto(null);
     setShowEditMemberModal(false);
-    Alert.alert('Gelukt!', 'Gezinslid bijgewerkt');
+    Alert.alert(t('common.success'), t('profile.memberUpdated'));
   };
 
   const handleDeleteMember = (memberId: string, memberName: string) => {
     Alert.alert(
-      'Weet je het zeker?',
-      `Weet je zeker dat je dit gezinslid wilt verwijderen?`,
+      t('profile.areYouSure'),
+      t('profile.deleteMember'),
       [
-        { text: 'Annuleren', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Verwijderen',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
             deleteFamilyMember(memberId);
-            Alert.alert('Gelukt!', `${memberName} is verwijderd`);
+            Alert.alert(t('common.success'), t('profile.memberDeleted', { name: memberName }));
           },
         },
       ]
@@ -182,24 +186,24 @@ export default function ProfileScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Account verwijderen',
-      'Weet je zeker dat je je account wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.',
+      t('profile.deleteAccount'),
+      t('profile.deleteAccountConfirm'),
       [
-        { text: 'Annuleren', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Verwijderen',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               const { error } = await supabase.auth.signOut();
               if (error) {
-                Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van je account');
+                Alert.alert(t('common.error'), t('profile.errorDeleting'));
                 return;
               }
               router.replace('/(auth)/welcome');
             } catch (error) {
               console.error('Delete account error:', error);
-              Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van je account');
+              Alert.alert(t('common.error'), t('profile.errorDeleting'));
             }
           },
         },
@@ -209,31 +213,29 @@ export default function ProfileScreen() {
 
   const handleDeleteAllData = () => {
     Alert.alert(
-      'Alle gegevens verwijderen',
-      'Weet je zeker dat je alle persoonlijke gegevens wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.',
+      t('profile.deleteAllData'),
+      t('profile.deleteAllDataConfirm'),
       [
-        { text: 'Annuleren', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Verwijderen',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
-              // Clear all local data
               const AsyncStorage = await import('@react-native-async-storage/async-storage');
               await AsyncStorage.default.clear();
               
-              // Sign out
               const { error } = await supabase.auth.signOut();
               if (error) {
-                Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van je gegevens');
+                Alert.alert(t('common.error'), t('profile.errorDeletingData'));
                 return;
               }
               
-              Alert.alert('Gelukt', 'Alle gegevens zijn verwijderd');
+              Alert.alert(t('common.success'), t('profile.dataDeleted'));
               router.replace('/(auth)/welcome');
             } catch (error) {
               console.error('Delete all data error:', error);
-              Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van je gegevens');
+              Alert.alert(t('common.error'), t('profile.errorDeletingData'));
             }
           },
         },
@@ -243,16 +245,16 @@ export default function ProfileScreen() {
 
   const handleDeleteTask = (taskId: string, taskName: string) => {
     Alert.alert(
-      'Taak verwijderen',
-      `Weet je zeker dat je "${taskName}" wilt verwijderen?`,
+      t('common.delete') + ' ' + t('tasks.title').toLowerCase(),
+      t('tasks.deleteTaskConfirm', { name: taskName }),
       [
-        { text: 'Annuleren', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Verwijderen',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
             deleteTask(taskId);
-            Alert.alert('Gelukt!', 'Taak verwijderd');
+            Alert.alert(t('common.success'), t('profile.taskDeleted'));
           },
         },
       ]
@@ -282,7 +284,7 @@ export default function ProfileScreen() {
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      Alert.alert('Fout', 'Vul alle verplichte velden correct in');
+      Alert.alert(t('common.error'), t('profile.fillAllFieldsCorrectly'));
       return;
     }
 
@@ -301,17 +303,17 @@ export default function ProfileScreen() {
     setEditTaskIcon('check');
     setEditTaskRepeat('none');
     setShowEditTaskModal(false);
-    Alert.alert('Gelukt!', 'Taak bijgewerkt');
+    Alert.alert(t('common.success'), t('profile.taskUpdated'));
   };
 
   const handleAddAppointment = () => {
     if (!newAppointmentTitle.trim()) {
-      Alert.alert('Fout', 'Vul een titel in');
+      Alert.alert(t('common.error'), t('profile.fillTitle'));
       return;
     }
 
     if (!selectedChildForPlanning) {
-      Alert.alert('Fout', 'Selecteer een kind');
+      Alert.alert(t('common.error'), t('profile.selectChild'));
       return;
     }
 
@@ -330,21 +332,21 @@ export default function ProfileScreen() {
     setNewAppointmentDate(new Date());
     setNewAppointmentTime('09:00');
     setNewAppointmentRepeat('none');
-    Alert.alert('Gelukt!', 'Afspraak toegevoegd');
+    Alert.alert(t('common.success'), t('profile.appointmentAdded'));
   };
 
   const handleDeleteAppointment = (appointmentId: string, title: string) => {
     Alert.alert(
-      'Afspraak verwijderen',
-      `Weet je zeker dat je "${title}" wilt verwijderen?`,
+      t('common.delete') + ' ' + t('agenda.title').toLowerCase(),
+      t('profile.deleteAppointmentConfirm'),
       [
-        { text: 'Annuleren', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Verwijderen',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
             deleteAppointment(appointmentId);
-            Alert.alert('Gelukt!', 'Afspraak verwijderd');
+            Alert.alert(t('common.success'), t('profile.appointmentDeleted'));
           },
         },
       ]
@@ -356,7 +358,7 @@ export default function ProfileScreen() {
       await shareFamilyInvite();
     } catch (error) {
       console.error('Error sharing invite:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het delen van de uitnodiging');
+      Alert.alert(t('common.error'), t('profile.errorSharing'));
     }
   };
 
@@ -382,18 +384,18 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         
         <View style={styles.header}>
-          <Text style={styles.title}>Instellingen</Text>
+          <Text style={styles.title}>{t('profile.title')}</Text>
         </View>
         
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.subtitle}>Beheer je gezin</Text>
+        <Text style={styles.subtitle}>{t('profile.subtitle')}</Text>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Gezinsleden</Text>
+            <Text style={styles.sectionTitle}>{t('profile.familyMembers')}</Text>
             {isParent && (
               <TouchableOpacity
                 style={styles.addButton}
@@ -435,7 +437,7 @@ export default function ProfileScreen() {
                 <View style={styles.memberInfo}>
                   <Text style={styles.memberName}>{member.name}</Text>
                   <Text style={styles.memberRole}>
-                    {member.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+                    {member.role === 'parent' ? t('home.parent') : t('home.child')}
                   </Text>
                 </View>
                 {member.role === 'child' && (
@@ -478,7 +480,7 @@ export default function ProfileScreen() {
         {isParent && (
           <>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Partner uitnodigen</Text>
+              <Text style={styles.sectionTitle}>{t('profile.invitePartner')}</Text>
               <TouchableOpacity
                 style={styles.inviteButton}
                 onPress={handleShareInvite}
@@ -489,19 +491,19 @@ export default function ProfileScreen() {
                   size={24}
                   color={colors.card}
                 />
-                <Text style={styles.inviteButtonText}>Nodig je partner uit</Text>
+                <Text style={styles.inviteButtonText}>{t('profile.invitePartnerButton')}</Text>
               </TouchableOpacity>
               {familyCode && (
                 <View style={styles.codeCard}>
-                  <Text style={styles.codeLabel}>Jouw gezinscode:</Text>
+                  <Text style={styles.codeLabel}>{t('profile.yourFamilyCode')}</Text>
                   <Text style={styles.codeText}>{familyCode}</Text>
-                  <Text style={styles.codeHint}>Deel deze code met je partner om samen de app te gebruiken</Text>
+                  <Text style={styles.codeHint}>{t('profile.shareCodeHint')}</Text>
                 </View>
               )}
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Kinderen beheren</Text>
+              <Text style={styles.sectionTitle}>{t('profile.manageChildren')}</Text>
               
               <TouchableOpacity
                 style={styles.manageButton}
@@ -513,7 +515,7 @@ export default function ProfileScreen() {
                   size={24}
                   color={colors.card}
                 />
-                <Text style={styles.manageButtonText}>Taken van kinderen beheren</Text>
+                <Text style={styles.manageButtonText}>{t('profile.manageChildTasks')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -526,15 +528,15 @@ export default function ProfileScreen() {
                   size={24}
                   color={colors.card}
                 />
-                <Text style={styles.manageButtonText}>Planning van kinderen beheren</Text>
+                <Text style={styles.manageButtonText}>{t('profile.manageChildPlanning')}</Text>
               </TouchableOpacity>
             </View>
           </>
         )}
 
-        {/* Profile Switcher Section - Moved above App Information */}
+        {/* Profile Switcher Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Profiel wisselen</Text>
+          <Text style={styles.sectionTitle}>{t('profile.switchProfile')}</Text>
           <TouchableOpacity
             style={styles.profileSwitcherButton}
             onPress={() => setShowProfileSwitcher(true)}
@@ -549,7 +551,7 @@ export default function ProfileScreen() {
             <View style={styles.currentUserInfo}>
               <Text style={styles.currentUserName}>{currentUser?.name}</Text>
               <Text style={styles.currentUserRole}>
-                {currentUser?.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+                {currentUser?.role === 'parent' ? t('home.parent') : t('home.child')}
               </Text>
             </View>
             <IconSymbol
@@ -561,22 +563,48 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* App Information Section - Moved below Profile Switcher */}
+        {/* Language Selector Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App informatie</Text>
+          <Text style={styles.sectionTitle}>{t('language.title')}</Text>
+          <TouchableOpacity
+            style={styles.profileSwitcherButton}
+            onPress={() => setShowLanguageSelector(true)}
+          >
+            <View style={styles.languageIcon}>
+              <IconSymbol
+                ios_icon_name="globe"
+                android_material_icon_name="language"
+                size={24}
+                color={colors.accent}
+              />
+            </View>
+            <View style={styles.currentUserInfo}>
+              <Text style={styles.currentUserName}>{t('language.change')}</Text>
+              <Text style={styles.currentUserRole}>{t('language.current')}</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron-right"
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* App Information Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.appInfo')}</Text>
           <View style={styles.infoCard}>
-            <Text style={styles.infoText}>Flow Fam App</Text>
-            <Text style={styles.infoSubtext}>Versie 1.0.0</Text>
-            <Text style={styles.infoNote}>
-              💡 Deze app kan door beide ouders geïnstalleerd worden op hun eigen telefoon voor gezamenlijk gebruik.
-            </Text>
+            <Text style={styles.infoText}>{t('profile.appName')}</Text>
+            <Text style={styles.infoSubtext}>{t('profile.version')}</Text>
+            <Text style={styles.infoNote}>{t('profile.appNote')}</Text>
           </View>
         </View>
 
         {/* Delete Account Section - Only for parents */}
         {isParent && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Account beheer</Text>
+            <Text style={styles.sectionTitle}>{t('profile.accountManagement')}</Text>
             
             <TouchableOpacity
               style={styles.deleteButton}
@@ -588,7 +616,7 @@ export default function ProfileScreen() {
                 size={20}
                 color={colors.card}
               />
-              <Text style={styles.deleteButtonText}>Account verwijderen</Text>
+              <Text style={styles.deleteButtonText}>{t('profile.deleteAccount')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -601,11 +629,17 @@ export default function ProfileScreen() {
                 size={20}
                 color={colors.card}
               />
-              <Text style={styles.deleteButtonText}>Alle persoonlijke gegevens verwijderen</Text>
+              <Text style={styles.deleteButtonText}>{t('profile.deleteAllData')}</Text>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+      {/* Language Selector Modal */}
+      <LanguageSelector
+        visible={showLanguageSelector}
+        onClose={() => setShowLanguageSelector(false)}
+      />
 
       {/* Profile Switcher Modal */}
       <Modal
@@ -616,8 +650,8 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.profileSwitcherModal}>
-            <Text style={styles.modalTitle}>Wissel van profiel</Text>
-            <Text style={styles.profileSwitcherSubtitle}>Selecteer wie je bent</Text>
+            <Text style={styles.modalTitle}>{t('profile.switchProfile')}</Text>
+            <Text style={styles.profileSwitcherSubtitle}>{t('profile.switchProfileSubtitle')}</Text>
             
             {familyMembers.map((member, index) => (
               <React.Fragment key={index}>
@@ -642,7 +676,7 @@ export default function ProfileScreen() {
                   <View style={styles.profileOptionInfo}>
                     <Text style={styles.profileOptionName}>{member.name}</Text>
                     <Text style={styles.profileOptionRole}>
-                      {member.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+                      {member.role === 'parent' ? t('home.parent') : t('home.child')}
                     </Text>
                   </View>
                   {currentUser?.id === member.id && (
@@ -661,7 +695,7 @@ export default function ProfileScreen() {
               style={[styles.modalButton, styles.modalButtonCancel, { marginTop: 20 }]}
               onPress={() => setShowProfileSwitcher(false)}
             >
-              <Text style={styles.modalButtonText}>Annuleren</Text>
+              <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -677,7 +711,7 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Nieuw gezinslid toevoegen</Text>
+              <Text style={styles.modalTitle}>{t('profile.addMember')}</Text>
 
               <TouchableOpacity style={styles.photoPickerButton} onPress={handlePickImage}>
                 {newMemberPhoto ? (
@@ -690,27 +724,27 @@ export default function ProfileScreen() {
                       size={32}
                       color={colors.textSecondary}
                     />
-                    <Text style={styles.photoPlaceholderText}>Foto toevoegen</Text>
+                    <Text style={styles.photoPlaceholderText}>{t('profile.addPhoto')}</Text>
                   </View>
                 )}
               </TouchableOpacity>
 
               <TextInput
                 style={styles.input}
-                placeholder="Naam"
+                placeholder={t('common.name')}
                 placeholderTextColor={colors.textSecondary}
                 value={newMemberName}
                 onChangeText={setNewMemberName}
               />
 
-              <Text style={styles.inputLabel}>Rol:</Text>
+              <Text style={styles.inputLabel}>{t('profile.role')}</Text>
               <View style={styles.roleSelector}>
                 <TouchableOpacity
                   style={[styles.roleButton, newMemberRole === 'child' && styles.roleButtonActive]}
                   onPress={() => setNewMemberRole('child')}
                 >
                   <Text style={[styles.roleButtonText, newMemberRole === 'child' && styles.roleButtonTextActive]}>
-                    👶 Kind
+                    {t('home.child')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -718,13 +752,13 @@ export default function ProfileScreen() {
                   onPress={() => setNewMemberRole('parent')}
                 >
                   <Text style={[styles.roleButtonText, newMemberRole === 'parent' && styles.roleButtonTextActive]}>
-                    👨‍👩‍👧‍👦 Ouder
+                    {t('home.parent')}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.inputLabel}>Kies een kleur:</Text>
-              <Text style={styles.colorHint}>Deze kleur wordt gebruikt in de agenda voor afspraken</Text>
+              <Text style={styles.inputLabel}>{t('profile.chooseColor')}</Text>
+              <Text style={styles.colorHint}>{t('profile.colorHint')}</Text>
               <View style={styles.colorSelector}>
                 {AVAILABLE_COLORS.map((colorOption, index) => (
                   <React.Fragment key={index}>
@@ -752,7 +786,7 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.previewCard}>
-                <Text style={styles.previewLabel}>Voorbeeld:</Text>
+                <Text style={styles.previewLabel}>{t('profile.preview')}</Text>
                 <View style={[styles.previewAvatar, { backgroundColor: newMemberColor }]}>
                   {newMemberPhoto ? (
                     <Image source={{ uri: newMemberPhoto }} style={styles.previewPhoto} />
@@ -762,7 +796,7 @@ export default function ProfileScreen() {
                     </Text>
                   )}
                 </View>
-                <Text style={styles.previewName}>{newMemberName || 'Naam'}</Text>
+                <Text style={styles.previewName}>{newMemberName || t('common.name')}</Text>
               </View>
 
               <View style={styles.modalButtons}>
@@ -776,13 +810,13 @@ export default function ProfileScreen() {
                     setNewMemberPhoto(null);
                   }}
                 >
-                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleAddMember}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.add')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -800,7 +834,7 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Gezinslid bewerken</Text>
+              <Text style={styles.modalTitle}>{t('profile.editMember')}</Text>
 
               <TouchableOpacity style={styles.photoPickerButton} onPress={handlePickImage}>
                 {newMemberPhoto ? (
@@ -813,27 +847,27 @@ export default function ProfileScreen() {
                       size={32}
                       color={colors.textSecondary}
                     />
-                    <Text style={styles.photoPlaceholderText}>Foto toevoegen</Text>
+                    <Text style={styles.photoPlaceholderText}>{t('profile.addPhoto')}</Text>
                   </View>
                 )}
               </TouchableOpacity>
 
               <TextInput
                 style={styles.input}
-                placeholder="Naam"
+                placeholder={t('common.name')}
                 placeholderTextColor={colors.textSecondary}
                 value={newMemberName}
                 onChangeText={setNewMemberName}
               />
 
-              <Text style={styles.inputLabel}>Rol:</Text>
+              <Text style={styles.inputLabel}>{t('profile.role')}</Text>
               <View style={styles.roleSelector}>
                 <TouchableOpacity
                   style={[styles.roleButton, newMemberRole === 'child' && styles.roleButtonActive]}
                   onPress={() => setNewMemberRole('child')}
                 >
                   <Text style={[styles.roleButtonText, newMemberRole === 'child' && styles.roleButtonTextActive]}>
-                    👶 Kind
+                    {t('home.child')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -841,13 +875,13 @@ export default function ProfileScreen() {
                   onPress={() => setNewMemberRole('parent')}
                 >
                   <Text style={[styles.roleButtonText, newMemberRole === 'parent' && styles.roleButtonTextActive]}>
-                    👨‍👩‍👧‍👦 Ouder
+                    {t('home.parent')}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.inputLabel}>Kies een kleur:</Text>
-              <Text style={styles.colorHint}>Deze kleur wordt gebruikt in de agenda voor afspraken</Text>
+              <Text style={styles.inputLabel}>{t('profile.chooseColor')}</Text>
+              <Text style={styles.colorHint}>{t('profile.colorHint')}</Text>
               <View style={styles.colorSelector}>
                 {AVAILABLE_COLORS.map((colorOption, index) => (
                   <React.Fragment key={index}>
@@ -875,7 +909,7 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.previewCard}>
-                <Text style={styles.previewLabel}>Voorbeeld:</Text>
+                <Text style={styles.previewLabel}>{t('profile.preview')}</Text>
                 <View style={[styles.previewAvatar, { backgroundColor: newMemberColor }]}>
                   {newMemberPhoto ? (
                     <Image source={{ uri: newMemberPhoto }} style={styles.previewPhoto} />
@@ -885,7 +919,7 @@ export default function ProfileScreen() {
                     </Text>
                   )}
                 </View>
-                <Text style={styles.previewName}>{newMemberName || 'Naam'}</Text>
+                <Text style={styles.previewName}>{newMemberName || t('common.name')}</Text>
               </View>
 
               <View style={styles.modalButtons}>
@@ -900,13 +934,13 @@ export default function ProfileScreen() {
                     setNewMemberPhoto(null);
                   }}
                 >
-                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleEditMember}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -923,12 +957,12 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Taken van kinderen beheren</Text>
+            <Text style={styles.modalTitle}>{t('profile.manageChildTasks')}</Text>
             
             <ScrollView style={styles.tasksList}>
               {childTasks.length === 0 ? (
                 <View style={styles.emptyTasks}>
-                  <Text style={styles.emptyTasksText}>Nog geen taken voor kinderen</Text>
+                  <Text style={styles.emptyTasksText}>{t('profile.noTasks')}</Text>
                 </View>
               ) : (
                 childTasks.map((task, index) => {
@@ -942,9 +976,9 @@ export default function ProfileScreen() {
                             {assignedChild?.name} • {task.coins}🪙
                             {task.repeatType && task.repeatType !== 'none' && (
                               <Text> • 🔄 {
-                                task.repeatType === 'daily' ? 'Dagelijks' :
-                                task.repeatType === 'weekly' ? 'Wekelijks' :
-                                task.repeatType === 'monthly' ? 'Maandelijks' : ''
+                                task.repeatType === 'daily' ? t('tasks.daily') :
+                                task.repeatType === 'weekly' ? t('tasks.weekly') :
+                                task.repeatType === 'monthly' ? t('tasks.monthly') : ''
                               }</Text>
                             )}
                           </Text>
@@ -987,7 +1021,7 @@ export default function ProfileScreen() {
               style={[styles.modalButton, styles.modalButtonConfirm, { marginTop: 20 }]}
               onPress={() => setShowManageChildTasksModal(false)}
             >
-              <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Sluiten</Text>
+              <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.close')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1003,9 +1037,9 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Planning van kinderen beheren</Text>
+              <Text style={styles.modalTitle}>{t('profile.manageChildPlanning')}</Text>
               
-              <Text style={styles.inputLabel}>Selecteer kind:</Text>
+              <Text style={styles.inputLabel}>{t('profile.selectChild')}</Text>
               <View style={styles.childSelector}>
                 {children.map((child, index) => (
                   <React.Fragment key={index}>
@@ -1033,11 +1067,11 @@ export default function ProfileScreen() {
                 <>
                   <View style={styles.divider} />
                   
-                  <Text style={styles.sectionSubtitle}>Afspraken toevoegen</Text>
+                  <Text style={styles.sectionSubtitle}>{t('profile.addAppointments')}</Text>
                   
                   <TextInput
                     style={styles.input}
-                    placeholder="Titel afspraak"
+                    placeholder={t('profile.appointmentTitle')}
                     placeholderTextColor={colors.textSecondary}
                     value={newAppointmentTitle}
                     onChangeText={setNewAppointmentTitle}
@@ -1045,19 +1079,19 @@ export default function ProfileScreen() {
 
                   <TextInput
                     style={styles.input}
-                    placeholder="Tijd (bijv. 09:00)"
+                    placeholder={t('profile.timePlaceholder')}
                     placeholderTextColor={colors.textSecondary}
                     value={newAppointmentTime}
                     onChangeText={setNewAppointmentTime}
                   />
 
-                  <Text style={styles.inputLabel}>Herhaling:</Text>
+                  <Text style={styles.inputLabel}>{t('profile.repeat')}</Text>
                   <View style={styles.repeatSelector}>
                     {[
-                      { value: 'none', label: 'Geen' },
-                      { value: 'daily', label: 'Dagelijks' },
-                      { value: 'weekly', label: 'Wekelijks' },
-                      { value: 'monthly', label: 'Maandelijks' },
+                      { value: 'none', label: t('profile.repeatNone') },
+                      { value: 'daily', label: t('profile.repeatDaily') },
+                      { value: 'weekly', label: t('profile.repeatWeekly') },
+                      { value: 'monthly', label: t('profile.repeatMonthly') },
                     ].map((option, index) => (
                       <React.Fragment key={index}>
                         <TouchableOpacity
@@ -1090,15 +1124,15 @@ export default function ProfileScreen() {
                       size={20}
                       color={colors.card}
                     />
-                    <Text style={styles.addAppointmentButtonText}>Afspraak toevoegen</Text>
+                    <Text style={styles.addAppointmentButtonText}>{t('profile.addAppointment')}</Text>
                   </TouchableOpacity>
 
-                  <Text style={styles.sectionSubtitle}>Huidige afspraken</Text>
+                  <Text style={styles.sectionSubtitle}>{t('profile.currentAppointments')}</Text>
                   
                   <ScrollView style={styles.appointmentsList}>
                     {childAppointments.filter(apt => apt.assignedTo.includes(selectedChildForPlanning)).length === 0 ? (
                       <View style={styles.emptyTasks}>
-                        <Text style={styles.emptyTasksText}>Nog geen afspraken</Text>
+                        <Text style={styles.emptyTasksText}>{t('profile.noAppointments')}</Text>
                       </View>
                     ) : (
                       childAppointments
@@ -1112,9 +1146,9 @@ export default function ProfileScreen() {
                                   {apt.time} • {apt.date.toLocaleDateString('nl-NL')}
                                   {apt.repeatType !== 'none' && (
                                     <Text> • 🔄 {
-                                      apt.repeatType === 'daily' ? 'Dagelijks' :
-                                      apt.repeatType === 'weekly' ? 'Wekelijks' :
-                                      apt.repeatType === 'monthly' ? 'Maandelijks' : ''
+                                      apt.repeatType === 'daily' ? t('profile.repeatDaily') :
+                                      apt.repeatType === 'weekly' ? t('profile.repeatWeekly') :
+                                      apt.repeatType === 'monthly' ? t('profile.repeatMonthly') : ''
                                     }</Text>
                                   )}
                                 </Text>
@@ -1148,7 +1182,7 @@ export default function ProfileScreen() {
                   setNewAppointmentRepeat('none');
                 }}
               >
-                <Text style={styles.modalButtonText}>Sluiten</Text>
+                <Text style={styles.modalButtonText}>{t('common.close')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -1165,14 +1199,14 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Taak bewerken</Text>
+              <Text style={styles.modalTitle}>{t('tasks.editTask')}</Text>
 
               <TextInput
                 style={[
                   styles.input,
                   validationErrors.taskName && styles.inputError
                 ]}
-                placeholder="Taaknaam *"
+                placeholder={t('tasks.taskName')}
                 placeholderTextColor={validationErrors.taskName ? '#E74C3C' : colors.textSecondary}
                 value={editTaskName}
                 onChangeText={(text) => {
@@ -1188,7 +1222,7 @@ export default function ProfileScreen() {
                   styles.input,
                   validationErrors.taskCoins && styles.inputError
                 ]}
-                placeholder="Aantal muntjes *"
+                placeholder={t('rewards.coins', { count: 0 })}
                 placeholderTextColor={validationErrors.taskCoins ? '#E74C3C' : colors.textSecondary}
                 value={editTaskCoins}
                 onChangeText={(text) => {
@@ -1207,13 +1241,13 @@ export default function ProfileScreen() {
                 taskName={editTaskName}
               />
 
-              <Text style={styles.inputLabel}>Herhaling:</Text>
+              <Text style={styles.inputLabel}>{t('profile.repeat')}</Text>
               <View style={styles.repeatSelector}>
                 {[
-                  { value: 'none', label: 'Geen' },
-                  { value: 'daily', label: 'Dagelijks' },
-                  { value: 'weekly', label: 'Wekelijks' },
-                  { value: 'monthly', label: 'Maandelijks' },
+                  { value: 'none', label: t('profile.repeatNone') },
+                  { value: 'daily', label: t('profile.repeatDaily') },
+                  { value: 'weekly', label: t('profile.repeatWeekly') },
+                  { value: 'monthly', label: t('profile.repeatMonthly') },
                 ].map((option, index) => (
                   <React.Fragment key={index}>
                     <TouchableOpacity
@@ -1249,13 +1283,13 @@ export default function ProfileScreen() {
                     setValidationErrors({});
                   }}
                 >
-                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleEditTask}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1580,6 +1614,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
+  },
+  languageIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
   },
   currentUserInfo: {
     flex: 1,

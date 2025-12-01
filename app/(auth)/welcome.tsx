@@ -2,10 +2,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@/styles/commonStyles';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
@@ -17,8 +19,8 @@ export default function WelcomeScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Welkom bij Flow Fam</Text>
-          <Text style={styles.subtitle}>Rust, overzicht en liefde voor je gezin</Text>
+          <Text style={styles.title}>{t('welcome.title')}</Text>
+          <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
         </View>
 
         {/* Main buttons */}
@@ -27,14 +29,14 @@ export default function WelcomeScreen() {
             style={[styles.button, styles.primaryButton]}
             onPress={() => router.push('/(auth)/create-family')}
           >
-            <Text style={styles.primaryButtonText}>Nieuw gezin starten</Text>
+            <Text style={styles.primaryButtonText}>{t('welcome.startNewFamily')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.button, styles.secondaryButton]}
             onPress={() => router.push('/(auth)/join-family')}
           >
-            <Text style={styles.secondaryButtonText}>Ik heb een gezinscode</Text>
+            <Text style={styles.secondaryButtonText}>{t('welcome.haveFamilyCode')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -44,7 +46,7 @@ export default function WelcomeScreen() {
           onPress={() => router.push('/(auth)/login')}
         >
           <Text style={styles.loginLinkText}>
-            Ik heb al een account – Inloggen
+            {t('welcome.alreadyHaveAccount')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -55,7 +57,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Pure white background for the welcome screen
+    backgroundColor: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -75,7 +77,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#0D1A2D', // Navy blue (Marine blauw)
+    color: '#0D1A2D',
     marginBottom: 10,
     fontFamily: 'Poppins_700Bold',
     textAlign: 'center',
