@@ -171,7 +171,10 @@ export default function ProfileScreen() {
       t('profile.areYouSure'),
       t('profile.deleteMember'),
       [
-        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('common.cancel'), 
+          style: 'cancel' 
+        },
         {
           text: t('common.delete'),
           style: 'destructive',
@@ -189,18 +192,34 @@ export default function ProfileScreen() {
       t('profile.deleteAccount'),
       t('profile.deleteAccountConfirm'),
       [
-        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('common.cancel'), 
+          style: 'cancel' 
+        },
         {
           text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
+              // Sign out the user
               const { error } = await supabase.auth.signOut();
               if (error) {
+                console.error('Sign out error:', error);
                 Alert.alert(t('common.error'), t('profile.errorDeleting'));
                 return;
               }
-              router.replace('/(auth)/welcome');
+              
+              // Navigate to welcome screen
+              Alert.alert(
+                t('common.success'), 
+                t('profile.dataDeleted'),
+                [
+                  {
+                    text: t('common.ok'),
+                    onPress: () => router.replace('/(auth)/welcome')
+                  }
+                ]
+              );
             } catch (error) {
               console.error('Delete account error:', error);
               Alert.alert(t('common.error'), t('profile.errorDeleting'));
@@ -216,23 +235,38 @@ export default function ProfileScreen() {
       t('profile.deleteAllData'),
       t('profile.deleteAllDataConfirm'),
       [
-        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('common.cancel'), 
+          style: 'cancel' 
+        },
         {
           text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
+              // Clear all local storage
               const AsyncStorage = await import('@react-native-async-storage/async-storage');
               await AsyncStorage.default.clear();
               
+              // Sign out the user
               const { error } = await supabase.auth.signOut();
               if (error) {
+                console.error('Sign out error:', error);
                 Alert.alert(t('common.error'), t('profile.errorDeletingData'));
                 return;
               }
               
-              Alert.alert(t('common.success'), t('profile.dataDeleted'));
-              router.replace('/(auth)/welcome');
+              // Navigate to welcome screen
+              Alert.alert(
+                t('common.success'), 
+                t('profile.dataDeleted'),
+                [
+                  {
+                    text: t('common.ok'),
+                    onPress: () => router.replace('/(auth)/welcome')
+                  }
+                ]
+              );
             } catch (error) {
               console.error('Delete all data error:', error);
               Alert.alert(t('common.error'), t('profile.errorDeletingData'));
@@ -248,7 +282,10 @@ export default function ProfileScreen() {
       t('common.delete') + ' ' + t('tasks.title').toLowerCase(),
       t('tasks.deleteTaskConfirm', { name: taskName }),
       [
-        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('common.cancel'), 
+          style: 'cancel' 
+        },
         {
           text: t('common.delete'),
           style: 'destructive',
@@ -340,7 +377,10 @@ export default function ProfileScreen() {
       t('common.delete') + ' ' + t('agenda.title').toLowerCase(),
       t('profile.deleteAppointmentConfirm'),
       [
-        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('common.cancel'), 
+          style: 'cancel' 
+        },
         {
           text: t('common.delete'),
           style: 'destructive',
