@@ -152,13 +152,16 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
   if (type === 'schedule') icons = SCHEDULE_ICONS;
   
   React.useEffect(() => {
-    if (taskName && taskName.trim().length > 2) {
+    if (taskName && taskName.trim().length > 2 && !selectedIcon) {
       const suggested = suggestIcon(taskName, type);
-      if (suggested !== selectedIcon) {
-        onSelectIcon(suggested);
-      }
+      onSelectIcon(suggested);
     }
   }, [taskName, type, selectedIcon, onSelectIcon]);
+
+  const handleIconPress = useCallback((iconAndroid: string) => {
+    console.log('Icon pressed:', iconAndroid);
+    onSelectIcon(iconAndroid);
+  }, [onSelectIcon]);
 
   const renderIcon = useCallback((icon: IconOption, isActive: boolean) => {
     const iconColor = isActive ? colors.card : colors.text;
@@ -194,19 +197,23 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {icons.map((icon, index) => (
-          <React.Fragment key={index}>
-            <TouchableOpacity
-              style={[
-                styles.iconButton,
-                selectedIcon === icon.android && styles.iconButtonSelected,
-              ]}
-              onPress={() => onSelectIcon(icon.android)}
-            >
-              {renderIcon(icon, selectedIcon === icon.android)}
-            </TouchableOpacity>
-          </React.Fragment>
-        ))}
+        {icons.map((icon, index) => {
+          const isSelected = selectedIcon === icon.android;
+          return (
+            <React.Fragment key={index}>
+              <TouchableOpacity
+                style={[
+                  styles.iconButton,
+                  isSelected && styles.iconButtonSelected,
+                ]}
+                onPress={() => handleIconPress(icon.android)}
+                activeOpacity={0.7}
+              >
+                {renderIcon(icon, isSelected)}
+              </TouchableOpacity>
+            </React.Fragment>
+          );
+        })}
       </ScrollView>
     </View>
   );

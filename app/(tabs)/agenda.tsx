@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
 import ModuleHeader from '@/components/ModuleHeader';
 import ThemedButton from '@/components/ThemedButton';
+import { Appointment } from '@/types/family';
 
 export default function AgendaScreen() {
   const router = useRouter();
@@ -26,14 +27,87 @@ export default function AgendaScreen() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [selectedMemberFilters, setSelectedMemberFilters] = useState<string[]>([]);
 
   // Set module theme on mount
   useEffect(() => {
     setModule('agenda' as ModuleName);
   }, [setModule]);
 
+  // Helper function to check if a date matches a repeating appointment
+  const doesRepeatMatchDate = (appointment: Appointment, date: Date): boolean => {
+    const aptDate = new Date(appointment.date);
+    
+    if (appointment.repeatType === 'daily') {
+      // Daily: show on any date after the start date
+      return date >= aptDate;
+    } else if (appointment.repeatType === 'weekly') {
+      // Weekly: show on the same day of the week
+      if (date < aptDate) return false;
+      return date.getDay() === aptDate.getDay();
+    } else if (appointment.repeatType === 'monthly') {
+      // Monthly: show on the same day of each month
+      if (date < aptDate) return false;
+      return date.getDate() === aptDate.getDate();
+    } else {
+      // Non-repeating: exact date match
+      return (
+        date.getDate() === aptDate.getDate() &&
+        date.getMonth() === aptDate.getMonth() &&
+        date.getFullYear() === aptDate.getFullYear()
+      );
+    }
+  };
+
+  const getAppointmentsForDate = (date: Date) => {
+    return appointments.filter(apt => doesRepeatMatchDate(apt, date))
+      .sort((a, b) => a.time.localeCompare(b.time));
+  };
+
+  // Get upcoming appointments (next 30 days)
+  const upcomingAppointments = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const thirtyDaysFromNow = new Date(today);
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+
+    const upcoming: Array<{ date: Date; appointment: Appointment }> = [];
+
+    // Check each day in the next 30 days
+    for (let d = new Date(today); d <= thirtyDaysFromNow; d.setDate(d.getDate() + 1)) {
+      const dayAppointments = getAppointmentsForDate(new Date(d));
+      dayAppointments.forEach(apt => {
+        // Apply member filter
+        if (selectedMemberFilters.length > 0) {
+          const hasMatchingMember = apt.assignedTo.some(memberId => 
+            selectedMemberFilters.includes(memberId)
+          );
+          if (!hasMatchingMember) return;
+        }
+        
+        upcoming.push({ date: new Date(d), appointment: apt });
+      });
+    }
+
+    return upcoming.sort((a, b) => {
+      const dateCompare = a.date.getTime() - b.date.getTime();
+      if (dateCompare !== 0) return dateCompare;
+      return a.appointment.time.localeCompare(b.appointment.time);
+    });
+  }, [appointments, selectedMemberFilters]);
+
   const toggleMemberSelection = (memberId: string) => {
     setNewAppointmentAssignedTo(prev => {
+      if (prev.includes(memberId)) {
+        return prev.filter(id => id !== memberId);
+      } else {
+        return [...prev, memberId];
+      }
+    });
+  };
+
+  const toggleMemberFilter = (memberId: string) => {
+    setSelectedMemberFilters(prev => {
       if (prev.includes(memberId)) {
         return prev.filter(id => id !== memberId);
       } else {
@@ -78,18 +152,7 @@ export default function AgendaScreen() {
     Alert.alert(t('common.success'), t('agenda.appointmentAdded'));
   };
 
-  const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter(apt => {
-      const aptDate = new Date(apt.date);
-      return (
-        aptDate.getDate() === date.getDate() &&
-        aptDate.getMonth() === date.getMonth() &&
-        aptDate.getFullYear() === date.getFullYear()
-      );
-    }).sort((a, b) => a.time.localeCompare(b.time));
-  };
-
-  const handleDeleteAppointment = (appointmentId: string, isRecurring: boolean) => {
+  const handleDeleteAppointment = async (appointmentId: string, isRecurring: boolean) => {
     if (isRecurring) {
       // Show options for recurring appointments
       Alert.alert(
@@ -109,10 +172,14 @@ export default function AgendaScreen() {
                   {
                     text: t('common.delete'),
                     style: 'destructive',
-                    onPress: () => {
-                      deleteAppointment(appointmentId);
-                      setSelectedDay(null);
-                      Alert.alert(t('common.success'), t('agenda.appointmentDeleted'));
+                    onPress: async () => {
+                      try {
+                        await deleteAppointment(appointmentId, false);
+                        setSelectedDay(null);
+                        Alert.alert(t('common.success'), t('agenda.appointmentDeleted'));
+                      } catch (error) {
+                        Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
+                      }
                     },
                   },
                 ]
@@ -131,10 +198,14 @@ export default function AgendaScreen() {
                   {
                     text: t('common.delete'),
                     style: 'destructive',
-                    onPress: () => {
-                      deleteAppointment(appointmentId);
-                      setSelectedDay(null);
-                      Alert.alert(t('common.success'), t('agenda.seriesDeleted'));
+                    onPress: async () => {
+                      try {
+                        await deleteAppointment(appointmentId, true);
+                        setSelectedDay(null);
+                        Alert.alert(t('common.success'), t('agenda.seriesDeleted'));
+                      } catch (error) {
+                        Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
+                      }
                     },
                   },
                 ]
@@ -153,10 +224,14 @@ export default function AgendaScreen() {
           {
             text: t('common.delete'),
             style: 'destructive',
-            onPress: () => {
-              deleteAppointment(appointmentId);
-              setSelectedDay(null);
-              Alert.alert(t('common.success'), t('agenda.appointmentDeleted'));
+            onPress: async () => {
+              try {
+                await deleteAppointment(appointmentId, false);
+                setSelectedDay(null);
+                Alert.alert(t('common.success'), t('agenda.appointmentDeleted'));
+              } catch (error) {
+                Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
+              }
             },
           },
         ]
@@ -228,10 +303,18 @@ export default function AgendaScreen() {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(selectedYear, selectedMonth, day);
       date.setHours(0, 0, 0, 0);
-      const dayAppointments = getAppointmentsForDate(date);
+      
+      let dayAppointments = getAppointmentsForDate(date);
+      
+      // Apply member filter
+      if (selectedMemberFilters.length > 0) {
+        dayAppointments = dayAppointments.filter(apt => 
+          apt.assignedTo.some(memberId => selectedMemberFilters.includes(memberId))
+        );
+      }
+      
       const isToday = date.getTime() === today.getTime();
       const totalCount = dayAppointments.length;
-      const showBadge = totalCount > 3;
 
       days.push(
         <TouchableOpacity
@@ -249,8 +332,8 @@ export default function AgendaScreen() {
             <Text style={[styles.dayNumber, isToday && [styles.dayNumberToday, { color: accentColor }]]}>
               {day}
             </Text>
-            {showBadge && (
-              <View style={styles.badge}>
+            {totalCount > 0 && (
+              <View style={[styles.badge, { backgroundColor: accentColor }]}>
                 <Text style={styles.badgeText}>{totalCount}</Text>
               </View>
             )}
@@ -366,6 +449,93 @@ export default function AgendaScreen() {
             {renderMonthCalendar()}
           </View>
         </View>
+
+        {/* Member Filter */}
+        <View style={styles.filterSection}>
+          <Text style={styles.filterTitle}>Toon afspraken voor:</Text>
+          <View style={styles.memberFilterContainer}>
+            {familyMembers.map((member, index) => (
+              <React.Fragment key={index}>
+                <TouchableOpacity
+                  style={[
+                    styles.memberFilterChip,
+                    selectedMemberFilters.includes(member.id) && [styles.memberFilterChipActive, { backgroundColor: member.color }],
+                  ]}
+                  onPress={() => toggleMemberFilter(member.id)}
+                >
+                  <View style={[styles.memberFilterAvatar, { backgroundColor: member.color }]}>
+                    <Text style={styles.memberFilterAvatarText}>{member.name.charAt(0)}</Text>
+                  </View>
+                  <Text style={[
+                    styles.memberFilterName,
+                    selectedMemberFilters.includes(member.id) && styles.memberFilterNameActive
+                  ]}>
+                    {member.name}
+                  </Text>
+                </TouchableOpacity>
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+
+        {/* Upcoming Appointments */}
+        <View style={styles.upcomingSection}>
+          <Text style={styles.upcomingTitle}>Komende afspraken</Text>
+          {upcomingAppointments.length === 0 ? (
+            <View style={styles.emptyUpcoming}>
+              <Text style={styles.emptyUpcomingText}>Geen komende afspraken</Text>
+            </View>
+          ) : (
+            upcomingAppointments.map((item, index) => {
+              const members = familyMembers.filter(m => item.appointment.assignedTo.includes(m.id));
+              const isRecurring = item.appointment.repeatType && item.appointment.repeatType !== 'none';
+              
+              return (
+                <React.Fragment key={index}>
+                  <View style={[styles.upcomingCard, { borderLeftColor: item.appointment.color }]}>
+                    <View style={styles.upcomingCardDate}>
+                      <Text style={styles.upcomingCardDay}>
+                        {item.date.toLocaleDateString('nl-NL', { weekday: 'short' })}
+                      </Text>
+                      <Text style={styles.upcomingCardDayNumber}>
+                        {item.date.getDate()}
+                      </Text>
+                      <Text style={styles.upcomingCardMonth}>
+                        {item.date.toLocaleDateString('nl-NL', { month: 'short' })}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.upcomingCardContent}>
+                      <View style={styles.upcomingCardHeader}>
+                        <Text style={styles.upcomingCardTime}>
+                          {item.appointment.time}
+                          {item.appointment.endTime ? ` - ${item.appointment.endTime}` : ''}
+                        </Text>
+                        {isRecurring && (
+                          <View style={styles.repeatBadge}>
+                            <Ionicons name="repeat" size={12} color={colors.textSecondary} />
+                          </View>
+                        )}
+                      </View>
+                      
+                      <Text style={styles.upcomingCardTitle}>{item.appointment.title}</Text>
+                      
+                      <View style={styles.upcomingCardMembers}>
+                        {members.map((member, mIndex) => (
+                          <React.Fragment key={mIndex}>
+                            <View style={[styles.memberBadge, { backgroundColor: member.color }]}>
+                              <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
+                            </View>
+                          </React.Fragment>
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </React.Fragment>
+              );
+            })
+          )}
+        </View>
       </ScrollView>
 
       {/* Day Detail Modal */}
@@ -442,29 +612,15 @@ export default function AgendaScreen() {
 
                             {/* Delete Buttons */}
                             <View style={styles.deleteButtonsContainer}>
-                              {isRecurring ? (
-                                <>
-                                  <TouchableOpacity
-                                    style={styles.deleteButton}
-                                    onPress={() => handleDeleteAppointment(apt.id, true)}
-                                  >
-                                    <Ionicons name="trash-outline" size={18} color="#fff" />
-                                    <Text style={styles.deleteButtonText}>
-                                      {t('agenda.deleteOptions')}
-                                    </Text>
-                                  </TouchableOpacity>
-                                </>
-                              ) : (
-                                <TouchableOpacity
-                                  style={styles.deleteButton}
-                                  onPress={() => handleDeleteAppointment(apt.id, false)}
-                                >
-                                  <Ionicons name="trash-outline" size={18} color="#fff" />
-                                  <Text style={styles.deleteButtonText}>
-                                    {t('common.delete')}
-                                  </Text>
-                                </TouchableOpacity>
-                              )}
+                              <TouchableOpacity
+                                style={styles.deleteButton}
+                                onPress={() => handleDeleteAppointment(apt.id, isRecurring)}
+                              >
+                                <Ionicons name="trash-outline" size={18} color="#fff" />
+                                <Text style={styles.deleteButtonText}>
+                                  {isRecurring ? t('agenda.deleteOptions') : t('common.delete')}
+                                </Text>
+                              </TouchableOpacity>
                             </View>
                           </View>
                         </View>
@@ -735,6 +891,7 @@ const styles = StyleSheet.create({
     padding: 15,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
+    marginBottom: 20,
   },
   monthHeader: {
     flexDirection: 'row',
@@ -800,17 +957,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
   },
   badge: {
-    backgroundColor: colors.textSecondary + '30',
     borderRadius: 8,
     paddingHorizontal: 4,
     paddingVertical: 1,
-    minWidth: 22,
+    minWidth: 18,
     alignItems: 'center',
   },
   badgeText: {
     fontSize: 9,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.card,
     fontFamily: 'Poppins_700Bold',
   },
   appointmentsContainer: {
@@ -828,6 +984,142 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.card,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  filterSection: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  filterTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 15,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  memberFilterContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  memberFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  memberFilterChipActive: {
+  },
+  memberFilterAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberFilterAvatarText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberFilterName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  memberFilterNameActive: {
+    color: colors.card,
+  },
+  upcomingSection: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  upcomingTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 15,
+    fontFamily: 'Poppins_700Bold',
+  },
+  emptyUpcoming: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyUpcomingText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  upcomingCard: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 12,
+    flexDirection: 'row',
+    borderLeftWidth: 4,
+  },
+  upcomingCardDate: {
+    alignItems: 'center',
+    marginRight: 15,
+    minWidth: 50,
+  },
+  upcomingCardDay: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+    textTransform: 'uppercase',
+  },
+  upcomingCardDayNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  upcomingCardMonth: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+    textTransform: 'uppercase',
+  },
+  upcomingCardContent: {
+    flex: 1,
+  },
+  upcomingCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+    gap: 8,
+  },
+  upcomingCardTime: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.accent,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  upcomingCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 8,
+  },
+  upcomingCardMembers: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   modalOverlay: {
     flex: 1,

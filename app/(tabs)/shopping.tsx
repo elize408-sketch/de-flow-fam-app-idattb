@@ -107,6 +107,32 @@ export default function ShoppingScreen() {
     }
   };
 
+  const handleDeleteItem = async (itemId: string, itemName: string, isShoppingItem: boolean) => {
+    Alert.alert(
+      'Verwijderen?',
+      `Weet je zeker dat je "${itemName}" wilt verwijderen?`,
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        { 
+          text: 'Verwijderen', 
+          onPress: async () => {
+            try {
+              if (isShoppingItem) {
+                await deleteShoppingItem(itemId);
+              } else {
+                await deletePantryItem(itemId);
+              }
+              Alert.alert('Gelukt!', 'Item verwijderd');
+            } catch (error) {
+              Alert.alert('Fout', 'Kon item niet verwijderen');
+            }
+          }, 
+          style: 'destructive' 
+        },
+      ]
+    );
+  };
+
   // Group items by category
   const groupItemsByCategory = (items: (ShoppingItem | PantryItem)[]) => {
     const grouped: { [key in IngredientCategory]?: (ShoppingItem | PantryItem)[] } = {};
@@ -231,16 +257,7 @@ export default function ShoppingScreen() {
 
                                   <TouchableOpacity
                                     style={styles.deleteButton}
-                                    onPress={() => {
-                                      Alert.alert(
-                                        'Verwijderen?',
-                                        `Weet je zeker dat je "${item.name}" wilt verwijderen?`,
-                                        [
-                                          { text: 'Annuleren', style: 'cancel' },
-                                          { text: 'Verwijderen', onPress: () => deleteShoppingItem(item.id), style: 'destructive' },
-                                        ]
-                                      );
-                                    }}
+                                    onPress={() => handleDeleteItem(item.id, item.name, true)}
                                   >
                                     <IconSymbol
                                       ios_icon_name="trash"
@@ -288,7 +305,7 @@ export default function ShoppingScreen() {
 
                           <TouchableOpacity
                             style={styles.deleteButton}
-                            onPress={() => deleteShoppingItem(item.id)}
+                            onPress={() => handleDeleteItem(item.id, item.name, true)}
                           >
                             <IconSymbol
                               ios_icon_name="trash"
@@ -346,16 +363,7 @@ export default function ShoppingScreen() {
 
                               <TouchableOpacity
                                 style={styles.deleteButton}
-                                onPress={() => {
-                                  Alert.alert(
-                                    'Verwijderen?',
-                                    `Weet je zeker dat je "${item.name}" wilt verwijderen?`,
-                                    [
-                                      { text: 'Annuleren', style: 'cancel' },
-                                      { text: 'Verwijderen', onPress: () => deletePantryItem(item.id), style: 'destructive' },
-                                    ]
-                                  );
-                                }}
+                                onPress={() => handleDeleteItem(item.id, item.name, false)}
                               >
                                 <IconSymbol
                                   ios_icon_name="trash"
@@ -387,15 +395,13 @@ export default function ShoppingScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowAddModal(false)}
-          >
-            <View 
-              style={styles.modalContent}
-              onStartShouldSetResponder={() => true}
-            >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity 
+              style={styles.modalBackdrop}
+              activeOpacity={1}
+              onPress={() => setShowAddModal(false)}
+            />
+            <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity
                   style={styles.modalBackButton}
@@ -425,6 +431,7 @@ export default function ShoppingScreen() {
                   placeholderTextColor={colors.textSecondary}
                   value={newItemName}
                   onChangeText={setNewItemName}
+                  autoFocus={false}
                 />
 
                 <View style={styles.quantityRow}>
@@ -471,7 +478,7 @@ export default function ShoppingScreen() {
                 </View>
               </ScrollView>
             </View>
-          </TouchableOpacity>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -631,8 +638,11 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: colors.card,

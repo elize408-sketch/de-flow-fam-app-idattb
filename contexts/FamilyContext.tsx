@@ -6,6 +6,7 @@ import { savePantryItems, loadPantryItems, saveWeekPlanningServings, loadWeekPla
 import { categorizeIngredient, parseIngredient, shouldNotScale } from '@/utils/ingredientCategories';
 import { Alert, Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/utils/supabase';
 
 interface Family {
   id: string;
@@ -50,16 +51,16 @@ interface FamilyContextType {
   checkAndPerformMonthlyReset: () => void;
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   updateFamilyMember: (memberId: string, updates: Partial<FamilyMember>) => void;
-  deleteFamilyMember: (memberId: string) => void;
+  deleteFamilyMember: (memberId: string) => Promise<void>;
   completeTask: (taskId: string) => void;
   addCoins: (memberId: string, amount: number) => void;
   redeemReward: (memberId: string, rewardId: string) => void;
   addTask: (task: Omit<Task, 'id' | 'completedCount'>) => void;
   updateTask: (taskId: string, updates: Partial<Task>) => void;
-  deleteTask: (taskId: string) => void;
+  deleteTask: (taskId: string) => Promise<void>;
   addAppointment: (appointment: Omit<Appointment, 'id'>) => void;
   updateAppointment: (appointmentId: string, updates: Partial<Appointment>) => void;
-  deleteAppointment: (appointmentId: string) => void;
+  deleteAppointment: (appointmentId: string, deleteSeries?: boolean) => Promise<void>;
   addHouseholdTask: (task: Omit<HouseholdTask, 'id'>) => void;
   updateHouseholdTask: (taskId: string, updates: Partial<HouseholdTask>) => void;
   deleteHouseholdTask: (taskId: string) => void;
@@ -84,10 +85,10 @@ interface FamilyContextType {
   deleteMemory: (memoryId: string) => void;
   addShoppingItem: (item: Omit<ShoppingItem, 'id' | 'addedAt'>) => void;
   toggleShoppingItem: (itemId: string) => void;
-  deleteShoppingItem: (itemId: string) => void;
+  deleteShoppingItem: (itemId: string) => Promise<void>;
   addPantryItem: (item: Omit<PantryItem, 'id' | 'addedAt'>) => void;
   updatePantryItem: (itemId: string, updates: Partial<PantryItem>) => void;
-  deletePantryItem: (itemId: string) => void;
+  deletePantryItem: (itemId: string) => Promise<void>;
   addFamilyNote: (note: Omit<FamilyNote, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateFamilyNote: (noteId: string, updates: Partial<FamilyNote>) => void;
   deleteFamilyNote: (noteId: string) => void;
@@ -110,6 +111,10 @@ interface FamilyContextType {
   generateFamilyInviteCode: () => Promise<string>;
   shareFamilyInvite: () => Promise<void>;
   getVisibleFamilyMembers: () => FamilyMember[];
+  loadAppointmentsFromDB: () => Promise<void>;
+  loadTasksFromDB: () => Promise<void>;
+  loadShoppingItemsFromDB: () => Promise<void>;
+  loadPantryItemsFromDB: () => Promise<void>;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -148,6 +153,137 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [weekPlanningServings, setWeekPlanningServingsState] = useState(2);
   const [familyCode, setFamilyCode] = useState<string | null>(null);
   const [currentFamily, setCurrentFamily] = useState<Family | null>(null);
+
+  const loadAppointmentsFromDB = useCallback(async () => {
+    if (!currentFamily) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('family_id', currentFamily.id);
+
+      if (error) {
+        console.error('Error loading appointments:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedAppointments: Appointment[] = data.map(apt => ({
+          id: apt.id,
+          title: apt.title,
+          date: new Date(apt.date),
+          time: apt.time,
+          endTime: apt.end_time || undefined,
+          assignedTo: apt.assigned_to || [],
+          color: apt.color,
+          repeatType: apt.repeat_type as 'none' | 'daily' | 'weekly' | 'monthly',
+          location: apt.location || undefined,
+          notes: apt.notes || undefined,
+        }));
+        setAppointments(formattedAppointments);
+      }
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+    }
+  }, [currentFamily]);
+
+  const loadTasksFromDB = useCallback(async () => {
+    if (!currentFamily) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('family_id', currentFamily.id);
+
+      if (error) {
+        console.error('Error loading tasks:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedTasks: Task[] = data.map(task => ({
+          id: task.id,
+          name: task.name,
+          icon: task.icon,
+          coins: task.coins,
+          assignedTo: task.assigned_to || '',
+          completed: task.completed,
+          repeatType: task.repeat_type as 'daily' | 'weekly' | 'monthly' | 'none',
+          completedCount: task.completed_count,
+          dueDate: task.due_date ? new Date(task.due_date) : undefined,
+          time: task.time || undefined,
+          createdBy: task.created_by || undefined,
+        }));
+        setTasks(formattedTasks);
+      }
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    }
+  }, [currentFamily]);
+
+  const loadShoppingItemsFromDB = useCallback(async () => {
+    if (!currentFamily) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('shopping_items')
+        .select('*')
+        .eq('family_id', currentFamily.id);
+
+      if (error) {
+        console.error('Error loading shopping items:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedItems: ShoppingItem[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity ? parseFloat(item.quantity) : undefined,
+          unit: item.unit || undefined,
+          category: item.category as IngredientCategory || undefined,
+          completed: item.completed,
+          addedBy: item.added_by || '',
+          addedAt: new Date(item.added_at),
+        }));
+        setShoppingList(formattedItems);
+      }
+    } catch (error) {
+      console.error('Error loading shopping items:', error);
+    }
+  }, [currentFamily]);
+
+  const loadPantryItemsFromDB = useCallback(async () => {
+    if (!currentFamily) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('pantry_items')
+        .select('*')
+        .eq('family_id', currentFamily.id);
+
+      if (error) {
+        console.error('Error loading pantry items:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedItems: PantryItem[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: parseFloat(item.quantity),
+          unit: item.unit,
+          category: item.category as IngredientCategory,
+          addedAt: new Date(item.added_at),
+        }));
+        setPantryItems(formattedItems);
+      }
+    } catch (error) {
+      console.error('Error loading pantry items:', error);
+    }
+  }, [currentFamily]);
 
   const loadInitialData = useCallback(async () => {
     try {
@@ -200,6 +336,16 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
+
+  // Load data from Supabase when family is set
+  useEffect(() => {
+    if (currentFamily) {
+      loadAppointmentsFromDB();
+      loadTasksFromDB();
+      loadShoppingItemsFromDB();
+      loadPantryItemsFromDB();
+    }
+  }, [currentFamily, loadAppointmentsFromDB, loadTasksFromDB, loadShoppingItemsFromDB, loadPantryItemsFromDB]);
 
   // Save family members whenever they change
   useEffect(() => {
@@ -401,12 +547,31 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteFamilyMember = (memberId: string) => {
-    setFamilyMembers(prev => prev.filter(member => member.id !== memberId));
-    
-    // If deleting current user, clear current user
-    if (currentUser?.id === memberId) {
-      setCurrentUserState(null);
+  const deleteFamilyMember = async (memberId: string) => {
+    try {
+      // Delete from Supabase if we have a family
+      if (currentFamily) {
+        const { error } = await supabase
+          .from('family_members')
+          .delete()
+          .eq('id', memberId);
+
+        if (error) {
+          console.error('Error deleting family member from DB:', error);
+          throw error;
+        }
+      }
+
+      // Delete from local state
+      setFamilyMembers(prev => prev.filter(member => member.id !== memberId));
+      
+      // If deleting current user, clear current user
+      if (currentUser?.id === memberId) {
+        setCurrentUserState(null);
+      }
+    } catch (error) {
+      console.error('Error deleting family member:', error);
+      throw error;
     }
   };
 
@@ -460,6 +625,29 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     };
     setTasks(prevTasks => [...prevTasks, newTask]);
     
+    // Add to Supabase if we have a family
+    if (currentFamily) {
+      supabase
+        .from('tasks')
+        .insert([{
+          id: newTask.id,
+          family_id: currentFamily.id,
+          name: newTask.name,
+          icon: newTask.icon,
+          coins: newTask.coins,
+          assigned_to: newTask.assignedTo,
+          completed: newTask.completed,
+          repeat_type: newTask.repeatType,
+          completed_count: newTask.completedCount,
+          due_date: newTask.dueDate?.toISOString(),
+          time: newTask.time,
+          created_by: newTask.createdBy,
+        }])
+        .then(({ error }) => {
+          if (error) console.error('Error adding task to DB:', error);
+        });
+    }
+    
     addNotification({
       type: 'task',
       title: 'Nieuwe taak toegevoegd',
@@ -476,8 +664,27 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const deleteTask = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+  const deleteTask = async (taskId: string) => {
+    try {
+      // Delete from Supabase if we have a family
+      if (currentFamily) {
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('id', taskId);
+
+        if (error) {
+          console.error('Error deleting task from DB:', error);
+          throw error;
+        }
+      }
+
+      // Delete from local state
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      throw error;
+    }
   };
 
   const addAppointment = (appointment: Omit<Appointment, 'id'>) => {
@@ -486,6 +693,28 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       id: Date.now().toString(),
     };
     setAppointments(prev => [...prev, newAppointment]);
+    
+    // Add to Supabase if we have a family
+    if (currentFamily) {
+      supabase
+        .from('appointments')
+        .insert([{
+          id: newAppointment.id,
+          family_id: currentFamily.id,
+          title: newAppointment.title,
+          date: newAppointment.date.toISOString(),
+          time: newAppointment.time,
+          end_time: newAppointment.endTime,
+          assigned_to: newAppointment.assignedTo,
+          color: newAppointment.color,
+          repeat_type: newAppointment.repeatType,
+          location: newAppointment.location,
+          notes: newAppointment.notes,
+        }])
+        .then(({ error }) => {
+          if (error) console.error('Error adding appointment to DB:', error);
+        });
+    }
     
     addNotification({
       type: 'appointment',
@@ -501,8 +730,27 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const deleteAppointment = (appointmentId: string) => {
-    setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+  const deleteAppointment = async (appointmentId: string, deleteSeries: boolean = false) => {
+    try {
+      // Delete from Supabase if we have a family
+      if (currentFamily) {
+        const { error } = await supabase
+          .from('appointments')
+          .delete()
+          .eq('id', appointmentId);
+
+        if (error) {
+          console.error('Error deleting appointment from DB:', error);
+          throw error;
+        }
+      }
+
+      // Delete from local state
+      setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      throw error;
+    }
   };
 
   const addHouseholdTask = (task: Omit<HouseholdTask, 'id'>) => {
@@ -672,6 +920,26 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     };
     setShoppingList(prev => [...prev, newItem]);
     
+    // Add to Supabase if we have a family
+    if (currentFamily) {
+      supabase
+        .from('shopping_items')
+        .insert([{
+          id: newItem.id,
+          family_id: currentFamily.id,
+          name: newItem.name,
+          quantity: newItem.quantity,
+          unit: newItem.unit,
+          category: newItem.category,
+          completed: newItem.completed,
+          added_by: newItem.addedBy,
+          added_at: newItem.addedAt.toISOString(),
+        }])
+        .then(({ error }) => {
+          if (error) console.error('Error adding shopping item to DB:', error);
+        });
+    }
+    
     addNotification({
       type: 'shopping',
       title: 'Nieuw boodschappenlijstje item',
@@ -686,10 +954,43 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         item.id === itemId ? { ...item, completed: !item.completed } : item
       )
     );
+
+    // Update in Supabase if we have a family
+    if (currentFamily) {
+      const item = shoppingList.find(i => i.id === itemId);
+      if (item) {
+        supabase
+          .from('shopping_items')
+          .update({ completed: !item.completed })
+          .eq('id', itemId)
+          .then(({ error }) => {
+            if (error) console.error('Error updating shopping item in DB:', error);
+          });
+      }
+    }
   };
 
-  const deleteShoppingItem = (itemId: string) => {
-    setShoppingList(prev => prev.filter(item => item.id !== itemId));
+  const deleteShoppingItem = async (itemId: string) => {
+    try {
+      // Delete from Supabase if we have a family
+      if (currentFamily) {
+        const { error } = await supabase
+          .from('shopping_items')
+          .delete()
+          .eq('id', itemId);
+
+        if (error) {
+          console.error('Error deleting shopping item from DB:', error);
+          throw error;
+        }
+      }
+
+      // Delete from local state
+      setShoppingList(prev => prev.filter(item => item.id !== itemId));
+    } catch (error) {
+      console.error('Error deleting shopping item:', error);
+      throw error;
+    }
   };
 
   const addPantryItem = (item: Omit<PantryItem, 'id' | 'addedAt'>) => {
@@ -699,6 +1000,24 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       addedAt: new Date(),
     };
     setPantryItems(prev => [...prev, newItem]);
+
+    // Add to Supabase if we have a family
+    if (currentFamily) {
+      supabase
+        .from('pantry_items')
+        .insert([{
+          id: newItem.id,
+          family_id: currentFamily.id,
+          name: newItem.name,
+          quantity: newItem.quantity,
+          unit: newItem.unit,
+          category: newItem.category,
+          added_at: newItem.addedAt.toISOString(),
+        }])
+        .then(({ error }) => {
+          if (error) console.error('Error adding pantry item to DB:', error);
+        });
+    }
   };
 
   const updatePantryItem = (itemId: string, updates: Partial<PantryItem>) => {
@@ -707,8 +1026,27 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const deletePantryItem = (itemId: string) => {
-    setPantryItems(prev => prev.filter(item => item.id !== itemId));
+  const deletePantryItem = async (itemId: string) => {
+    try {
+      // Delete from Supabase if we have a family
+      if (currentFamily) {
+        const { error } = await supabase
+          .from('pantry_items')
+          .delete()
+          .eq('id', itemId);
+
+        if (error) {
+          console.error('Error deleting pantry item from DB:', error);
+          throw error;
+        }
+      }
+
+      // Delete from local state
+      setPantryItems(prev => prev.filter(item => item.id !== itemId));
+    } catch (error) {
+      console.error('Error deleting pantry item:', error);
+      throw error;
+    }
   };
 
   const addFamilyNote = (note: Omit<FamilyNote, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -1054,6 +1392,10 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         generateFamilyInviteCode,
         shareFamilyInvite,
         getVisibleFamilyMembers,
+        loadAppointmentsFromDB,
+        loadTasksFromDB,
+        loadShoppingItemsFromDB,
+        loadPantryItemsFromDB,
       }}
     >
       {children}
