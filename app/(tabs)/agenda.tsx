@@ -5,9 +5,11 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { useFamily } from '@/contexts/FamilyContext';
+import { useTranslation } from 'react-i18next';
 
 export default function AgendaScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { appointments, familyMembers, addAppointment, deleteAppointment } = useFamily();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newAppointmentTitle, setNewAppointmentTitle] = useState('');
@@ -19,24 +21,7 @@ export default function AgendaScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [currentWeekStart, setCurrentWeekStart] = useState(getWeekStart(new Date()));
-
-  function getWeekStart(date: Date): Date {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-    return new Date(d.setDate(diff));
-  }
-
-  function getWeekDays(startDate: Date): Date[] {
-    const days: Date[] = [];
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(startDate);
-      day.setDate(startDate.getDate() + i);
-      days.push(day);
-    }
-    return days;
-  }
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   const toggleMemberSelection = (memberId: string) => {
     setNewAppointmentAssignedTo(prev => {
@@ -50,12 +35,12 @@ export default function AgendaScreen() {
 
   const handleAddAppointment = () => {
     if (!newAppointmentTitle.trim()) {
-      Alert.alert('Fout', 'Vul een titel in');
+      Alert.alert(t('common.error'), t('agenda.fillTitle'));
       return;
     }
 
     if (newAppointmentAssignedTo.length === 0) {
-      Alert.alert('Fout', 'Selecteer minimaal één gezinslid');
+      Alert.alert(t('common.error'), t('agenda.selectMember'));
       return;
     }
 
@@ -81,7 +66,7 @@ export default function AgendaScreen() {
     setNewAppointmentRepeat('none');
     setShowAddModal(false);
     
-    Alert.alert('Gelukt!', 'Afspraak toegevoegd');
+    Alert.alert(t('common.success'), t('agenda.appointmentAdded'));
   };
 
   const getAppointmentsForDate = (date: Date) => {
@@ -95,21 +80,122 @@ export default function AgendaScreen() {
     }).sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
-  const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+  const monthNames = [
+    t('agenda.months.january'),
+    t('agenda.months.february'),
+    t('agenda.months.march'),
+    t('agenda.months.april'),
+    t('agenda.months.may'),
+    t('agenda.months.june'),
+    t('agenda.months.july'),
+    t('agenda.months.august'),
+    t('agenda.months.september'),
+    t('agenda.months.october'),
+    t('agenda.months.november'),
+    t('agenda.months.december'),
+  ];
 
-  const changeWeek = (direction: 'prev' | 'next') => {
-    const newStart = new Date(currentWeekStart);
-    newStart.setDate(newStart.getDate() + (direction === 'next' ? 7 : -7));
-    setCurrentWeekStart(newStart);
+  const dayNames = [
+    t('agenda.days.monday'),
+    t('agenda.days.tuesday'),
+    t('agenda.days.wednesday'),
+    t('agenda.days.thursday'),
+    t('agenda.days.friday'),
+    t('agenda.days.saturday'),
+    t('agenda.days.sunday'),
+  ];
+
+  const changeMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'next') {
+      if (selectedMonth === 11) {
+        setSelectedMonth(0);
+        setSelectedYear(selectedYear + 1);
+      } else {
+        setSelectedMonth(selectedMonth + 1);
+      }
+    } else {
+      if (selectedMonth === 0) {
+        setSelectedMonth(11);
+        setSelectedYear(selectedYear - 1);
+      } else {
+        setSelectedMonth(selectedMonth - 1);
+      }
+    }
   };
 
-  const renderCalendar = () => {
+  const renderMonthCalendar = () => {
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
+    const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1).getDay();
+    // Convert Sunday (0) to 7 for Monday-first week
+    const firstDayIndex = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+    
+    const days = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDayIndex; i++) {
+      days.push(
+        <View key={`empty-${i}`} style={styles.dayCell} />
+      );
+    }
+
+    // Add cells for each day of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(selectedYear, selectedMonth, day);
+      date.setHours(0, 0, 0, 0);
+      const dayAppointments = getAppointmentsForDate(date);
+      const isToday = date.getTime() === today.getTime();
+
+      days.push(
+        <TouchableOpacity
+          key={day}
+          style={[
+            styles.dayCell,
+            styles.dayCellActive,
+            isToday && styles.dayCellToday,
+          ]}
+          onPress={() => {
+            setSelectedDay(date);
+          }}
+        >
+          <Text style={[styles.dayNumber, isToday && styles.dayNumberToday]}>
+            {day}
+          </Text>
+          <View style={styles.appointmentsContainer}>
+            {dayAppointments.slice(0, 3).map((apt, index) => (
+              <React.Fragment key={index}>
+                <View
+                  style={[
+                    styles.appointmentLabel,
+                    { backgroundColor: apt.color },
+                  ]}
+                >
+                  <Text style={styles.appointmentLabelText} numberOfLines={1}>
+                    {apt.time} {apt.title}
+                  </Text>
+                </View>
+              </React.Fragment>
+            ))}
+            {dayAppointments.length > 3 && (
+              <Text style={styles.moreAppointments}>
+                +{dayAppointments.length - 3}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    return days;
+  };
+
+  const renderDatePicker = () => {
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1).getDay();
     const days = [];
 
-    for (let i = 0; i < firstDay; i++) {
+    for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(
         <View key={`empty-${i}`} style={styles.calendarDay} />
       );
@@ -148,10 +234,6 @@ export default function AgendaScreen() {
     return days;
   };
 
-  const weekDays = getWeekDays(currentWeekStart);
-  const weekEnd = new Date(currentWeekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -164,8 +246,8 @@ export default function AgendaScreen() {
           </TouchableOpacity>
           
           <View style={styles.header}>
-            <Text style={styles.title}>Agenda</Text>
-            <Text style={styles.subtitle}>Gezinsafspraken en planning</Text>
+            <Text style={styles.title}>{t('agenda.title')}</Text>
+            <Text style={styles.subtitle}>{t('agenda.subtitle')}</Text>
           </View>
           
           <View style={styles.placeholder} />
@@ -176,103 +258,148 @@ export default function AgendaScreen() {
           onPress={() => setShowAddModal(true)}
         >
           <Ionicons name="add" size={24} color={colors.card} />
-          <Text style={styles.addButtonText}>Afspraak toevoegen</Text>
+          <Text style={styles.addButtonText}>{t('agenda.addAppointment')}</Text>
         </TouchableOpacity>
 
-        {/* Weekly Calendar View */}
-        <View style={styles.weeklyCalendar}>
-          <View style={styles.weekHeader}>
-            <TouchableOpacity onPress={() => changeWeek('prev')} style={styles.weekNavButton}>
+        {/* Monthly Calendar View */}
+        <View style={styles.monthlyCalendar}>
+          <View style={styles.monthHeader}>
+            <TouchableOpacity onPress={() => changeMonth('prev')} style={styles.monthNavButton}>
               <Ionicons name="chevron-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.weekTitle}>
-              {currentWeekStart.getDate()} {monthNames[currentWeekStart.getMonth()]} - {weekEnd.getDate()} {monthNames[weekEnd.getMonth()]} {weekEnd.getFullYear()}
+            <Text style={styles.monthTitle}>
+              {monthNames[selectedMonth]} {selectedYear}
             </Text>
-            <TouchableOpacity onPress={() => changeWeek('next')} style={styles.weekNavButton}>
+            <TouchableOpacity onPress={() => changeMonth('next')} style={styles.monthNavButton}>
               <Ionicons name="chevron-forward" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.weekGrid}>
-            {weekDays.map((day, index) => {
-              const dayAppointments = getAppointmentsForDate(day);
-              const isToday = 
-                day.getDate() === new Date().getDate() &&
-                day.getMonth() === new Date().getMonth() &&
-                day.getFullYear() === new Date().getFullYear();
+          <View style={styles.weekDaysHeader}>
+            {dayNames.map((day, index) => (
+              <React.Fragment key={index}>
+                <View style={styles.weekDayCell}>
+                  <Text style={styles.weekDayText}>{day}</Text>
+                </View>
+              </React.Fragment>
+            ))}
+          </View>
 
-              return (
-                <React.Fragment key={index}>
-                  <View style={[styles.dayColumn, isToday && styles.dayColumnToday]}>
-                    <View style={styles.dayHeader}>
-                      <Text style={[styles.dayName, isToday && styles.dayNameToday]}>{dayNames[index]}</Text>
-                      <Text style={[styles.dayNumber, isToday && styles.dayNumberToday]}>{day.getDate()}</Text>
-                    </View>
-                    
-                    <ScrollView style={styles.dayAppointments} showsVerticalScrollIndicator={false}>
-                      {dayAppointments.length === 0 ? (
-                        <View style={styles.emptyDay}>
-                          <Text style={styles.emptyDayText}>-</Text>
-                        </View>
-                      ) : (
-                        dayAppointments.map((apt, aptIndex) => {
-                          const members = familyMembers.filter(m => apt.assignedTo.includes(m.id));
-                          return (
-                            <React.Fragment key={aptIndex}>
-                              <TouchableOpacity
-                                style={[styles.appointmentBlock, { backgroundColor: apt.color }]}
-                                onPress={() => {
-                                  Alert.alert(
-                                    apt.title,
-                                    `${apt.time}${apt.endTime ? ` - ${apt.endTime}` : ''}\n\n${members.map(m => m.name).join(', ')}`,
-                                    [
-                                      { text: 'Sluiten', style: 'cancel' },
-                                      {
-                                        text: 'Verwijderen',
-                                        style: 'destructive',
-                                        onPress: () => {
-                                          Alert.alert(
-                                            'Verwijderen?',
-                                            'Weet je zeker dat je deze afspraak wilt verwijderen?',
-                                            [
-                                              { text: 'Annuleren', style: 'cancel' },
-                                              { text: 'Verwijderen', onPress: () => deleteAppointment(apt.id), style: 'destructive' },
-                                            ]
-                                          );
-                                        },
-                                      },
-                                    ]
-                                  );
-                                }}
-                              >
-                                <Text style={styles.appointmentTime}>{apt.time}</Text>
-                                <Text style={styles.appointmentTitle} numberOfLines={2}>{apt.title}</Text>
-                                <View style={styles.appointmentMembers}>
-                                  {members.slice(0, 2).map((member, mIndex) => (
-                                    <React.Fragment key={mIndex}>
-                                      <View style={[styles.memberDot, { backgroundColor: member.color }]}>
-                                        <Text style={styles.memberDotText}>{member.name.charAt(0)}</Text>
-                                      </View>
-                                    </React.Fragment>
-                                  ))}
-                                  {members.length > 2 && (
-                                    <Text style={styles.moreMembers}>+{members.length - 2}</Text>
-                                  )}
-                                </View>
-                              </TouchableOpacity>
-                            </React.Fragment>
-                          );
-                        })
-                      )}
-                    </ScrollView>
-                  </View>
-                </React.Fragment>
-              );
-            })}
+          <View style={styles.monthGrid}>
+            {renderMonthCalendar()}
           </View>
         </View>
       </ScrollView>
 
+      {/* Day Detail Modal */}
+      {selectedDay && (
+        <Modal
+          visible={true}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setSelectedDay(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.dayDetailModal}>
+              <View style={styles.dayDetailHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => setSelectedDay(null)}
+                >
+                  <Ionicons name="chevron-back" size={26} color="#333" />
+                </TouchableOpacity>
+                <Text style={styles.dayDetailTitle}>
+                  {selectedDay.toLocaleDateString('nl-NL', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long' 
+                  })}
+                </Text>
+                <View style={styles.modalHeaderSpacer} />
+              </View>
+
+              <ScrollView style={styles.dayDetailContent}>
+                {getAppointmentsForDate(selectedDay).length === 0 ? (
+                  <View style={styles.noAppointments}>
+                    <Text style={styles.noAppointmentsText}>
+                      {t('home.noAppointmentsToday')}
+                    </Text>
+                  </View>
+                ) : (
+                  getAppointmentsForDate(selectedDay).map((apt, index) => {
+                    const members = familyMembers.filter(m => apt.assignedTo.includes(m.id));
+                    return (
+                      <React.Fragment key={index}>
+                        <TouchableOpacity
+                          style={[styles.appointmentCard, { borderLeftColor: apt.color }]}
+                          onPress={() => {
+                            Alert.alert(
+                              apt.title,
+                              `${apt.time}${apt.endTime ? ` - ${apt.endTime}` : ''}\n\n${members.map(m => m.name).join(', ')}`,
+                              [
+                                { text: t('common.close'), style: 'cancel' },
+                                {
+                                  text: t('common.delete'),
+                                  style: 'destructive',
+                                  onPress: () => {
+                                    Alert.alert(
+                                      t('agenda.deleteConfirm'),
+                                      t('agenda.deleteMessage', { title: apt.title }),
+                                      [
+                                        { text: t('common.cancel'), style: 'cancel' },
+                                        { 
+                                          text: t('common.delete'), 
+                                          onPress: () => {
+                                            deleteAppointment(apt.id);
+                                            setSelectedDay(null);
+                                          }, 
+                                          style: 'destructive' 
+                                        },
+                                      ]
+                                    );
+                                  },
+                                },
+                              ]
+                            );
+                          }}
+                        >
+                          <View style={styles.appointmentCardContent}>
+                            <Text style={styles.appointmentCardTime}>
+                              {apt.time}{apt.endTime ? ` - ${apt.endTime}` : ''}
+                            </Text>
+                            <Text style={styles.appointmentCardTitle}>{apt.title}</Text>
+                            <View style={styles.appointmentCardMembers}>
+                              {members.map((member, mIndex) => (
+                                <React.Fragment key={mIndex}>
+                                  <View style={[styles.memberBadge, { backgroundColor: member.color }]}>
+                                    <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
+                                  </View>
+                                </React.Fragment>
+                              ))}
+                              <Text style={styles.memberNames}>
+                                {members.map(m => m.name).join(', ')}
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      </React.Fragment>
+                    );
+                  })
+                )}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setSelectedDay(null)}
+              >
+                <Text style={styles.closeButtonText}>{t('common.close')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Add Appointment Modal */}
       <Modal
         visible={showAddModal}
         transparent
@@ -297,13 +424,13 @@ export default function AgendaScreen() {
                 >
                   <Ionicons name="chevron-back" size={26} color="#333" />
                 </TouchableOpacity>
-                <Text style={styles.modalTitle}>Nieuwe afspraak</Text>
+                <Text style={styles.modalTitle}>{t('agenda.newAppointment')}</Text>
                 <View style={styles.modalHeaderSpacer} />
               </View>
 
               <TextInput
                 style={styles.input}
-                placeholder="Titel"
+                placeholder={t('agenda.titlePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={newAppointmentTitle}
                 onChangeText={setNewAppointmentTitle}
@@ -327,26 +454,26 @@ export default function AgendaScreen() {
                 <Ionicons name="time-outline" size={22} color="#333" />
                 <TextInput
                   style={styles.timeInput}
-                  placeholder="Starttijd (bijv. 10:00)"
+                  placeholder={t('agenda.startTime')}
                   placeholderTextColor={colors.textSecondary}
                   value={newAppointmentTime}
                   onChangeText={setNewAppointmentTime}
                 />
               </View>
 
-              <Text style={styles.inputLabel}>Eindtijd (optioneel)</Text>
+              <Text style={styles.inputLabel}>{t('agenda.endTime')}</Text>
               <View style={styles.timeInputContainer}>
                 <Ionicons name="time-outline" size={22} color="#333" />
                 <TextInput
                   style={styles.timeInput}
-                  placeholder="bijv. 11:30"
+                  placeholder={t('agenda.endTimePlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                   value={newAppointmentEndTime}
                   onChangeText={setNewAppointmentEndTime}
                 />
               </View>
 
-              <Text style={styles.inputLabel}>Voor wie: (meerdere mogelijk)</Text>
+              <Text style={styles.inputLabel}>{t('agenda.forWho')}</Text>
               <View style={styles.memberSelector}>
                 {familyMembers.map((member, index) => (
                   <React.Fragment key={index}>
@@ -371,13 +498,13 @@ export default function AgendaScreen() {
                 ))}
               </View>
 
-              <Text style={styles.inputLabel}>Herhaling:</Text>
+              <Text style={styles.inputLabel}>{t('profile.repeat')}</Text>
               <View style={styles.repeatSelector}>
                 {[
-                  { value: 'none', label: 'Geen' },
-                  { value: 'daily', label: 'Dagelijks' },
-                  { value: 'weekly', label: 'Wekelijks' },
-                  { value: 'monthly', label: 'Maandelijks' },
+                  { value: 'none', label: t('profile.repeatNone') },
+                  { value: 'daily', label: t('profile.repeatDaily') },
+                  { value: 'weekly', label: t('profile.repeatWeekly') },
+                  { value: 'monthly', label: t('profile.repeatMonthly') },
                 ].map((option, index) => (
                   <React.Fragment key={index}>
                     <TouchableOpacity
@@ -413,13 +540,15 @@ export default function AgendaScreen() {
                     setNewAppointmentRepeat('none');
                   }}
                 >
-                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleAddAppointment}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
+                    {t('common.add')}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -447,7 +576,7 @@ export default function AgendaScreen() {
               >
                 <Ionicons name="chevron-back" size={26} color="#333" />
               </TouchableOpacity>
-              <Text style={styles.calendarPickerTitle}>Selecteer datum</Text>
+              <Text style={styles.calendarPickerTitle}>{t('agenda.selectDate')}</Text>
               <View style={styles.calendarHeaderSpacer} />
             </View>
 
@@ -486,14 +615,14 @@ export default function AgendaScreen() {
             </View>
 
             <View style={styles.calendarGrid}>
-              {renderCalendar()}
+              {renderDatePicker()}
             </View>
 
             <TouchableOpacity
               style={styles.calendarCloseButton}
               onPress={() => setShowDatePicker(false)}
             >
-              <Text style={styles.calendarCloseButtonText}>Sluiten</Text>
+              <Text style={styles.calendarCloseButtonText}>{t('common.close')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -567,133 +696,193 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontFamily: 'Poppins_600SemiBold',
   },
-  weeklyCalendar: {
+  monthlyCalendar: {
     backgroundColor: colors.card,
     borderRadius: 20,
     padding: 15,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
-  weekHeader: {
+  monthHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
   },
-  weekNavButton: {
+  monthNavButton: {
     padding: 8,
   },
-  weekTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  weekGrid: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  dayColumn: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    overflow: 'hidden',
-    minHeight: 300,
-  },
-  dayColumnToday: {
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: colors.accent,
-  },
-  dayHeader: {
-    padding: 8,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.textSecondary + '20',
-  },
-  dayName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  dayNameToday: {
-    color: colors.accent,
-  },
-  dayNumber: {
+  monthTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
-  dayNumberToday: {
-    color: colors.accent,
+  weekDaysHeader: {
+    flexDirection: 'row',
+    marginBottom: 10,
   },
-  dayAppointments: {
+  weekDayCell: {
     flex: 1,
-    padding: 4,
-  },
-  emptyDay: {
     alignItems: 'center',
-    paddingVertical: 20,
   },
-  emptyDayText: {
-    fontSize: 14,
+  weekDayText: {
+    fontSize: 12,
+    fontWeight: '600',
     color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
+    fontFamily: 'Poppins_600SemiBold',
   },
-  appointmentBlock: {
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 6,
-    minHeight: 60,
+  monthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
-  appointmentTime: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
+  dayCell: {
+    width: '14.28%',
+    aspectRatio: 0.75,
+    padding: 4,
+    borderWidth: 0.5,
+    borderColor: colors.textSecondary + '20',
+  },
+  dayCellActive: {
+    backgroundColor: colors.background,
+  },
+  dayCellToday: {
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.accent,
+  },
+  dayNumber: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
     marginBottom: 2,
   },
-  appointmentTitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.card,
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 4,
-  },
-  appointmentMembers: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  memberDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.card,
-  },
-  memberDotText: {
-    fontSize: 8,
+  dayNumberToday: {
+    color: colors.accent,
     fontWeight: '700',
-    color: colors.card,
     fontFamily: 'Poppins_700Bold',
   },
-  moreMembers: {
+  appointmentsContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  appointmentLabel: {
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    marginBottom: 2,
+  },
+  appointmentLabelText: {
     fontSize: 9,
     fontWeight: '600',
     color: colors.card,
     fontFamily: 'Poppins_600SemiBold',
-    marginLeft: 2,
+  },
+  moreAppointments: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+    marginTop: 2,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     padding: 20,
+  },
+  dayDetailModal: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+    boxShadow: `0px 8px 24px ${colors.shadow}`,
+    elevation: 5,
+  },
+  dayDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  dayDetailTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  dayDetailContent: {
+    maxHeight: 400,
+  },
+  noAppointments: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  noAppointmentsText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  appointmentCard: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+  },
+  appointmentCardContent: {
+    gap: 8,
+  },
+  appointmentCardTime: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.accent,
+    fontFamily: 'Poppins_700Bold',
+  },
+  appointmentCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  appointmentCardMembers: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  memberBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberNames: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  closeButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
   },
   modalScrollContent: {
     flexGrow: 1,
