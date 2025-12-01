@@ -23,7 +23,10 @@ export default function AgendaScreen() {
   const [newAppointmentEndTime, setNewAppointmentEndTime] = useState('');
   const [newAppointmentAssignedTo, setNewAppointmentAssignedTo] = useState<string[]>([]);
   const [newAppointmentRepeat, setNewAppointmentRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
+  const [newAppointmentEndDate, setNewAppointmentEndDate] = useState<Date | null>(null);
+  const [newAppointmentWeekdays, setNewAppointmentWeekdays] = useState<string[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
@@ -38,12 +41,28 @@ export default function AgendaScreen() {
   const doesRepeatMatchDate = (appointment: Appointment, date: Date): boolean => {
     const aptDate = new Date(appointment.date);
     
+    // Check if we're past the end date
+    if (appointment.endDate) {
+      const endDate = new Date(appointment.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      if (date > endDate) return false;
+    }
+    
     if (appointment.repeatType === 'daily') {
       // Daily: show on any date after the start date
       return date >= aptDate;
     } else if (appointment.repeatType === 'weekly') {
-      // Weekly: show on the same day of the week
+      // Weekly: show on selected weekdays
       if (date < aptDate) return false;
+      
+      // If weekdays are specified, check if current day matches
+      if (appointment.weekdays && appointment.weekdays.length > 0) {
+        const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const currentDay = dayNames[date.getDay()];
+        return appointment.weekdays.includes(currentDay);
+      }
+      
+      // Fallback to same day of week
       return date.getDay() === aptDate.getDay();
     } else if (appointment.repeatType === 'monthly') {
       // Monthly: show on the same day of each month
@@ -116,6 +135,16 @@ export default function AgendaScreen() {
     });
   };
 
+  const toggleWeekday = (day: string) => {
+    setNewAppointmentWeekdays(prev => {
+      if (prev.includes(day)) {
+        return prev.filter(d => d !== day);
+      } else {
+        return [...prev, day];
+      }
+    });
+  };
+
   const handleAddAppointment = () => {
     if (!newAppointmentTitle.trim()) {
       Alert.alert(t('common.error'), t('agenda.fillTitle'));
@@ -124,6 +153,12 @@ export default function AgendaScreen() {
 
     if (newAppointmentAssignedTo.length === 0) {
       Alert.alert(t('common.error'), t('agenda.selectMember'));
+      return;
+    }
+
+    // Validate weekly selection
+    if (newAppointmentRepeat === 'weekly' && newAppointmentWeekdays.length === 0) {
+      Alert.alert(t('common.error'), 'Selecteer minimaal één dag voor wekelijkse herhaling');
       return;
     }
 
@@ -138,6 +173,8 @@ export default function AgendaScreen() {
       assignedTo: newAppointmentAssignedTo,
       color: appointmentColor,
       repeatType: newAppointmentRepeat,
+      endDate: newAppointmentEndDate || undefined,
+      weekdays: newAppointmentRepeat === 'weekly' ? newAppointmentWeekdays : undefined,
     });
 
     // Reset form and close modal
@@ -147,6 +184,8 @@ export default function AgendaScreen() {
     setNewAppointmentEndTime('');
     setNewAppointmentAssignedTo([]);
     setNewAppointmentRepeat('none');
+    setNewAppointmentEndDate(null);
+    setNewAppointmentWeekdays([]);
     setShowAddModal(false);
     
     Alert.alert(t('common.success'), t('agenda.appointmentAdded'));
@@ -264,6 +303,9 @@ export default function AgendaScreen() {
     t('agenda.days.sunday'),
   ];
 
+  const weekdayShortNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+  const weekdayValues = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
   const changeMonth = (direction: 'prev' | 'next') => {
     if (direction === 'next') {
       if (selectedMonth === 11) {
@@ -339,20 +381,25 @@ export default function AgendaScreen() {
             )}
           </View>
           <View style={styles.appointmentsContainer}>
-            {dayAppointments.slice(0, 3).map((apt, index) => (
-              <React.Fragment key={index}>
-                <View
-                  style={[
-                    styles.appointmentBar,
-                    { backgroundColor: apt.color },
-                  ]}
-                >
-                  <Text style={styles.appointmentBarText} numberOfLines={1}>
-                    {apt.time} {apt.title}
-                  </Text>
-                </View>
-              </React.Fragment>
-            ))}
+            {dayAppointments.slice(0, 3).map((apt, index) => {
+              const isRepeating = apt.repeatType && apt.repeatType !== 'none';
+              const bgColor = isRepeating ? '#ADD6FF' : apt.color;
+              
+              return (
+                <React.Fragment key={index}>
+                  <View
+                    style={[
+                      styles.appointmentBar,
+                      { backgroundColor: bgColor },
+                    ]}
+                  >
+                    <Text style={styles.appointmentBarText} numberOfLines={1}>
+                      {apt.time} {apt.title}
+                    </Text>
+                  </View>
+                </React.Fragment>
+              );
+            })}
           </View>
         </TouchableOpacity>
       );
@@ -390,6 +437,50 @@ export default function AgendaScreen() {
           onPress={() => {
             setNewAppointmentDate(date);
             setShowDatePicker(false);
+          }}
+        >
+          <Text style={[
+            styles.calendarDayText,
+            isSelected && styles.calendarDayTextSelected
+          ]}>
+            {day}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return days;
+  };
+
+  const renderEndDatePicker = () => {
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1).getDay();
+    const days = [];
+
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push(
+        <View key={`empty-${i}`} style={styles.calendarDay} />
+      );
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(selectedYear, selectedMonth, day);
+      const isSelected = newAppointmentEndDate &&
+        newAppointmentEndDate.getDate() === day &&
+        newAppointmentEndDate.getMonth() === selectedMonth &&
+        newAppointmentEndDate.getFullYear() === selectedYear;
+
+      days.push(
+        <TouchableOpacity
+          key={day}
+          style={[
+            styles.calendarDay,
+            styles.calendarDayActive,
+            isSelected && [styles.calendarDaySelected, { backgroundColor: accentColor }]
+          ]}
+          onPress={() => {
+            setNewAppointmentEndDate(date);
+            setShowEndDatePicker(false);
           }}
         >
           <Text style={[
@@ -662,6 +753,8 @@ export default function AgendaScreen() {
                     setNewAppointmentEndTime('');
                     setNewAppointmentAssignedTo([]);
                     setNewAppointmentRepeat('none');
+                    setNewAppointmentEndDate(null);
+                    setNewAppointmentWeekdays([]);
                   }}
                 >
                   <Ionicons name="chevron-back" size={26} color="#333" />
@@ -769,6 +862,68 @@ export default function AgendaScreen() {
                 ))}
               </View>
 
+              {/* Weekday Selector for Weekly Repeat */}
+              {newAppointmentRepeat === 'weekly' && (
+                <>
+                  <Text style={styles.inputLabel}>Selecteer dagen:</Text>
+                  <View style={styles.weekdaySelector}>
+                    {weekdayShortNames.map((day, index) => (
+                      <React.Fragment key={index}>
+                        <TouchableOpacity
+                          style={[
+                            styles.weekdayButton,
+                            newAppointmentWeekdays.includes(weekdayValues[index]) && [
+                              styles.weekdayButtonActive,
+                              { backgroundColor: accentColor }
+                            ],
+                          ]}
+                          onPress={() => toggleWeekday(weekdayValues[index])}
+                        >
+                          <Text
+                            style={[
+                              styles.weekdayButtonText,
+                              newAppointmentWeekdays.includes(weekdayValues[index]) && styles.weekdayButtonTextActive,
+                            ]}
+                          >
+                            {day}
+                          </Text>
+                        </TouchableOpacity>
+                      </React.Fragment>
+                    ))}
+                  </View>
+                </>
+              )}
+
+              {/* End Date for Recurring Events */}
+              {newAppointmentRepeat !== 'none' && (
+                <>
+                  <Text style={styles.inputLabel}>Einddatum (optioneel):</Text>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() => {
+                      setSelectedMonth(newAppointmentEndDate?.getMonth() || new Date().getMonth());
+                      setSelectedYear(newAppointmentEndDate?.getFullYear() || new Date().getFullYear());
+                      setShowEndDatePicker(true);
+                    }}
+                  >
+                    <Ionicons name="calendar-outline" size={22} color="#333" />
+                    <Text style={styles.dateButtonText}>
+                      {newAppointmentEndDate 
+                        ? newAppointmentEndDate.toLocaleDateString('nl-NL')
+                        : 'Geen einddatum'}
+                    </Text>
+                  </TouchableOpacity>
+                  {newAppointmentEndDate && (
+                    <TouchableOpacity
+                      style={styles.clearEndDateButton}
+                      onPress={() => setNewAppointmentEndDate(null)}
+                    >
+                      <Text style={styles.clearEndDateText}>Einddatum wissen</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonCancel]}
@@ -780,6 +935,8 @@ export default function AgendaScreen() {
                     setNewAppointmentEndTime('');
                     setNewAppointmentAssignedTo([]);
                     setNewAppointmentRepeat('none');
+                    setNewAppointmentEndDate(null);
+                    setNewAppointmentWeekdays([]);
                   }}
                 >
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
@@ -863,6 +1020,78 @@ export default function AgendaScreen() {
             <TouchableOpacity
               style={styles.calendarCloseButton}
               onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={styles.calendarCloseButtonText}>{t('common.close')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* End Date Picker Modal */}
+      <Modal
+        visible={showEndDatePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEndDatePicker(false)}
+      >
+        <TouchableOpacity 
+          style={styles.calendarOverlay}
+          activeOpacity={1}
+          onPress={() => setShowEndDatePicker(false)}
+        >
+          <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
+            <View style={styles.calendarPickerHeader}>
+              <TouchableOpacity
+                style={styles.calendarBackButton}
+                onPress={() => setShowEndDatePicker(false)}
+              >
+                <Ionicons name="chevron-back" size={26} color="#333" />
+              </TouchableOpacity>
+              <Text style={styles.calendarPickerTitle}>Selecteer einddatum</Text>
+              <View style={styles.calendarHeaderSpacer} />
+            </View>
+
+            <View style={styles.calendarMonthNav}>
+              <TouchableOpacity onPress={() => {
+                if (selectedMonth === 0) {
+                  setSelectedMonth(11);
+                  setSelectedYear(selectedYear - 1);
+                } else {
+                  setSelectedMonth(selectedMonth - 1);
+                }
+              }} style={styles.calendarNavButton}>
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={styles.calendarMonthYear}>
+                {monthNames[selectedMonth]} {selectedYear}
+              </Text>
+              <TouchableOpacity onPress={() => {
+                if (selectedMonth === 11) {
+                  setSelectedMonth(0);
+                  setSelectedYear(selectedYear + 1);
+                } else {
+                  setSelectedMonth(selectedMonth + 1);
+                }
+              }} style={styles.calendarNavButton}>
+                <Ionicons name="chevron-forward" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.calendarWeekDays}>
+              {['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'].map((day, index) => (
+                <React.Fragment key={index}>
+                  <Text style={styles.calendarWeekDay}>{day}</Text>
+                </React.Fragment>
+              ))}
+            </View>
+
+            <View style={styles.calendarGrid}>
+              {renderEndDatePicker()}
+            </View>
+
+            <TouchableOpacity
+              style={styles.calendarCloseButton}
+              onPress={() => setShowEndDatePicker(false)}
             >
               <Text style={styles.calendarCloseButtonText}>{t('common.close')}</Text>
             </TouchableOpacity>
@@ -1418,6 +1647,45 @@ const styles = StyleSheet.create({
   },
   repeatOptionTextActive: {
     color: colors.text,
+  },
+  weekdaySelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  weekdayButton: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
+    minWidth: 45,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  weekdayButtonActive: {
+  },
+  weekdayButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  weekdayButtonTextActive: {
+    color: colors.card,
+  },
+  clearEndDateButton: {
+    backgroundColor: colors.background,
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  clearEndDateText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
   },
   modalButtons: {
     flexDirection: 'row',

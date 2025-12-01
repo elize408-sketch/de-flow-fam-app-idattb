@@ -85,7 +85,7 @@ export default function NotesScreen() {
     setShowEditModal(true);
   };
 
-  const handleDeleteNote = (noteId: string, noteTitle: string) => {
+  const handleDeleteNote = async (noteId: string, noteTitle: string) => {
     Alert.alert(
       'Verwijderen?',
       `Weet je zeker dat je "${noteTitle}" wilt verwijderen?`,
@@ -93,9 +93,14 @@ export default function NotesScreen() {
         { text: 'Annuleren', style: 'cancel' },
         { 
           text: 'Verwijderen', 
-          onPress: () => {
-            deleteFamilyNote(noteId);
-            Alert.alert('Verwijderd', 'Notitie is verwijderd');
+          onPress: async () => {
+            try {
+              await deleteFamilyNote(noteId);
+              Alert.alert('Verwijderd', 'Notitie is verwijderd');
+            } catch (error) {
+              console.error('Error deleting note:', error);
+              Alert.alert('Fout', 'Kon notitie niet verwijderen');
+            }
           }, 
           style: 'destructive' 
         },
@@ -173,7 +178,7 @@ export default function NotesScreen() {
                             ios_icon_name="trash"
                             android_material_icon_name="delete"
                             size={20}
-                            color={colors.textSecondary}
+                            color="#E74C3C"
                           />
                         </TouchableOpacity>
                       </View>

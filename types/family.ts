@@ -1,12 +1,12 @@
 
 export interface FamilyMember {
   id: string;
+  userId: string;
   name: string;
   role: 'parent' | 'child';
-  avatar?: string;
+  color: string;
   photoUri?: string;
   coins: number;
-  color: string;
 }
 
 export interface Task {
@@ -38,7 +38,9 @@ export interface Appointment {
   endTime?: string;
   assignedTo: string[];
   color: string;
-  repeatType: 'none' | 'daily' | 'weekly' | 'monthly';
+  repeatType?: 'none' | 'daily' | 'weekly' | 'monthly';
+  weekdays?: string[];
+  endDate?: Date;
   location?: string;
   notes?: string;
 }
@@ -50,7 +52,6 @@ export interface HouseholdTask {
   completed: boolean;
   dueDate?: Date;
   repeatType?: 'daily' | 'weekly' | 'monthly' | 'none';
-  icon?: string;
 }
 
 export interface Expense {
@@ -62,33 +63,24 @@ export interface Expense {
   date: Date;
   paid: boolean;
   recurring: boolean;
-  recurringFrequency?: 'weekly' | 'monthly' | 'yearly';
+  recurringPeriod?: 'weekly' | 'monthly' | 'yearly';
 }
 
 export interface Income {
   id: string;
   name: string;
   amount: number;
-  type?: 'salary' | 'partner' | 'benefits' | 'other';
   date: Date;
   recurring: boolean;
-  recurringFrequency?: 'weekly' | 'monthly' | 'yearly';
+  recurringPeriod?: 'weekly' | 'monthly' | 'yearly';
 }
 
 export interface Receipt {
   id: string;
   imageUri: string;
   amount: number;
-  date: Date;
   category?: string;
-  budgetPotId?: string;
-}
-
-export interface BudgetPot {
-  id: string;
-  name: string;
-  budget: number;
-  spent: number;
+  date: Date;
 }
 
 export interface Ingredient {
@@ -99,36 +91,45 @@ export interface Ingredient {
 }
 
 export type IngredientCategory = 
-  | 'groente'
+  | 'groenten'
   | 'fruit'
+  | 'vlees'
+  | 'vis'
   | 'zuivel'
-  | 'vlees_vis'
-  | 'droge_voorraad'
-  | 'koelkast'
-  | 'diepvries'
+  | 'brood'
+  | 'granen'
+  | 'kruiden'
+  | 'sauzen'
   | 'overig';
 
 export interface Meal {
   id: string;
   name: string;
   type: 'breakfast' | 'lunch' | 'dinner';
+  day?: string;
   ingredients?: Ingredient[];
   instructions?: string;
-  prepTime?: number;
+  imageUri?: string;
   servings?: number;
   baseServings?: number;
-  photoUri?: string;
 }
 
 export interface SavingsPot {
   id: string;
   name: string;
-  goalAmount: number;
+  targetAmount: number;
   currentAmount: number;
-  monthlyDeposit: number;
   color: string;
   icon: string;
-  photoUri?: string;
+}
+
+export interface BudgetPot {
+  id: string;
+  name: string;
+  budgetAmount: number;
+  spent: number;
+  color: string;
+  icon: string;
 }
 
 export interface Memory {
@@ -137,7 +138,7 @@ export interface Memory {
   description?: string;
   date: Date;
   photos: string[];
-  createdBy: string;
+  participants: string[];
 }
 
 export interface ShoppingItem {
@@ -165,28 +166,28 @@ export interface FamilyNote {
   title: string;
   content: string;
   createdBy: string;
+  sharedWith: string[];
   createdAt: Date;
   updatedAt: Date;
-  color?: string;
 }
 
 export interface Reminder {
   id: string;
   title: string;
   description?: string;
-  date: Date;
-  time: string;
+  dueDate: Date;
   assignedTo: string[];
   completed: boolean;
+  priority: 'low' | 'medium' | 'high';
 }
 
 export interface DailyScheduleItem {
   id: string;
   time: string;
-  activity: string;
+  title: string;
+  description?: string;
   assignedTo: string[];
-  recurring: boolean;
-  repeatType?: 'none' | 'daily' | 'weekly' | 'monthly';
+  days: string[];
 }
 
 export interface Notification {

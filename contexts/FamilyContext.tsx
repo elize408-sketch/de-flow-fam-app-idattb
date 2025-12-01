@@ -115,6 +115,7 @@ interface FamilyContextType {
   loadTasksFromDB: () => Promise<void>;
   loadShoppingItemsFromDB: () => Promise<void>;
   loadPantryItemsFromDB: () => Promise<void>;
+  loadNotesFromDB: () => Promise<void>;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -178,6 +179,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           assignedTo: apt.assigned_to || [],
           color: apt.color,
           repeatType: apt.repeat_type as 'none' | 'daily' | 'weekly' | 'monthly',
+          weekdays: apt.weekdays || undefined,
+          endDate: apt.end_date ? new Date(apt.end_date) : undefined,
           location: apt.location || undefined,
           notes: apt.notes || undefined,
         }));
@@ -285,6 +288,37 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     }
   }, [currentFamily]);
 
+  const loadNotesFromDB = useCallback(async () => {
+    if (!currentFamily) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('family_id', currentFamily.id);
+
+      if (error) {
+        console.error('Error loading notes:', error);
+        return;
+      }
+
+      if (data) {
+        const formattedNotes: FamilyNote[] = data.map(note => ({
+          id: note.id,
+          title: note.title,
+          content: note.content,
+          createdBy: note.created_by,
+          sharedWith: note.shared_with || [],
+          createdAt: new Date(note.created_at),
+          updatedAt: new Date(note.updated_at),
+        }));
+        setFamilyNotes(formattedNotes);
+      }
+    } catch (error) {
+      console.error('Error loading notes:', error);
+    }
+  }, [currentFamily]);
+
   const loadInitialData = useCallback(async () => {
     try {
       // Load family members
@@ -344,8 +378,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       loadTasksFromDB();
       loadShoppingItemsFromDB();
       loadPantryItemsFromDB();
+      loadNotesFromDB();
     }
-  }, [currentFamily, loadAppointmentsFromDB, loadTasksFromDB, loadShoppingItemsFromDB, loadPantryItemsFromDB]);
+  }, [currentFamily, loadAppointmentsFromDB, loadTasksFromDB, loadShoppingItemsFromDB, loadPantryItemsFromDB, loadNotesFromDB]);
 
   // Save family members whenever they change
   useEffect(() => {
@@ -717,6 +752,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           assigned_to: newAppointment.assignedTo,
           color: newAppointment.color,
           repeat_type: newAppointment.repeatType,
+          weekdays: newAppointment.weekdays,
+          end_date: newAppointment.endDate?.toISOString(),
           location: newAppointment.location,
           notes: newAppointment.notes,
         }])
@@ -1079,6 +1116,25 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     };
     setFamilyNotes(prev => [newNote, ...prev]);
     
+    // Add to Supabase if we have a family
+    if (currentFamily) {
+      supabase
+        .from('notes')
+        .insert([{
+          id: newNote.id,
+          family_id: currentFamily.id,
+          title: newNote.title,
+          content: newNote.content,
+          created_by: newNote.createdBy,
+          shared_with: newNote.sharedWith,
+          created_at: newNote.createdAt.toISOString(),
+          updated_at: newNote.updatedAt.toISOString(),
+        }])
+        .then(({ error }) => {
+          if (error) console.error('Error adding note to DB:', error);
+        });
+    }
+    
     addNotification({
       type: 'note',
       title: 'Nieuwe notitie',
@@ -1093,10 +1149,49 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         note.id === noteId ? { ...note, ...updates, updatedAt: new Date() } : note
       )
     );
+    
+    // Update in Supabase if we have a family
+    if (currentFamily) {
+      supabase
+        .from('notes')
+        .update({
+          title: updates.title,
+          content: updates.content,
+          shared_with: updates.sharedWith,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', noteId)
+        .then(({ error }) => {
+          if (error) console.error('Error updating note in DB:', error);
+        });
+    }
   };
 
-  const deleteFamilyNote = (noteId: string) => {
-    setFamilyNotes(prev => prev.filter(note => note.id !== noteId));
+  const deleteFamilyNote = async (noteId: string) => {
+    try {
+      console.log('Deleting note:', noteId);
+      
+      // Delete from Supabase if we have a family
+      if (currentFamily) {
+        const { error } = await supabase
+          .from('notes')
+          .delete()
+          .eq('id', noteId);
+
+        if (error) {
+          console.error('Error deleting note from DB:', error);
+          throw error;
+        }
+        console.log('Note deleted from DB');
+      }
+
+      // Delete from local state
+      setFamilyNotes(prev => prev.filter(note => note.id !== noteId));
+      console.log('Note deleted successfully');
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      throw error;
+    }
   };
 
   const addReminder = (reminder: Omit<Reminder, 'id'>) => {
@@ -1417,6 +1512,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         loadTasksFromDB,
         loadShoppingItemsFromDB,
         loadPantryItemsFromDB,
+        loadNotesFromDB,
       }}
     >
       {children}
