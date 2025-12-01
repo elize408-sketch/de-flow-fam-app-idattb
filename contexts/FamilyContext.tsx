@@ -549,6 +549,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const deleteFamilyMember = async (memberId: string) => {
     try {
+      console.log('Deleting family member:', memberId);
+      
       // Delete from Supabase if we have a family
       if (currentFamily) {
         const { error } = await supabase
@@ -560,6 +562,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           console.error('Error deleting family member from DB:', error);
           throw error;
         }
+        console.log('Family member deleted from DB');
       }
 
       // Delete from local state
@@ -569,6 +572,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       if (currentUser?.id === memberId) {
         setCurrentUserState(null);
       }
+      
+      console.log('Family member deleted successfully');
     } catch (error) {
       console.error('Error deleting family member:', error);
       throw error;
@@ -666,6 +671,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const deleteTask = async (taskId: string) => {
     try {
+      console.log('Deleting task:', taskId);
+      
       // Delete from Supabase if we have a family
       if (currentFamily) {
         const { error } = await supabase
@@ -677,10 +684,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           console.error('Error deleting task from DB:', error);
           throw error;
         }
+        console.log('Task deleted from DB');
       }
 
       // Delete from local state
       setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      console.log('Task deleted successfully');
     } catch (error) {
       console.error('Error deleting task:', error);
       throw error;
@@ -732,6 +741,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const deleteAppointment = async (appointmentId: string, deleteSeries: boolean = false) => {
     try {
+      console.log('Deleting appointment:', appointmentId, 'deleteSeries:', deleteSeries);
+      
       // Delete from Supabase if we have a family
       if (currentFamily) {
         const { error } = await supabase
@@ -743,10 +754,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           console.error('Error deleting appointment from DB:', error);
           throw error;
         }
+        console.log('Appointment deleted from DB');
       }
 
       // Delete from local state
       setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+      console.log('Appointment deleted successfully');
     } catch (error) {
       console.error('Error deleting appointment:', error);
       throw error;
@@ -972,6 +985,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const deleteShoppingItem = async (itemId: string) => {
     try {
+      console.log('Deleting shopping item:', itemId);
+      
       // Delete from Supabase if we have a family
       if (currentFamily) {
         const { error } = await supabase
@@ -983,10 +998,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           console.error('Error deleting shopping item from DB:', error);
           throw error;
         }
+        console.log('Shopping item deleted from DB');
       }
 
       // Delete from local state
       setShoppingList(prev => prev.filter(item => item.id !== itemId));
+      console.log('Shopping item deleted successfully');
     } catch (error) {
       console.error('Error deleting shopping item:', error);
       throw error;
@@ -1028,6 +1045,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const deletePantryItem = async (itemId: string) => {
     try {
+      console.log('Deleting pantry item:', itemId);
+      
       // Delete from Supabase if we have a family
       if (currentFamily) {
         const { error } = await supabase
@@ -1039,10 +1058,12 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           console.error('Error deleting pantry item from DB:', error);
           throw error;
         }
+        console.log('Pantry item deleted from DB');
       }
 
       // Delete from local state
       setPantryItems(prev => prev.filter(item => item.id !== itemId));
+      console.log('Pantry item deleted successfully');
     } catch (error) {
       console.error('Error deleting pantry item:', error);
       throw error;

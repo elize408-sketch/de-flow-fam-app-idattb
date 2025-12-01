@@ -393,18 +393,72 @@ export default function ShoppingScreen() {
       >
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
+          style={{ flex: 1 }}
         >
-          <View style={styles.modalOverlay}>
-            <TouchableOpacity 
-              style={styles.modalBackdrop}
-              activeOpacity={1}
-              onPress={() => setShowAddModal(false)}
-            />
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowAddModal(false)}
+          />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                style={styles.modalBackButton}
+                onPress={() => {
+                  setShowAddModal(false);
+                  setNewItemName('');
+                  setNewItemQuantity('');
+                  setNewItemUnit('');
+                }}
+              >
+                <Ionicons name="chevron-back" size={26} color="#333" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>
+                {activeTab === 'shopping' ? 'Nieuw boodschappen item' : 'Nieuw voorraad item'}
+              </Text>
+              <View style={styles.modalHeaderSpacer} />
+            </View>
+
+            <ScrollView 
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <TextInput
+                style={styles.input}
+                placeholder="Naam (bijv. Melk, Brood, Eieren)"
+                placeholderTextColor={colors.textSecondary}
+                value={newItemName}
+                onChangeText={setNewItemName}
+                autoFocus={false}
+              />
+
+              <View style={styles.quantityRow}>
+                <TextInput
+                  style={[styles.input, styles.quantityInput]}
+                  placeholder="Aantal"
+                  placeholderTextColor={colors.textSecondary}
+                  value={newItemQuantity}
+                  onChangeText={setNewItemQuantity}
+                  keyboardType="numeric"
+                />
+                
+                <TextInput
+                  style={[styles.input, styles.unitInput]}
+                  placeholder="Eenheid"
+                  placeholderTextColor={colors.textSecondary}
+                  value={newItemUnit}
+                  onChangeText={setNewItemUnit}
+                />
+              </View>
+
+              <Text style={styles.helperText}>
+                Bijvoorbeeld: 1 liter, 500 gram, 2 stuks
+              </Text>
+
+              <View style={styles.modalButtons}>
                 <TouchableOpacity
-                  style={styles.modalBackButton}
+                  style={[styles.modalButton, styles.modalButtonCancel]}
                   onPress={() => {
                     setShowAddModal(false);
                     setNewItemName('');
@@ -412,72 +466,16 @@ export default function ShoppingScreen() {
                     setNewItemUnit('');
                   }}
                 >
-                  <Ionicons name="chevron-back" size={26} color="#333" />
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
-                <Text style={styles.modalTitle}>
-                  {activeTab === 'shopping' ? 'Nieuw boodschappen item' : 'Nieuw voorraad item'}
-                </Text>
-                <View style={styles.modalHeaderSpacer} />
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
+                  onPress={handleAddItem}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                </TouchableOpacity>
               </View>
-
-              <ScrollView 
-                style={styles.modalScrollView}
-                contentContainerStyle={styles.modalScrollContent}
-                keyboardShouldPersistTaps="handled"
-              >
-                <TextInput
-                  style={styles.input}
-                  placeholder="Naam (bijv. Melk, Brood, Eieren)"
-                  placeholderTextColor={colors.textSecondary}
-                  value={newItemName}
-                  onChangeText={setNewItemName}
-                  autoFocus={false}
-                />
-
-                <View style={styles.quantityRow}>
-                  <TextInput
-                    style={[styles.input, styles.quantityInput]}
-                    placeholder="Aantal"
-                    placeholderTextColor={colors.textSecondary}
-                    value={newItemQuantity}
-                    onChangeText={setNewItemQuantity}
-                    keyboardType="numeric"
-                  />
-                  
-                  <TextInput
-                    style={[styles.input, styles.unitInput]}
-                    placeholder="Eenheid"
-                    placeholderTextColor={colors.textSecondary}
-                    value={newItemUnit}
-                    onChangeText={setNewItemUnit}
-                  />
-                </View>
-
-                <Text style={styles.helperText}>
-                  Bijvoorbeeld: 1 liter, 500 gram, 2 stuks
-                </Text>
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.modalButtonCancel]}
-                    onPress={() => {
-                      setShowAddModal(false);
-                      setNewItemName('');
-                      setNewItemQuantity('');
-                      setNewItemUnit('');
-                    }}
-                  >
-                    <Text style={styles.modalButtonText}>Annuleren</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
-                    onPress={handleAddItem}
-                  >
-                    <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -636,12 +634,12 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 10,
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {

@@ -158,12 +158,12 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
     }
   }, [taskName, type, selectedIcon, onSelectIcon]);
 
-  const handleIconPress = useCallback((iconAndroid: string) => {
+  const handleIconPress = (iconAndroid: string) => {
     console.log('Icon pressed:', iconAndroid);
     onSelectIcon(iconAndroid);
-  }, [onSelectIcon]);
+  };
 
-  const renderIcon = useCallback((icon: IconOption, isActive: boolean) => {
+  const renderIcon = (icon: IconOption, isActive: boolean) => {
     const iconColor = isActive ? colors.card : colors.text;
     
     if (icon.isCustom && icon.customImage) {
@@ -187,7 +187,7 @@ export default function IconPicker({ selectedIcon, onSelectIcon, type = 'task', 
         color={iconColor}
       />
     );
-  }, []);
+  };
 
   return (
     <View style={styles.container}>

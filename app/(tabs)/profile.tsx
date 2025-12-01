@@ -186,9 +186,14 @@ export default function ProfileScreen() {
         {
           text: t('common.delete'),
           style: 'destructive',
-          onPress: () => {
-            deleteFamilyMember(memberId);
-            Alert.alert(t('common.success'), t('profile.memberDeleted', { name: memberName }));
+          onPress: async () => {
+            try {
+              await deleteFamilyMember(memberId);
+              Alert.alert(t('common.success'), t('profile.memberDeleted', { name: memberName }));
+            } catch (error) {
+              console.error('Error deleting member:', error);
+              Alert.alert(t('common.error'), 'Kon gezinslid niet verwijderen');
+            }
           },
         },
       ]
@@ -297,9 +302,14 @@ export default function ProfileScreen() {
         {
           text: t('common.delete'),
           style: 'destructive',
-          onPress: () => {
-            deleteTask(taskId);
-            Alert.alert(t('common.success'), t('profile.taskDeleted'));
+          onPress: async () => {
+            try {
+              await deleteTask(taskId);
+              Alert.alert(t('common.success'), t('profile.taskDeleted'));
+            } catch (error) {
+              console.error('Error deleting task:', error);
+              Alert.alert(t('common.error'), 'Kon taak niet verwijderen');
+            }
           },
         },
       ]
@@ -392,9 +402,14 @@ export default function ProfileScreen() {
         {
           text: t('common.delete'),
           style: 'destructive',
-          onPress: () => {
-            deleteAppointment(appointmentId);
-            Alert.alert(t('common.success'), t('profile.appointmentDeleted'));
+          onPress: async () => {
+            try {
+              await deleteAppointment(appointmentId);
+              Alert.alert(t('common.success'), t('profile.appointmentDeleted'));
+            } catch (error) {
+              console.error('Error deleting appointment:', error);
+              Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
+            }
           },
         },
       ]
