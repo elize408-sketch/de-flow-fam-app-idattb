@@ -10,7 +10,7 @@ clean(false)
 
 # Workspace and scheme configuration
 workspace("./FlowFam.xcworkspace")
-scheme("flowfam")
+scheme("FlowFam")
 
 # Build configuration
 configuration("Release")
