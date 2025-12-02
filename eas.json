@@ -30,3 +30,17 @@
     }
   }
 }
+"production": {
+  "ios": {
+    "buildConfiguration": "Release",
+    "simulator": false,
+    "developmentClient": false,
+    "image": "latest",
+    "env": {},
+    "autoIncrement": true,
+    "resourceClass": "m1-large",
+    "cli": {
+      "args": ["--verbose"]
+    }
+  }
+}
