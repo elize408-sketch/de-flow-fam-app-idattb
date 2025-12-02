@@ -7,6 +7,7 @@ import { categorizeIngredient, parseIngredient, shouldNotScale } from '@/utils/i
 import { Alert, Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/utils/supabase';
+import { getCurrentUser } from '@/utils/auth';
 
 interface Family {
   id: string;
@@ -156,9 +157,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [currentFamily, setCurrentFamily] = useState<Family | null>(null);
 
   const loadAppointmentsFromDB = useCallback(async () => {
-    if (!currentFamily) return;
+    if (!currentFamily) {
+      console.log('No current family, skipping appointments load');
+      return;
+    }
     
     try {
+      console.log('Loading appointments for family:', currentFamily.id);
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
@@ -185,6 +190,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           notes: apt.notes || undefined,
         }));
         setAppointments(formattedAppointments);
+        console.log('Loaded appointments:', formattedAppointments.length);
       }
     } catch (error) {
       console.error('Error loading appointments:', error);
@@ -192,9 +198,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   }, [currentFamily]);
 
   const loadTasksFromDB = useCallback(async () => {
-    if (!currentFamily) return;
+    if (!currentFamily) {
+      console.log('No current family, skipping tasks load');
+      return;
+    }
     
     try {
+      console.log('Loading tasks for family:', currentFamily.id);
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -220,6 +230,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           createdBy: task.created_by || undefined,
         }));
         setTasks(formattedTasks);
+        console.log('Loaded tasks:', formattedTasks.length);
       }
     } catch (error) {
       console.error('Error loading tasks:', error);
@@ -227,9 +238,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   }, [currentFamily]);
 
   const loadShoppingItemsFromDB = useCallback(async () => {
-    if (!currentFamily) return;
+    if (!currentFamily) {
+      console.log('No current family, skipping shopping items load');
+      return;
+    }
     
     try {
+      console.log('Loading shopping items for family:', currentFamily.id);
       const { data, error } = await supabase
         .from('shopping_items')
         .select('*')
@@ -252,6 +267,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           addedAt: new Date(item.added_at),
         }));
         setShoppingList(formattedItems);
+        console.log('Loaded shopping items:', formattedItems.length);
       }
     } catch (error) {
       console.error('Error loading shopping items:', error);
@@ -259,9 +275,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   }, [currentFamily]);
 
   const loadPantryItemsFromDB = useCallback(async () => {
-    if (!currentFamily) return;
+    if (!currentFamily) {
+      console.log('No current family, skipping pantry items load');
+      return;
+    }
     
     try {
+      console.log('Loading pantry items for family:', currentFamily.id);
       const { data, error } = await supabase
         .from('pantry_items')
         .select('*')
@@ -282,6 +302,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           addedAt: new Date(item.added_at),
         }));
         setPantryItems(formattedItems);
+        console.log('Loaded pantry items:', formattedItems.length);
       }
     } catch (error) {
       console.error('Error loading pantry items:', error);
@@ -289,9 +310,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   }, [currentFamily]);
 
   const loadNotesFromDB = useCallback(async () => {
-    if (!currentFamily) return;
+    if (!currentFamily) {
+      console.log('No current family, skipping notes load');
+      return;
+    }
     
     try {
+      console.log('Loading notes for family:', currentFamily.id);
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -313,6 +338,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           updatedAt: new Date(note.updated_at),
         }));
         setFamilyNotes(formattedNotes);
+        console.log('Loaded notes:', formattedNotes.length);
       }
     } catch (error) {
       console.error('Error loading notes:', error);
@@ -321,36 +347,90 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   const loadInitialData = useCallback(async () => {
     try {
-      // Load family members
-      const loadedMembers = await loadFamilyMembers();
-      if (loadedMembers.length > 0) {
-        setFamilyMembers(loadedMembers);
+      console.log('Loading initial data...');
+      
+      // Get authenticated user from Supabase
+      const authUser = await getCurrentUser();
+      console.log('Auth user:', authUser?.id);
+      
+      if (!authUser) {
+        console.log('No authenticated user found');
+        return;
       }
 
-      // Load current user
-      const userId = await loadCurrentUserId();
-      if (userId && loadedMembers.length > 0) {
-        const user = loadedMembers.find(m => m.id === userId);
-        if (user) {
-          setCurrentUserState(user);
-          
-          // Load current family from database
-          const { getFamilyByUserId } = await import('@/utils/familyService');
-          const familyResult = await getFamilyByUserId(user.userId);
-          if (familyResult.success && familyResult.family) {
-            setCurrentFamily(familyResult.family);
-            setFamilyCode(familyResult.family.family_code);
+      // Try to get family member from database
+      const { data: familyMemberData, error: familyMemberError } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .single();
+
+      if (familyMemberError) {
+        console.log('No family member found in database:', familyMemberError.message);
+        // User is authenticated but not part of a family yet
+        return;
+      }
+
+      if (familyMemberData) {
+        console.log('Found family member:', familyMemberData.id);
+        
+        // Convert database family member to app format
+        const member: FamilyMember = {
+          id: familyMemberData.id,
+          userId: familyMemberData.user_id,
+          name: familyMemberData.name,
+          role: familyMemberData.role,
+          color: familyMemberData.color || '#CBA85B',
+          photoUri: familyMemberData.photo_uri,
+          coins: familyMemberData.coins || 0,
+        };
+
+        setCurrentUserState(member);
+        console.log('Set current user:', member.id);
+
+        // Get family
+        const { data: familyData, error: familyError } = await supabase
+          .from('families')
+          .select('*')
+          .eq('id', familyMemberData.family_id)
+          .single();
+
+        if (familyError) {
+          console.error('Error loading family:', familyError);
+          return;
+        }
+
+        if (familyData) {
+          console.log('Found family:', familyData.id);
+          setCurrentFamily(familyData);
+          setFamilyCode(familyData.family_code);
+
+          // Load all family members
+          const { data: allMembersData, error: allMembersError } = await supabase
+            .from('family_members')
+            .select('*')
+            .eq('family_id', familyData.id);
+
+          if (allMembersError) {
+            console.error('Error loading family members:', allMembersError);
+          } else if (allMembersData) {
+            const members: FamilyMember[] = allMembersData.map(m => ({
+              id: m.id,
+              userId: m.user_id,
+              name: m.name,
+              role: m.role,
+              color: m.color || '#CBA85B',
+              photoUri: m.photo_uri,
+              coins: m.coins || 0,
+            }));
+            setFamilyMembers(members);
+            saveFamilyMembers(members);
+            console.log('Loaded family members:', members.length);
           }
         }
       }
 
-      // Load family code
-      const code = await loadFamilyCode();
-      if (code) {
-        setFamilyCode(code);
-      }
-
-      // Load other data
+      // Load other local data
       const items = await loadPantryItems();
       setPantryItems(items);
       
@@ -361,6 +441,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       await loadFinanceResetDay();
       await loadFinanceLastResetDate();
       await loadFinancePreviousMonthLeftover();
+      
+      console.log('Initial data loaded successfully');
     } catch (error) {
       console.error('Error loading initial data:', error);
     }
@@ -374,6 +456,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   // Load data from Supabase when family is set
   useEffect(() => {
     if (currentFamily) {
+      console.log('Family set, loading data from Supabase');
       loadAppointmentsFromDB();
       loadTasksFromDB();
       loadShoppingItemsFromDB();
@@ -714,7 +797,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from('tasks')
           .delete()
-          .eq('id', taskId);
+          .eq('id', taskId)
+          .eq('family_id', currentFamily.id);
 
         if (error) {
           console.error('Error deleting task from DB:', error);
@@ -787,7 +871,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from('appointments')
           .delete()
-          .eq('id', appointmentId);
+          .eq('id', appointmentId)
+          .eq('family_id', currentFamily.id);
 
         if (error) {
           console.error('Error deleting appointment from DB:', error);
@@ -1016,6 +1101,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           .from('shopping_items')
           .update({ completed: !item.completed })
           .eq('id', itemId)
+          .eq('family_id', currentFamily.id)
           .then(({ error }) => {
             if (error) console.error('Error updating shopping item in DB:', error);
           });
@@ -1032,7 +1118,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from('shopping_items')
           .delete()
-          .eq('id', itemId);
+          .eq('id', itemId)
+          .eq('family_id', currentFamily.id);
 
         if (error) {
           console.error('Error deleting shopping item from DB:', error);
@@ -1093,7 +1180,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from('pantry_items')
           .delete()
-          .eq('id', itemId);
+          .eq('id', itemId)
+          .eq('family_id', currentFamily.id);
 
         if (error) {
           console.error('Error deleting pantry item from DB:', error);
@@ -1166,6 +1254,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', noteId)
+        .eq('family_id', currentFamily.id)
         .then(({ error }) => {
           if (error) console.error('Error updating note in DB:', error);
         });
@@ -1181,7 +1270,8 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from('notes')
           .delete()
-          .eq('id', noteId);
+          .eq('id', noteId)
+          .eq('family_id', currentFamily.id);
 
         if (error) {
           console.error('Error deleting note from DB:', error);
