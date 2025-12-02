@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Flow Fam",
@@ -18,8 +19,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "1",
-      "deploymentTarget": "16.0"
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -43,6 +43,11 @@
         {
           "ios": {
             "deploymentTarget": "16.0"
+          },
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 23
           }
         }
       ]
