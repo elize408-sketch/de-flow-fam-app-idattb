@@ -19,7 +19,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "deploymentTarget": "16.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -42,7 +43,7 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "15.1"
+            "deploymentTarget": "16.0"
           }
         }
       ]
