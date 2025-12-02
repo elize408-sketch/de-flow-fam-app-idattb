@@ -1,16 +1,17 @@
+
 {
   "expo": {
     "name": "Flow Fam",
     "slug": "Flow Fam",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/natively-dark.png",
+    "icon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/natively-dark.png",
+      "image": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#F9F6F1"
     },
     "ios": {
       "supportsTablet": true,
@@ -21,14 +22,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/natively-dark.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
+        "backgroundColor": "#F9F6F1"
       },
       "edgeToEdgeEnabled": true,
       "package": "nl.flowfam.gezinsapp"
     },
     "web": {
-      "favicon": "./assets/images/final_quest_240x240.png",
+      "favicon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
       "bundler": "metro"
     },
     "plugins": [
