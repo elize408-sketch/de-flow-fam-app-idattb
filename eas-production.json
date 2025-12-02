@@ -1,9 +1,16 @@
 
 {
-  "ios": {
-    "gym": {
-      "suppress_xcode_output": false,
-      "verbose": true
+  "cli": {
+    "version": ">= 13.2.0"
+  },
+  "build": {
+    "production": {
+      "ios": {
+        "buildConfiguration": "Release",
+        "simulator": false,
+        "image": "latest",
+        "resourceClass": "m-medium"
+      }
     }
   }
 }

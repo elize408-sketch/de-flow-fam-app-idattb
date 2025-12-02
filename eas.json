@@ -14,7 +14,18 @@
       "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release",
-        "config": "eas-production.json"
+        "simulator": false,
+        "image": "latest",
+        "resourceClass": "m-medium"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "info@flowfam.nl",
+        "ascAppId": "6738992901",
+        "appleTeamId": "4KNTRYN57N"
       }
     }
   }

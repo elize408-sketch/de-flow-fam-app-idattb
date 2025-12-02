@@ -2,7 +2,7 @@
 {
   "expo": {
     "name": "Flow Fam",
-    "slug": "Flow Fam",
+    "slug": "flowfam",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
@@ -18,7 +18,8 @@
       "bundleIdentifier": "nl.flowfam.gezinsapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +27,8 @@
         "backgroundColor": "#F9F6F1"
       },
       "edgeToEdgeEnabled": true,
-      "package": "nl.flowfam.gezinsapp"
+      "package": "nl.flowfam.gezinsapp",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
@@ -35,15 +37,25 @@
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "13.4"
+          }
+        }
+      ]
     ],
-    "scheme": "natively",
+    "scheme": "flowfam",
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "iykrwfgfdpnlfmdexrpr"
+      }
     }
-  },
-  "scheme": "Flow Fam"
+  }
 }

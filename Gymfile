@@ -1,0 +1,12 @@
+
+suppress_xcode_output(false)
+verbose(true)
+clean(false)
+scheme("FlowFam")
+configuration("Release")
+export_options({
+  method: "app-store"
+})
+disable_xcpretty(false)
+buildlog_path("./logs")
+output_directory("./build")
