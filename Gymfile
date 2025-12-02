@@ -1,54 +1,20 @@
 
-# Suppress Xcode output for cleaner logs
-suppress_xcode_output(false)
-
-# Enable verbose output for debugging
-verbose(true)
-
-# Don't clean before building (EAS handles this)
-clean(false)
-
-# Workspace and scheme configuration
-# Note: EAS Build runs from the ios/ directory
-workspace("FlowFam.xcworkspace")
+workspace("./FlowFam.xcworkspace")
 scheme("FlowFam")
-
-# Build configuration
 configuration("Release")
-
-# Export options for App Store distribution
+clean(false)
+output_directory("./build")
+output_name("FlowFam")
+export_method("app-store")
 export_options({
   method: "app-store",
   signingStyle: "automatic",
   teamID: "4KNTRYN57N",
-  iCloudContainerEnvironment: "Production",
   uploadBitcode: false,
   uploadSymbols: true,
   compileBitcode: false
 })
-
-# Output configuration
-output_directory("./build")
-output_name("FlowFam")
-
-# Build settings
-disable_xcpretty(false)
-buildlog_path("./logs")
-
-# SDK configuration
 sdk("iphoneos")
-
-# Export method
-export_method("app-store")
-
-# Suppress package dependencies resolution warnings
-skip_package_dependencies_resolution(false)
-
-# Don't skip package IPA
-skip_package_ipa(false)
-
-# Archive path
-archive_path("./build/FlowFam.xcarchive")
-
-# Additional xcodebuild arguments to suppress warnings
 xcargs("-allowProvisioningUpdates")
+suppress_xcode_output(false)
+disable_xcpretty(true)

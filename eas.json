@@ -30,12 +30,7 @@
         "resourceClass": "m1-large",
         "credentialsSource": "remote",
         "cache": {
-          "disabled": false,
-          "key": "flowfam-ios-cache-v1",
-          "cacheDefaultPaths": true,
-          "customPaths": [
-            "ios/Pods"
-          ]
+          "disabled": true
         }
       },
       "android": {
