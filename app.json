@@ -2,7 +2,7 @@
 {
   "expo": {
     "name": "Flow Fam",
-    "slug": "Flow Fam",
+    "slug": "flowfam",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "nl.flowfam.gezinsapp",
+      "deploymentTarget": "16.0",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -62,6 +63,5 @@
         "projectId": "iykrwfgfdpnlfmdexrpr"
       }
     }
-  },
-  "scheme": "Flow Fam"
+  }
 }
