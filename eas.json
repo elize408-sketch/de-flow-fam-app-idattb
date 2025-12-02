@@ -4,11 +4,18 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "ios": {
+        "simulator": true
+      }
     },
     "preview": {
       "distribution": "internal",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release"
+      }
     },
     "production": {
       "autoIncrement": true,
@@ -20,7 +27,11 @@
         "resourceClass": "m1-large",
         "cli": {
           "args": ["--verbose"]
-        }
+        },
+        "credentialsSource": "remote"
+      },
+      "android": {
+        "buildType": "apk"
       }
     }
   },

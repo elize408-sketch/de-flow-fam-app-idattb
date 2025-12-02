@@ -1,12 +1,50 @@
 
+# Suppress Xcode output for cleaner logs
 suppress_xcode_output(false)
+
+# Enable verbose output for debugging
 verbose(true)
+
+# Don't clean before building (EAS handles this)
 clean(false)
+
+# Workspace and scheme configuration
+workspace("./ios/FlowFam.xcworkspace")
 scheme("FlowFam")
+
+# Build configuration
 configuration("Release")
+
+# Export options for App Store distribution
 export_options({
-  method: "app-store"
+  method: "app-store",
+  provisioningProfiles: {
+    "nl.flowfam.gezinsapp" => "match AppStore nl.flowfam.gezinsapp"
+  },
+  signingStyle: "automatic",
+  teamID: "4KNTRYN57N",
+  iCloudContainerEnvironment: "Production"
 })
-disable_xcpretty(false)
-buildlog_path("./logs")
+
+# Output configuration
 output_directory("./build")
+output_name("Flow Fam")
+
+# Build settings
+disable_xcpretty(true)
+buildlog_path("./logs")
+
+# SDK configuration
+sdk("iphoneos")
+
+# Export method
+export_method("app-store")
+
+# Suppress package dependencies resolution warnings
+skip_package_dependencies_resolution(false)
+
+# Don't skip package IPA
+skip_package_ipa(false)
+
+# Archive path
+archive_path("./build/FlowFam.xcarchive")
