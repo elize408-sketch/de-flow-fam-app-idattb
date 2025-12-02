@@ -1,0 +1,9 @@
+
+{
+  "ios": {
+    "gym": {
+      "suppress_xcode_output": false,
+      "verbose": true
+    }
+  }
+}
