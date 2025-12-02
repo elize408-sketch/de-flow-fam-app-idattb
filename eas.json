@@ -1,4 +1,3 @@
-
 {
   "build": {
     "development": {
@@ -26,7 +25,9 @@
         "image": "latest",
         "resourceClass": "m1-large",
         "cli": {
-          "args": ["--verbose"]
+          "args": [
+            "--verbose"
+          ]
         },
         "credentialsSource": "remote"
       },

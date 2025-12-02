@@ -9,8 +9,8 @@ verbose(true)
 clean(false)
 
 # Workspace and scheme configuration
-workspace("./ios/FlowFam.xcworkspace")
-scheme("FlowFam")
+workspace("./FlowFam.xcworkspace")
+scheme("flowfam")
 
 # Build configuration
 configuration("Release")
@@ -28,7 +28,7 @@ export_options({
 
 # Output configuration
 output_directory("./build")
-output_name("Flow Fam")
+output_name("FlowFam")
 
 # Build settings
 disable_xcpretty(true)
