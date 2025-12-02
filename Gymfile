@@ -9,7 +9,8 @@ verbose(true)
 clean(false)
 
 # Workspace and scheme configuration
-workspace("./FlowFam.xcworkspace")
+# Note: EAS Build runs from the ios/ directory
+workspace("FlowFam.xcworkspace")
 scheme("FlowFam")
 
 # Build configuration
@@ -18,12 +19,12 @@ configuration("Release")
 # Export options for App Store distribution
 export_options({
   method: "app-store",
-  provisioningProfiles: {
-    "nl.flowfam.gezinsapp" => "match AppStore nl.flowfam.gezinsapp"
-  },
   signingStyle: "automatic",
   teamID: "4KNTRYN57N",
-  iCloudContainerEnvironment: "Production"
+  iCloudContainerEnvironment: "Production",
+  uploadBitcode: false,
+  uploadSymbols: true,
+  compileBitcode: false
 })
 
 # Output configuration
@@ -31,7 +32,7 @@ output_directory("./build")
 output_name("FlowFam")
 
 # Build settings
-disable_xcpretty(true)
+disable_xcpretty(false)
 buildlog_path("./logs")
 
 # SDK configuration
@@ -48,3 +49,6 @@ skip_package_ipa(false)
 
 # Archive path
 archive_path("./build/FlowFam.xcarchive")
+
+# Additional xcodebuild arguments to suppress warnings
+xcargs("-allowProvisioningUpdates")

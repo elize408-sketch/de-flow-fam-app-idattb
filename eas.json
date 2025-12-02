@@ -1,3 +1,4 @@
+
 {
   "build": {
     "development": {
@@ -18,18 +19,24 @@
     },
     "production": {
       "autoIncrement": true,
+      "env": {
+        "EXPO_NO_DOTENV": "1"
+      },
       "ios": {
         "buildConfiguration": "Release",
         "simulator": false,
         "developmentClient": false,
         "image": "latest",
         "resourceClass": "m1-large",
-        "cli": {
-          "args": [
-            "--verbose"
+        "credentialsSource": "remote",
+        "cache": {
+          "disabled": false,
+          "key": "flowfam-ios-cache-v1",
+          "cacheDefaultPaths": true,
+          "customPaths": [
+            "ios/Pods"
           ]
-        },
-        "credentialsSource": "remote"
+        }
       },
       "android": {
         "buildType": "apk"
