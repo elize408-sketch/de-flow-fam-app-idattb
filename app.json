@@ -1,8 +1,7 @@
-
 {
   "expo": {
     "name": "Flow Fam",
-    "slug": "flowfam",
+    "slug": "Flow Fam",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
@@ -73,5 +72,6 @@
     "hooks": {
       "postPublish": []
     }
-  }
+  },
+  "scheme": "Flow Fam"
 }

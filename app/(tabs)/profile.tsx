@@ -80,6 +80,33 @@ export default function ProfileScreen() {
 
   const isParent = currentUser?.role === 'parent';
 
+  const handleChangeHomeBackground = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (permissionResult.granted === false) {
+      Alert.alert(t('profile.permissionRequired'), t('profile.photoPermissionMessage'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const imageUri = result.assets[0].uri;
+      try {
+        await AsyncStorage.setItem('@flow_fam_home_background', imageUri);
+        await AsyncStorage.setItem('@flow_fam_home_background_set', 'true');
+        Alert.alert(t('common.success'), 'Home background updated successfully!');
+      } catch (error) {
+        console.error('Error saving home background:', error);
+        Alert.alert(t('common.error'), 'Could not save home background');
+      }
+    }
+  };
+
   const handlePickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
@@ -628,6 +655,34 @@ export default function ProfileScreen() {
             <View style={styles.currentUserInfo}>
               <Text style={styles.currentUserName}>{t('language.change')}</Text>
               <Text style={styles.currentUserRole}>{t('language.current')}</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron-right"
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Home Background Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Settings</Text>
+          <TouchableOpacity
+            style={styles.profileSwitcherButton}
+            onPress={handleChangeHomeBackground}
+          >
+            <View style={styles.languageIcon}>
+              <IconSymbol
+                ios_icon_name="photo"
+                android_material_icon_name="image"
+                size={24}
+                color={colors.accent}
+              />
+            </View>
+            <View style={styles.currentUserInfo}>
+              <Text style={styles.currentUserName}>Change Home Background</Text>
+              <Text style={styles.currentUserRole}>Customize your home screen</Text>
             </View>
             <IconSymbol
               ios_icon_name="chevron.right"
