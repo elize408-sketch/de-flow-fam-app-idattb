@@ -6,39 +6,40 @@
     "orientation": "portrait",
     "icon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+
     "splash": {
       "image": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
       "resizeMode": "contain",
       "backgroundColor": "#F9F6F1"
     },
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "nl.flowfam.gezinsapp",
       "deploymentTarget": "16.0",
+      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDisplayName": "Flow Fam",
         "CFBundleName": "FlowFam"
-      },
-      "buildNumber": "1",
-      "config": {
-        "usesNonExemptEncryption": false
       }
     },
+
     "android": {
+      "package": "nl.flowfam.gezinsapp",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
         "backgroundColor": "#F9F6F1"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "nl.flowfam.gezinsapp",
-      "versionCode": 1
+      "edgeToEdgeEnabled": true
     },
+
     "web": {
       "favicon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
       "bundler": "metro"
     },
+
     "plugins": [
       "expo-font",
       "expo-router",
@@ -59,18 +60,17 @@
         }
       ]
     ],
+
     "scheme": "flowfam",
+
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "newArchEnabled": true
     },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "iykrwfgfdpnlfmdexrpr"
-      }
-    },
-    "hooks": {
-      "postPublish": []
+
+"extra": {
+  "eas": {
+    "projectId": "143b077c-c9bc-49ad-8f27-0180e47a0e1a"
     }
   },
   "scheme": "Flow Fam"

@@ -8,35 +8,36 @@
         "simulator": true
       }
     },
+
     "preview": {
       "distribution": "internal",
       "autoIncrement": true,
       "ios": {
-        "simulator": false,
-        "buildConfiguration": "Release"
+        "simulator": false
       }
     },
+
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_NO_DOTENV": "1"
       },
+
       "ios": {
         "buildConfiguration": "Release",
         "simulator": false,
         "developmentClient": false,
-        "image": "latest",
-        "resourceClass": "m1-large",
-        "credentialsSource": "remote",
-        "cache": {
-          "disabled": true
-        }
+        "resourceClass": "m-medium",
+        "credentialsSource": "remote"
       },
+
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle",
+        "autoIncrement": true
       }
     }
   },
+
   "submit": {
     "production": {
       "ios": {
