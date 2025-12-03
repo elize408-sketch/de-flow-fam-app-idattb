@@ -53,7 +53,6 @@ export default function HomeScreen() {
   };
 
   const handlePickBackgroundImage = async () => {
-    console.log('Pencil button pressed!');
     ActionSheetIOS.showActionSheetWithOptions(
       {
         options: ['Cancel', 'Take Photo', 'Choose from Library'],
@@ -120,7 +119,6 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.pencilButton}
             onPress={handlePickBackgroundImage}
-            activeOpacity={0.7}
           >
             <IconSymbol
               ios_icon_name="pencil"
@@ -189,7 +187,7 @@ export default function HomeScreen() {
           style={styles.backgroundImage}
           resizeMode="cover"
         >
-          <View style={styles.overlay} pointerEvents="none" />
+          <View style={styles.overlay} />
           {renderContent()}
         </ImageBackground>
       ) : (
