@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, ImageBackground, Alert, ActionSheetIOS } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
@@ -28,6 +28,8 @@ export default function HomeScreen() {
       const savedBackground = await AsyncStorage.getItem(HOME_BACKGROUND_KEY);
       const backgroundSet = await AsyncStorage.getItem(HOME_BACKGROUND_SET_KEY);
       
+      console.log('Loading background settings:', { savedBackground, backgroundSet });
+      
       if (savedBackground) {
         setBackgroundImage(savedBackground);
       }
@@ -44,6 +46,7 @@ export default function HomeScreen() {
     try {
       await AsyncStorage.setItem(HOME_BACKGROUND_KEY, imageUri);
       await AsyncStorage.setItem(HOME_BACKGROUND_SET_KEY, 'true');
+      console.log('Background settings saved:', imageUri);
     } catch (error) {
       console.error('Error saving background settings:', error);
     }
@@ -109,30 +112,10 @@ export default function HomeScreen() {
     }
   };
 
-  // If no user selected, force selection
-  if (!currentUser) {
-    return (
-      <View style={[styles.container, { backgroundColor: backgroundImage ? 'transparent' : colors.background }]}>
-        {backgroundImage ? (
-          <ImageBackground
-            source={{ uri: backgroundImage }}
-            style={styles.backgroundImage}
-            resizeMode="cover"
-          >
-            <View style={styles.overlay} />
-            {renderContent()}
-          </ImageBackground>
-        ) : (
-          renderContent()
-        )}
-      </View>
-    );
-  }
-
   function renderContent() {
     return (
       <View style={styles.contentWrapper}>
-        {editVisible && !backgroundImage && (
+        {editVisible && (
           <TouchableOpacity
             style={styles.pencilButton}
             onPress={handlePickBackgroundImage}
@@ -147,7 +130,9 @@ export default function HomeScreen() {
         )}
 
         <ScrollView contentContainerStyle={styles.contentContainer}>
-          <Text style={styles.welcomeTitle}>Welcome to Flow Fam!</Text>
+          <Text style={[styles.welcomeTitle, !backgroundImage && styles.welcomeTitleNoBackground]}>
+            Welcome to Flow Fam!
+          </Text>
 
           <View style={styles.profileGrid}>
             {familyMembers.map((member, index) => {
@@ -159,8 +144,10 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     style={styles.profileTile}
                     onPress={() => {
+                      console.log('Selected member:', member.name);
                       setCurrentUser(member);
                     }}
+                    activeOpacity={0.7}
                   >
                     <View style={styles.profilePhotoContainer}>
                       {member.photoUri ? (
@@ -241,7 +228,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   contentContainer: {
-    flex: 1,
+    flexGrow: 1,
     paddingTop: 120,
     paddingHorizontal: 20,
     paddingBottom: 140,
@@ -252,11 +239,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
     fontFamily: 'Poppins_700Bold',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+  },
+  welcomeTitleNoBackground: {
+    color: colors.text,
+    textShadowColor: 'transparent',
   },
   profileGrid: {
     flexDirection: 'row',
