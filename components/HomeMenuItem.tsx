@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Animated, View, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface HomeMenuItemProps {
@@ -15,7 +15,7 @@ export function HomeMenuItem({ title, color, icon, onPress }: HomeMenuItemProps)
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.96,
+      toValue: 0.97,
       useNativeDriver: true,
       speed: 50,
       bounciness: 4,
@@ -40,10 +40,10 @@ export function HomeMenuItem({ title, color, icon, onPress }: HomeMenuItemProps)
         onPressOut={handlePressOut}
         activeOpacity={0.9}
       >
-        <View style={styles.iconContainer}>
-          <MaterialCommunityIcons name={icon as any} size={32} color="#FFFFFF" />
+        <View style={styles.contentWrapper}>
+          <MaterialCommunityIcons name={icon as any} size={28} color="#FFFFFF" />
+          <Text style={styles.title}>{title}</Text>
         </View>
-        <Text style={styles.title}>{title}</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -51,22 +51,32 @@ export function HomeMenuItem({ title, color, icon, onPress }: HomeMenuItemProps)
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 3,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+      web: {
+        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.15)',
+      },
+    }),
+  },
+  contentWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    gap: 16,
   },
   title: {
     fontSize: 18,
@@ -74,5 +84,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Poppins_600SemiBold',
     flex: 1,
+    letterSpacing: 0.3,
   },
 });

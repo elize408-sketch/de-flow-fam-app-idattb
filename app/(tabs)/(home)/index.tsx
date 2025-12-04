@@ -15,57 +15,45 @@ import { colors } from '@/styles/commonStyles';
 const menuItems = [
   {
     title: 'Agenda',
-    color: '#4DA3FF',
+    color: '#3A8DFF',
     icon: 'calendar-month-outline',
     route: '/(tabs)/agenda',
   },
   {
-    title: 'Tasks',
-    color: '#5ECC4B',
+    title: 'Taken',
+    color: '#4CAF50',
     icon: 'check-circle-outline',
     route: '/(tabs)/tasks',
   },
   {
-    title: 'Groceries',
-    color: '#F6A623',
+    title: 'Boodschappen',
+    color: '#FFB74D',
     icon: 'cart-outline',
     route: '/(tabs)/shopping',
   },
   {
-    title: 'Finances',
-    color: '#6CCF5A',
-    icon: 'cash-outline',
+    title: 'Financiën',
+    color: '#7ED957',
+    icon: 'currency-eur',
     route: '/(tabs)/finances',
   },
   {
-    title: 'Reminders',
-    color: '#A65DFF',
+    title: 'Herinneringen',
+    color: '#FF8A65',
     icon: 'bell-outline',
     route: '/(tabs)/reminders',
   },
   {
-    title: 'Meals',
-    color: '#FF76A8',
+    title: 'Maaltijden',
+    color: '#29B6F6',
     icon: 'food-outline',
     route: '/(tabs)/meals',
   },
   {
-    title: 'Notes',
-    color: '#EBB156',
-    icon: 'notebook-outline',
-    route: '/(tabs)/notes',
-  },
-  {
     title: 'Shop',
-    color: '#5EDBC8',
+    color: '#AB47BC',
     icon: 'shopping-outline',
     route: '/(tabs)/shop',
-  },
-  {
-    title: 'Profile',
-    color: '#7A7A7A',
-    icon: 'account-circle-outline',
-    route: '/(tabs)/profile',
   },
 ];
 
@@ -79,8 +67,10 @@ export default function HomeScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>Flow Fam</Text>
+        <View style={styles.heroContainer}>
+          <View style={styles.titlePill}>
+            <Text style={styles.title}>Flow Fam</Text>
+          </View>
           <Text style={styles.subtitle}>Rust. Overzicht. Liefde.</Text>
         </View>
 
@@ -112,30 +102,40 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 20,
     paddingBottom: 140,
     alignItems: 'stretch',
   },
-  headerContainer: {
+  heroContainer: {
     alignItems: 'center',
-    marginBottom: 32,
-    marginTop: 20,
+    marginBottom: 28,
+    marginTop: 16,
+  },
+  titlePill: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 30,
+    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+    elevation: 4,
+    marginBottom: 12,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: colors.text,
+    color: '#FF8A3C',
     fontFamily: 'Poppins_700Bold',
-    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
+    color: colors.text,
+    fontFamily: 'Poppins_400Regular',
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
   menuContainer: {
-    gap: 12,
+    gap: 14,
   },
 });
