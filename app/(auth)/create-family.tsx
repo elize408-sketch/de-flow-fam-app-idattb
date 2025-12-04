@@ -98,32 +98,15 @@ export default function CreateFamilyScreen() {
 
       // Check if email verification is required
       if (result.requiresVerification) {
+        console.log('Email verification required, navigating to verify-email screen...');
         setLoading(false);
         
-        // Show appropriate message based on whether it's a repeated signup
-        if (result.isRepeatedSignup) {
-          Alert.alert(
-            'Account bestaat al',
-            'Er bestaat al een account met dit e-mailadres. We hebben een nieuwe bevestigingscode verstuurd naar je e-mail.',
-            [
-              {
-                text: t('common.ok'),
-                onPress: () => {
-                  router.push({
-                    pathname: '/(auth)/verify-email',
-                    params: { email, name, flow: 'create' },
-                  });
-                },
-              },
-            ]
-          );
-        } else {
-          // New signup - redirect to verification
-          router.push({
-            pathname: '/(auth)/verify-email',
-            params: { email, name, flow: 'create' },
-          });
-        }
+        // Navigate directly to verification screen without showing alert
+        // This makes the flow smoother and less confusing
+        router.push({
+          pathname: '/(auth)/verify-email',
+          params: { email, name, flow: 'create' },
+        });
         return;
       }
 

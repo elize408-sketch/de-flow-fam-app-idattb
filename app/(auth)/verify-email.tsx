@@ -211,13 +211,21 @@ export default function VerifyEmailScreen() {
 
         <Text style={styles.title}>{t('auth.verifyEmail.title')}</Text>
         <Text style={styles.subtitle}>
-          {t('auth.verifyEmail.subtitle')}{'\n'}
+          We hebben een 6-cijferige code verstuurd naar:{'\n'}
           <Text style={styles.email}>{email}</Text>
         </Text>
 
-        <Text style={styles.infoText}>
-          Controleer ook je spam/ongewenste e-mail map als je de code niet ziet.
-        </Text>
+        <View style={styles.infoBox}>
+          <IconSymbol
+            ios_icon_name="info.circle.fill"
+            android_material_icon_name="info"
+            size={20}
+            color={colors.accent}
+          />
+          <Text style={styles.infoText}>
+            Controleer ook je spam/ongewenste e-mail map als je de code niet ziet.
+          </Text>
+        </View>
 
         <View style={styles.codeContainer}>
           {code.map((digit, index) => (
@@ -340,7 +348,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
-    marginBottom: 10,
+    marginBottom: 20,
     fontFamily: 'Nunito_400Regular',
     textAlign: 'center',
     lineHeight: 24,
@@ -350,13 +358,23 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
-  infoText: {
-    fontSize: 14,
-    color: colors.textSecondary,
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.accent + '10',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
     marginBottom: 30,
+    width: '100%',
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.text,
     fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    lineHeight: 18,
   },
   codeContainer: {
     flexDirection: 'row',
