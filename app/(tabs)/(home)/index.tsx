@@ -1,331 +1,141 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, ImageBackground, Alert, ActionSheetIOS, Platform } from 'react-native';
+import React from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  ScrollView,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { HomeMenuItem } from '@/components/HomeMenuItem';
 import { colors } from '@/styles/commonStyles';
-import { IconSymbol } from '@/components/IconSymbol';
-import { useFamily } from '@/contexts/FamilyContext';
-import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width: screenWidth } = Dimensions.get('window');
-const HOME_BACKGROUND_KEY = '@flow_fam_home_background';
-const HOME_BACKGROUND_SET_KEY = '@flow_fam_home_background_set';
+const menuItems = [
+  {
+    title: 'Agenda',
+    color: '#4DA3FF',
+    icon: 'calendar-month-outline',
+    route: '/(tabs)/agenda',
+  },
+  {
+    title: 'Tasks',
+    color: '#5ECC4B',
+    icon: 'check-circle-outline',
+    route: '/(tabs)/tasks',
+  },
+  {
+    title: 'Groceries',
+    color: '#F6A623',
+    icon: 'cart-outline',
+    route: '/(tabs)/shopping',
+  },
+  {
+    title: 'Finances',
+    color: '#6CCF5A',
+    icon: 'cash-outline',
+    route: '/(tabs)/finances',
+  },
+  {
+    title: 'Reminders',
+    color: '#A65DFF',
+    icon: 'bell-outline',
+    route: '/(tabs)/reminders',
+  },
+  {
+    title: 'Meals',
+    color: '#FF76A8',
+    icon: 'food-outline',
+    route: '/(tabs)/meals',
+  },
+  {
+    title: 'Notes',
+    color: '#EBB156',
+    icon: 'notebook-outline',
+    route: '/(tabs)/notes',
+  },
+  {
+    title: 'Shop',
+    color: '#5EDBC8',
+    icon: 'shopping-outline',
+    route: '/(tabs)/shop',
+  },
+  {
+    title: 'Profile',
+    color: '#7A7A7A',
+    icon: 'account-circle-outline',
+    route: '/(tabs)/profile',
+  },
+];
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { familyMembers, currentUser, setCurrentUser } = useFamily();
-  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
-  const [editVisible, setEditVisible] = useState(true);
 
-  // Load background image and edit visibility on mount
-  useEffect(() => {
-    loadBackgroundSettings();
-  }, []);
-
-  const loadBackgroundSettings = async () => {
-    try {
-      const savedBackground = await AsyncStorage.getItem(HOME_BACKGROUND_KEY);
-      const backgroundSet = await AsyncStorage.getItem(HOME_BACKGROUND_SET_KEY);
-      
-      if (savedBackground) {
-        setBackgroundImage(savedBackground);
-      }
-      
-      if (backgroundSet === 'true') {
-        setEditVisible(false);
-      }
-    } catch (error) {
-      console.error('Error loading background settings:', error);
-    }
-  };
-
-  const saveBackgroundSettings = async (imageUri: string) => {
-    try {
-      await AsyncStorage.setItem(HOME_BACKGROUND_KEY, imageUri);
-      await AsyncStorage.setItem(HOME_BACKGROUND_SET_KEY, 'true');
-    } catch (error) {
-      console.error('Error saving background settings:', error);
-    }
-  };
-
-  const handlePickBackgroundImage = async () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Take Photo', 'Choose from Library'],
-          cancelButtonIndex: 0,
-        },
-        async (buttonIndex) => {
-          if (buttonIndex === 1) {
-            await launchCamera();
-          } else if (buttonIndex === 2) {
-            await launchImageLibrary();
-          }
-        }
-      );
-    } else {
-      Alert.alert(
-        'Select Background Image',
-        'Choose an option',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Take Photo', onPress: launchCamera },
-          { text: 'Choose from Library', onPress: launchImageLibrary },
-        ]
-      );
-    }
-  };
-
-  const launchCamera = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert('Permission Required', 'Camera permission is required to take photos.');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const imageUri = result.assets[0].uri;
-      setBackgroundImage(imageUri);
-      setEditVisible(false);
-      await saveBackgroundSettings(imageUri);
-    }
-  };
-
-  const launchImageLibrary = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert('Permission Required', 'Photo library permission is required to select images.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const imageUri = result.assets[0].uri;
-      setBackgroundImage(imageUri);
-      setEditVisible(false);
-      await saveBackgroundSettings(imageUri);
-    }
-  };
-
-  // If no user selected, force selection
-  if (!currentUser) {
-    return (
-      <View style={[styles.container, { backgroundColor: backgroundImage ? 'transparent' : colors.background }]}>
-        {backgroundImage ? (
-          <ImageBackground
-            source={{ uri: backgroundImage }}
-            style={styles.backgroundImage}
-            resizeMode="cover"
-          >
-            <View style={styles.overlay} />
-            {renderContent()}
-          </ImageBackground>
-        ) : (
-          renderContent()
-        )}
-      </View>
-    );
-  }
-
-  function renderContent() {
-    return (
-      <View style={styles.contentWrapper}>
-        {editVisible && !backgroundImage && (
-          <TouchableOpacity
-            style={styles.pencilButton}
-            onPress={handlePickBackgroundImage}
-          >
-            <IconSymbol
-              ios_icon_name="pencil"
-              android_material_icon_name="edit"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-        )}
-
-        <ScrollView contentContainerStyle={styles.contentContainer}>
-          <Text style={styles.welcomeTitle}>Welcome to Flow Fam!</Text>
-
-          <View style={styles.profileGrid}>
-            {familyMembers.map((member, index) => {
-              const fallbackLetter = member.name.charAt(0).toUpperCase();
-              const isParent = member.role === 'parent';
-              
-              return (
-                <React.Fragment key={index}>
-                  <TouchableOpacity
-                    style={styles.profileTile}
-                    onPress={() => {
-                      setCurrentUser(member);
-                    }}
-                  >
-                    <View style={styles.profilePhotoContainer}>
-                      {member.photoUri ? (
-                        <Image source={{ uri: member.photoUri }} style={styles.profilePhoto} />
-                      ) : (
-                        <View style={styles.fallbackCircle}>
-                          <Text style={styles.fallbackLetter}>{fallbackLetter}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.profileName}>{member.name}</Text>
-                    <View style={styles.roleContainer}>
-                      <IconSymbol
-                        ios_icon_name={isParent ? 'person.2.fill' : 'person.fill'}
-                        android_material_icon_name={isParent ? 'people' : 'person'}
-                        size={14}
-                        color="rgba(255, 255, 255, 0.9)"
-                      />
-                      <Text style={styles.roleText}>{isParent ? 'Parent' : 'Child'}</Text>
-                    </View>
-                  </TouchableOpacity>
-                </React.Fragment>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // Main render
   return (
-    <View style={[styles.container, { backgroundColor: backgroundImage ? 'transparent' : colors.background }]}>
-      {backgroundImage ? (
-        <ImageBackground
-          source={{ uri: backgroundImage }}
-          style={styles.backgroundImage}
-          resizeMode="cover"
-        >
-          <View style={styles.overlay} />
-          {renderContent()}
-        </ImageBackground>
-      ) : (
-        renderContent()
-      )}
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>Flow Fam</Text>
+          <Text style={styles.subtitle}>Rust. Overzicht. Liefde.</Text>
+        </View>
+
+        <View style={styles.menuContainer}>
+          {menuItems.map((item, index) => (
+            <React.Fragment key={index}>
+              <HomeMenuItem
+                title={item.title}
+                color={item.color}
+                icon={item.icon}
+                onPress={() => router.push(item.route as any)}
+              />
+            </React.Fragment>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
   container: {
-    flex: 1,
-  },
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
-  },
-  contentWrapper: {
-    flex: 1,
-  },
-  pencilButton: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 3,
-    zIndex: 10,
-  },
-  contentContainer: {
-    flex: 1,
-    paddingTop: 100,
-    paddingHorizontal: 20,
+    flexGrow: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'android' ? 48 : 20,
     paddingBottom: 140,
-    justifyContent: 'center',
+    alignItems: 'stretch',
   },
-  welcomeTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    textAlign: 'center',
-    marginBottom: 40,
-    fontFamily: 'Poppins_700Bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  profileGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 12,
-    paddingHorizontal: 10,
-  },
-  profileTile: {
-    width: (screenWidth - 64) / 2,
-    height: 140,
-    backgroundColor: 'rgba(0, 0, 0, 0.60)',
-    borderRadius: 18,
-    padding: 15,
-    justifyContent: 'center',
+  headerContainer: {
     alignItems: 'center',
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.3)',
-    elevation: 5,
+    marginBottom: 32,
+    marginTop: 20,
   },
-  profilePhotoContainer: {
-    marginBottom: 10,
-  },
-  profilePhoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-  },
-  fallbackCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fallbackLetter: {
-    fontSize: 28,
+  title: {
+    fontSize: 32,
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: colors.text,
     fontFamily: 'Poppins_700Bold',
+    marginBottom: 8,
   },
-  profileName: {
+  subtitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 4,
-    fontFamily: 'Poppins_700Bold',
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
     textAlign: 'center',
   },
-  roleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  roleText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontFamily: 'Nunito_400Regular',
+  menuContainer: {
+    gap: 12,
   },
 });
