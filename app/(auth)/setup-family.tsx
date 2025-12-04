@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { createFamily, addFamilyMember } from '@/utils/familyService';
 import { getCurrentUser } from '@/utils/auth';
-import { Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 export default function SetupFamilyScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const name = params.name as string;
   const [loading, setLoading] = useState(true);
@@ -18,7 +19,7 @@ export default function SetupFamilyScreen() {
       const user = await getCurrentUser();
       
       if (!user) {
-        Alert.alert('Fout', 'Geen gebruiker gevonden');
+        Alert.alert(t('common.error'), 'Geen gebruiker gevonden');
         router.replace('/(auth)/welcome');
         return;
       }
@@ -27,7 +28,7 @@ export default function SetupFamilyScreen() {
       const familyResult = await createFamily();
       
       if (!familyResult.success || !familyResult.family) {
-        Alert.alert('Fout', familyResult.error || 'Kon geen gezin aanmaken');
+        Alert.alert(t('common.error'), familyResult.error || 'Kon geen gezin aanmaken');
         router.replace('/(auth)/welcome');
         return;
       }
@@ -42,7 +43,7 @@ export default function SetupFamilyScreen() {
       );
 
       if (!memberResult.success) {
-        Alert.alert('Fout', memberResult.error || 'Kon je niet toevoegen aan het gezin');
+        Alert.alert(t('common.error'), memberResult.error || 'Kon je niet toevoegen aan het gezin');
         router.replace('/(auth)/welcome');
         return;
       }
@@ -51,23 +52,23 @@ export default function SetupFamilyScreen() {
       
       // Show family code
       Alert.alert(
-        'Gezin aangemaakt! 🎉',
-        `Je gezinscode is: ${familyResult.family.family_code}\n\nDeel deze code met andere gezinsleden zodat zij kunnen deelnemen.`,
+        t('auth.createFamily.familyCreated'),
+        t('auth.createFamily.familyCodeMessage', { code: familyResult.family.family_code }),
         [
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => {
-              router.replace('/(tabs)/profile');
+              router.replace('/(tabs)/(home)');
             },
           },
         ]
       );
     } catch (error: any) {
       console.error('Setup family error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het aanmaken van het gezin');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het aanmaken van het gezin');
       router.replace('/(auth)/welcome');
     }
-  }, [name, router]);
+  }, [name, router, t]);
 
   useEffect(() => {
     setupFamily();
@@ -77,7 +78,7 @@ export default function SetupFamilyScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <ActivityIndicator size="large" color={colors.accent} />
-        <Text style={styles.text}>Je gezin wordt aangemaakt...</Text>
+        <Text style={styles.text}>{t('auth.setupFamily.creatingFamily')}</Text>
       </View>
     </View>
   );

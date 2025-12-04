@@ -19,10 +19,6 @@ export interface AuthResult {
   requiresVerification?: boolean;
 }
 
-// TEMPORARY: Skip email verification for testing
-// Set to false to require email verification (production setting)
-const SKIP_EMAIL_VERIFICATION = true;
-
 // Sign up with email and password
 export async function signUpWithEmail(
   email: string,
@@ -32,7 +28,6 @@ export async function signUpWithEmail(
   try {
     console.log('=== Starting email signup ===');
     console.log('Email:', email);
-    console.log('Skip verification:', SKIP_EMAIL_VERIFICATION);
     
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -61,42 +56,16 @@ export async function signUpWithEmail(
     if (data.user && !data.session) {
       console.log('User created but no session - email verification required');
       
-      if (SKIP_EMAIL_VERIFICATION) {
-        console.log('⚠️ DEVELOPMENT MODE: Attempting to bypass email verification');
-        
-        // Show development mode alert
-        Alert.alert(
-          '⚠️ Development Mode',
-          'Email verification is temporarily disabled for testing.\n\nIn production, users will need to verify their email.\n\nYou can now continue without email verification.',
-          [{ text: 'Continue' }]
-        );
-
-        // Return success without session - the app will handle this
-        // by allowing the user to proceed to family setup
-        return { 
-          success: true, 
-          user: data.user, 
-          session: null,
-          requiresVerification: false // Skip verification in dev mode
-        };
-      }
-
-      // Production mode - require email verification
-      Alert.alert(
-        'Bevestig je e-mail',
-        'We hebben een bevestigingsmail gestuurd naar ' + email + '.\n\nControleer je inbox en klik op de link om je account te activeren.',
-        [{ text: 'OK' }]
-      );
-      
+      // Email verification is required
       return { 
         success: true, 
         user: data.user, 
-        session: data.session,
+        session: null,
         requiresVerification: true
       };
     }
 
-    // User has session - they're logged in
+    // User has session - they're logged in (auto-confirm is enabled)
     if (data.session) {
       console.log('✅ User has session - fully authenticated');
       return { success: true, user: data.user, session: data.session, requiresVerification: false };
@@ -129,20 +98,6 @@ export async function signInWithEmail(
       
       // Check if error is due to unconfirmed email
       if (error.message.includes('Email not confirmed')) {
-        if (SKIP_EMAIL_VERIFICATION) {
-          // In development mode, show a helpful message
-          Alert.alert(
-            '⚠️ Email Not Confirmed',
-            'Your email is not confirmed yet.\n\nIn development mode, you can:\n1. Check your email and click the confirmation link\n2. Or create a new account (which will skip verification)',
-            [{ text: 'OK' }]
-          );
-        } else {
-          Alert.alert(
-            'E-mail niet bevestigd',
-            'Je e-mailadres is nog niet bevestigd.\n\nControleer je inbox voor de bevestigingsmail en klik op de link om je account te activeren.',
-            [{ text: 'OK' }]
-          );
-        }
         return { 
           success: false, 
           error: 'Je e-mailadres is nog niet bevestigd. Controleer je inbox voor de bevestigingsmail.' 

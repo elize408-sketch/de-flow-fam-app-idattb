@@ -6,9 +6,11 @@ import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { signUpWithEmail, signInWithEmail, signInWithApple, signInWithGoogle } from '@/utils/auth';
 import { joinFamily, addFamilyMember } from '@/utils/familyService';
+import { useTranslation } from 'react-i18next';
 
 export default function JoinFamilyScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [step, setStep] = useState<'code' | 'auth' | 'email-signup' | 'email-signin'>('code');
   const [familyCode, setFamilyCode] = useState('');
   const [name, setName] = useState('');
@@ -19,11 +21,11 @@ export default function JoinFamilyScreen() {
 
   const handleCodeSubmit = async () => {
     if (!familyCode.trim()) {
-      Alert.alert('Fout', 'Vul de gezinscode in');
+      Alert.alert(t('common.error'), 'Vul de gezinscode in');
       return;
     }
     if (!name.trim()) {
-      Alert.alert('Fout', 'Vul je naam in');
+      Alert.alert(t('common.error'), 'Vul je naam in');
       return;
     }
 
@@ -32,7 +34,7 @@ export default function JoinFamilyScreen() {
       const result = await joinFamily(familyCode);
       
       if (!result.success || !result.family) {
-        Alert.alert('Fout', result.error || 'Oeps, deze code klopt niet.');
+        Alert.alert(t('common.error'), result.error || t('auth.joinFamily.invalidCode'));
         setLoading(false);
         return;
       }
@@ -42,14 +44,14 @@ export default function JoinFamilyScreen() {
       setStep('auth');
     } catch (error: any) {
       console.error('Join family error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het valideren van de code');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het valideren van de code');
       setLoading(false);
     }
   };
 
   const handleAppleSignIn = async () => {
     if (Platform.OS !== 'ios') {
-      Alert.alert('Niet beschikbaar', 'Apple Sign-In is alleen beschikbaar op iOS');
+      Alert.alert(t('auth.login.appleNotAvailable'), t('auth.login.appleOnlyIOS'));
       return;
     }
 
@@ -58,7 +60,7 @@ export default function JoinFamilyScreen() {
       const result = await signInWithApple();
       
       if (!result.success) {
-        Alert.alert('Fout', result.error || 'Er ging iets mis bij het inloggen');
+        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
@@ -66,7 +68,7 @@ export default function JoinFamilyScreen() {
       await addToFamilyAndNavigate(result.user.id);
     } catch (error: any) {
       console.error('Apple sign in error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het inloggen met Apple');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Apple');
       setLoading(false);
     }
   };
@@ -77,7 +79,7 @@ export default function JoinFamilyScreen() {
       const result = await signInWithGoogle();
       
       if (!result.success) {
-        Alert.alert('Fout', result.error || 'Er ging iets mis bij het inloggen');
+        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
@@ -85,18 +87,18 @@ export default function JoinFamilyScreen() {
       await addToFamilyAndNavigate(result.user.id);
     } catch (error: any) {
       console.error('Google sign in error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het inloggen met Google');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Google');
       setLoading(false);
     }
   };
 
   const handleEmailSignUp = async () => {
     if (!email.trim()) {
-      Alert.alert('Fout', 'Vul je e-mailadres in');
+      Alert.alert(t('common.error'), 'Vul je e-mailadres in');
       return;
     }
     if (!password.trim() || password.length < 6) {
-      Alert.alert('Fout', 'Wachtwoord moet minimaal 6 tekens zijn');
+      Alert.alert(t('common.error'), t('auth.createFamily.passwordMinLength'));
       return;
     }
 
@@ -105,7 +107,7 @@ export default function JoinFamilyScreen() {
       const result = await signUpWithEmail(email, password, name);
       
       if (!result.success) {
-        Alert.alert('Fout', result.error || 'Er ging iets mis bij het aanmelden');
+        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het aanmelden');
         setLoading(false);
         return;
       }
@@ -121,31 +123,25 @@ export default function JoinFamilyScreen() {
         return;
       }
 
-      // TEMPORARY: Skip verification and continue directly
-      if (!result.session && result.user) {
-        console.log('Skipping email verification - continuing to join family');
-        await addToFamilyAndNavigate(result.user.id);
-        return;
-      }
-
-      // Normal flow: user has session
-      if (result.session) {
+      // User is authenticated (auto-confirm is enabled in Supabase)
+      if (result.user) {
+        console.log('User authenticated, joining family...');
         await addToFamilyAndNavigate(result.user.id);
       }
     } catch (error: any) {
       console.error('Email sign up error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het aanmelden');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het aanmelden');
       setLoading(false);
     }
   };
 
   const handleEmailSignIn = async () => {
     if (!email.trim()) {
-      Alert.alert('Fout', 'Vul je e-mailadres in');
+      Alert.alert(t('common.error'), 'Vul je e-mailadres in');
       return;
     }
     if (!password.trim()) {
-      Alert.alert('Fout', 'Vul je wachtwoord in');
+      Alert.alert(t('common.error'), 'Vul je wachtwoord in');
       return;
     }
 
@@ -154,7 +150,7 @@ export default function JoinFamilyScreen() {
       const result = await signInWithEmail(email, password);
       
       if (!result.success) {
-        Alert.alert('Fout', result.error || 'Er ging iets mis bij het inloggen');
+        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
@@ -162,14 +158,14 @@ export default function JoinFamilyScreen() {
       await addToFamilyAndNavigate(result.user.id);
     } catch (error: any) {
       console.error('Email sign in error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het inloggen');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
       setLoading(false);
     }
   };
 
   const addToFamilyAndNavigate = async (userId: string) => {
     if (!familyId) {
-      Alert.alert('Fout', 'Geen gezin geselecteerd');
+      Alert.alert(t('common.error'), 'Geen gezin geselecteerd');
       setLoading(false);
       return;
     }
@@ -185,7 +181,7 @@ export default function JoinFamilyScreen() {
       );
 
       if (!memberResult.success) {
-        Alert.alert('Fout', memberResult.error || 'Kon je niet toevoegen aan het gezin');
+        Alert.alert(t('common.error'), memberResult.error || 'Kon je niet toevoegen aan het gezin');
         setLoading(false);
         return;
       }
@@ -193,11 +189,11 @@ export default function JoinFamilyScreen() {
       setLoading(false);
       
       Alert.alert(
-        'Welkom! 🎉',
-        'Je bent succesvol toegevoegd aan het gezin.',
+        t('auth.joinFamily.welcome'),
+        t('auth.joinFamily.welcomeMessage'),
         [
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => {
               router.replace('/(tabs)/(home)');
             },
@@ -206,7 +202,7 @@ export default function JoinFamilyScreen() {
       );
     } catch (error: any) {
       console.error('Add to family error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het toevoegen aan het gezin');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het toevoegen aan het gezin');
       setLoading(false);
     }
   };
@@ -227,15 +223,15 @@ export default function JoinFamilyScreen() {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Gezin deelnemen</Text>
-          <Text style={styles.subtitle}>Vul de gezinscode en je naam in</Text>
+          <Text style={styles.title}>{t('auth.joinFamily.title')}</Text>
+          <Text style={styles.subtitle}>{t('auth.joinFamily.subtitle')}</Text>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Gezinscode</Text>
               <TextInput
                 style={[styles.input, styles.codeInput]}
-                placeholder="ABCDEF"
+                placeholder={t('auth.joinFamily.familyCodePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={familyCode}
                 onChangeText={(text) => setFamilyCode(text.toUpperCase())}
@@ -246,10 +242,10 @@ export default function JoinFamilyScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Naam</Text>
+              <Text style={styles.label}>{t('common.name')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Je naam"
+                placeholder={t('auth.joinFamily.namePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={name}
                 onChangeText={setName}
@@ -266,7 +262,7 @@ export default function JoinFamilyScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.card} />
               ) : (
-                <Text style={styles.primaryButtonText}>Doorgaan</Text>
+                <Text style={styles.primaryButtonText}>{t('auth.joinFamily.continue')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -291,15 +287,15 @@ export default function JoinFamilyScreen() {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Registreer met e-mail</Text>
-          <Text style={styles.subtitle}>Maak een nieuw account aan</Text>
+          <Text style={styles.title}>{t('auth.joinFamily.registerWithEmail')}</Text>
+          <Text style={styles.subtitle}>{t('auth.joinFamily.createNewAccount')}</Text>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>E-mail</Text>
+              <Text style={styles.label}>{t('common.email')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="je@email.com"
+                placeholder={t('auth.login.emailPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={email}
                 onChangeText={setEmail}
@@ -310,7 +306,7 @@ export default function JoinFamilyScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Wachtwoord</Text>
+              <Text style={styles.label}>{t('common.password')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Minimaal 6 tekens"
@@ -330,7 +326,7 @@ export default function JoinFamilyScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.card} />
               ) : (
-                <Text style={styles.primaryButtonText}>Registreren</Text>
+                <Text style={styles.primaryButtonText}>{t('common.register')}</Text>
               )}
             </TouchableOpacity>
 
@@ -339,7 +335,7 @@ export default function JoinFamilyScreen() {
               onPress={() => setStep('email-signin')}
             >
               <Text style={styles.switchButtonText}>
-                Heb je al een account? Inloggen
+                {t('auth.joinFamily.haveAccount')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -364,15 +360,15 @@ export default function JoinFamilyScreen() {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Inloggen met e-mail</Text>
-          <Text style={styles.subtitle}>Log in met je bestaande account</Text>
+          <Text style={styles.title}>{t('auth.joinFamily.loginWithEmail')}</Text>
+          <Text style={styles.subtitle}>{t('auth.joinFamily.loginExistingAccount')}</Text>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>E-mail</Text>
+              <Text style={styles.label}>{t('common.email')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="je@email.com"
+                placeholder={t('auth.login.emailPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={email}
                 onChangeText={setEmail}
@@ -383,10 +379,10 @@ export default function JoinFamilyScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Wachtwoord</Text>
+              <Text style={styles.label}>{t('common.password')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Je wachtwoord"
+                placeholder={t('auth.login.passwordPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={password}
                 onChangeText={setPassword}
@@ -403,7 +399,7 @@ export default function JoinFamilyScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.card} />
               ) : (
-                <Text style={styles.primaryButtonText}>Inloggen</Text>
+                <Text style={styles.primaryButtonText}>{t('common.login')}</Text>
               )}
             </TouchableOpacity>
 
@@ -412,7 +408,7 @@ export default function JoinFamilyScreen() {
               onPress={() => setStep('email-signup')}
             >
               <Text style={styles.switchButtonText}>
-                Nog geen account? Registreren
+                {t('auth.joinFamily.noAccount')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -436,8 +432,8 @@ export default function JoinFamilyScreen() {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Inloggen</Text>
-        <Text style={styles.subtitle}>Kies hoe je wilt inloggen</Text>
+        <Text style={styles.title}>{t('common.login')}</Text>
+        <Text style={styles.subtitle}>{t('auth.createFamily.subtitle')}</Text>
 
         <View style={styles.authButtons}>
           {Platform.OS === 'ios' && (
@@ -456,7 +452,7 @@ export default function JoinFamilyScreen() {
                     size={20}
                     color={colors.card}
                   />
-                  <Text style={styles.appleButtonText}>Doorgaan met Apple</Text>
+                  <Text style={styles.appleButtonText}>{t('auth.login.withApple')}</Text>
                 </React.Fragment>
               )}
             </TouchableOpacity>
@@ -472,7 +468,7 @@ export default function JoinFamilyScreen() {
             ) : (
               <React.Fragment>
                 <Text style={styles.googleIcon}>G</Text>
-                <Text style={styles.googleButtonText}>Doorgaan met Google</Text>
+                <Text style={styles.googleButtonText}>{t('auth.login.withGoogle')}</Text>
               </React.Fragment>
             )}
           </TouchableOpacity>
@@ -488,7 +484,7 @@ export default function JoinFamilyScreen() {
               size={20}
               color={colors.card}
             />
-            <Text style={styles.emailButtonText}>Doorgaan met e-mail</Text>
+            <Text style={styles.emailButtonText}>{t('auth.createFamily.registerWithEmail')}</Text>
           </TouchableOpacity>
         </View>
       </View>

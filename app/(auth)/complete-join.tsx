@@ -5,9 +5,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { addFamilyMember } from '@/utils/familyService';
 import { getCurrentUser } from '@/utils/auth';
+import { useTranslation } from 'react-i18next';
 
 export default function CompleteJoinScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const name = params.name as string;
   const familyId = params.familyId as string;
@@ -18,13 +20,13 @@ export default function CompleteJoinScreen() {
       const user = await getCurrentUser();
       
       if (!user) {
-        Alert.alert('Fout', 'Geen gebruiker gevonden');
+        Alert.alert(t('common.error'), 'Geen gebruiker gevonden');
         router.replace('/(auth)/welcome');
         return;
       }
 
       if (!familyId) {
-        Alert.alert('Fout', 'Geen gezin geselecteerd');
+        Alert.alert(t('common.error'), 'Geen gezin geselecteerd');
         router.replace('/(auth)/welcome');
         return;
       }
@@ -38,7 +40,7 @@ export default function CompleteJoinScreen() {
       );
 
       if (!memberResult.success) {
-        Alert.alert('Fout', memberResult.error || 'Kon je niet toevoegen aan het gezin');
+        Alert.alert(t('common.error'), memberResult.error || 'Kon je niet toevoegen aan het gezin');
         router.replace('/(auth)/welcome');
         return;
       }
@@ -46,23 +48,23 @@ export default function CompleteJoinScreen() {
       setLoading(false);
       
       Alert.alert(
-        'Welkom! 🎉',
-        'Je bent succesvol toegevoegd aan het gezin.',
+        t('auth.joinFamily.welcome'),
+        t('auth.joinFamily.welcomeMessage'),
         [
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => {
-              router.replace('/(tabs)/profile');
+              router.replace('/(tabs)/(home)');
             },
           },
         ]
       );
     } catch (error: any) {
       console.error('Complete join error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het toevoegen aan het gezin');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het toevoegen aan het gezin');
       router.replace('/(auth)/welcome');
     }
-  }, [name, familyId, router]);
+  }, [name, familyId, router, t]);
 
   useEffect(() => {
     completeJoin();
@@ -72,7 +74,7 @@ export default function CompleteJoinScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <ActivityIndicator size="large" color={colors.accent} />
-        <Text style={styles.text}>Je wordt toegevoegd aan het gezin...</Text>
+        <Text style={styles.text}>{t('auth.joinFamily.addingToFamily')}</Text>
       </View>
     </View>
   );

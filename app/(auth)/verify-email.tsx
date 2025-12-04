@@ -5,9 +5,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { supabase } from '@/utils/supabase';
+import { useTranslation } from 'react-i18next';
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const email = params.email as string;
   const name = params.name as string;
@@ -57,7 +59,7 @@ export default function VerifyEmailScreen() {
     const codeToVerify = verificationCode || code.join('');
     
     if (codeToVerify.length !== 6) {
-      Alert.alert('Fout', 'Vul de volledige 6-cijferige code in');
+      Alert.alert(t('common.error'), t('auth.verifyEmail.fillCompleteCode'));
       return;
     }
 
@@ -71,7 +73,7 @@ export default function VerifyEmailScreen() {
 
       if (error) {
         console.error('Verification error:', error);
-        Alert.alert('Fout', 'Ongeldige verificatiecode. Probeer het opnieuw.');
+        Alert.alert(t('common.error'), t('auth.verifyEmail.invalidCode'));
         setLoading(false);
         setCode(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
@@ -80,16 +82,17 @@ export default function VerifyEmailScreen() {
 
       if (data.session) {
         // Email verified successfully
+        console.log('Email verified successfully, redirecting...');
         setLoading(false);
         
         if (flow === 'create') {
-          // Continue to create family flow
+          // Continue to create family flow - redirect to setup-family
           router.replace({
             pathname: '/(auth)/setup-family',
             params: { name, verified: 'true' },
           });
         } else if (flow === 'join') {
-          // Continue to join family flow
+          // Continue to join family flow - redirect to complete-join
           router.replace({
             pathname: '/(auth)/complete-join',
             params: { name, familyId, verified: 'true' },
@@ -98,7 +101,7 @@ export default function VerifyEmailScreen() {
       }
     } catch (error: any) {
       console.error('Verification error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het verifiëren. Probeer het opnieuw.');
+      Alert.alert(t('common.error'), t('auth.verifyEmail.invalidCode'));
       setLoading(false);
     }
   };
@@ -116,15 +119,15 @@ export default function VerifyEmailScreen() {
 
       if (error) {
         console.error('Resend error:', error);
-        Alert.alert('Fout', 'Kon geen nieuwe code versturen. Probeer het later opnieuw.');
+        Alert.alert(t('common.error'), 'Kon geen nieuwe code versturen. Probeer het later opnieuw.');
       } else {
-        Alert.alert('Verstuurd!', 'We hebben een nieuwe verificatiecode naar je e-mail gestuurd.');
+        Alert.alert(t('auth.verifyEmail.codeSent'), t('auth.verifyEmail.codeSentMessage'));
         setCode(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       }
     } catch (error: any) {
       console.error('Resend error:', error);
-      Alert.alert('Fout', 'Er ging iets mis. Probeer het later opnieuw.');
+      Alert.alert(t('common.error'), 'Er ging iets mis. Probeer het later opnieuw.');
     } finally {
       setResending(false);
     }
@@ -154,9 +157,9 @@ export default function VerifyEmailScreen() {
           />
         </View>
 
-        <Text style={styles.title}>Verifieer je e-mail</Text>
+        <Text style={styles.title}>{t('auth.verifyEmail.title')}</Text>
         <Text style={styles.subtitle}>
-          We hebben een 6-cijferige verificatiecode gestuurd naar{'\n'}
+          {t('auth.verifyEmail.subtitle')}{'\n'}
           <Text style={styles.email}>{email}</Text>
         </Text>
 
@@ -189,18 +192,18 @@ export default function VerifyEmailScreen() {
           {loading ? (
             <ActivityIndicator color={colors.card} />
           ) : (
-            <Text style={styles.primaryButtonText}>Verifiëren</Text>
+            <Text style={styles.primaryButtonText}>{t('auth.verifyEmail.verify')}</Text>
           )}
         </TouchableOpacity>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Geen code ontvangen?</Text>
+          <Text style={styles.footerText}>{t('auth.verifyEmail.noCodeReceived')}</Text>
           <TouchableOpacity
             onPress={handleResendCode}
             disabled={resending}
           >
             <Text style={[styles.footerLink, resending && styles.footerLinkDisabled]}>
-              {resending ? 'Versturen...' : 'Code opnieuw versturen'}
+              {resending ? t('auth.verifyEmail.sending') : t('auth.verifyEmail.resendCode')}
             </Text>
           </TouchableOpacity>
         </View>

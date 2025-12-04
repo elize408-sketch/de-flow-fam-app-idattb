@@ -104,9 +104,9 @@ export default function CreateFamilyScreen() {
         return;
       }
 
-      // User is authenticated or verification is skipped (dev mode)
+      // User is authenticated (auto-confirm is enabled in Supabase)
       if (result.user) {
-        console.log('User authenticated or verification skipped, creating family...');
+        console.log('User authenticated, creating family...');
         await createFamilyAndNavigate(result.user.id, name);
       } else {
         // This shouldn't happen, but handle it gracefully
