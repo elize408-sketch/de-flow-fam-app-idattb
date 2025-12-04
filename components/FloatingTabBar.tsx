@@ -55,10 +55,10 @@ const tabs: TabBarItem[] = [
     label: 'Notificaties',
   },
   {
-    name: 'profile',
-    route: '/(tabs)/profile',
+    name: 'child',
+    route: '/(tabs)/child',
     iosIcon: 'person.fill',
-    androidIcon: 'person',
+    androidIcon: 'child-care',
     label: 'Kind',
   },
   {

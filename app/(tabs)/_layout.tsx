@@ -15,6 +15,8 @@ export default function TabLayout() {
       >
         <Stack.Screen key="home" name="(home)" />
         <Stack.Screen key="notifications" name="notifications" />
+        <Stack.Screen key="child" name="child" />
+        <Stack.Screen key="child-dashboard" name="child-dashboard" />
         <Stack.Screen key="profile" name="profile" />
         <Stack.Screen key="settings" name="settings" />
         <Stack.Screen key="tasks" name="tasks" />

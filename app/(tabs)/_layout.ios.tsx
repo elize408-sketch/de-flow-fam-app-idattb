@@ -13,8 +13,8 @@ export default function TabLayout() {
         <Icon sf="bell.fill" />
         <Label>Notificaties</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger key="profile" name="profile">
-        <Icon sf="person.fill" />
+      <NativeTabs.Trigger key="child" name="child">
+        <Icon sf="figure.2.and.child.holdinghands" />
         <Label>Kind</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger key="settings" name="settings">
