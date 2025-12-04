@@ -8,7 +8,7 @@ export const MODULE_COLORS = {
   tasks: '#4CAF50',            // Green (matching home button)
   shopping: '#F5A623',         // Orange
   finances: '#34C759',         // Green
-  memories: '#9013FE',         // Purple (Fotoboek)
+  memories: '#FF8A65',         // Red-Orange (Fotoboek - matching home button)
   meals: '#FF6B9D',            // Pink
   notes: '#F5A623',            // Orange
   documents: '#50E3C2',        // Turquoise
