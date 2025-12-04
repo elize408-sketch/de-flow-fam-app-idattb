@@ -18,8 +18,11 @@ export default function LoginScreen() {
 
   const handleLoginSuccess = async (userId: string) => {
     try {
+      console.log('Login successful, checking family membership...');
+      
       // Check if user has a family
       const hasFamily = await userHasFamily(userId);
+      console.log('User has family:', hasFamily);
       
       if (!hasFamily) {
         Alert.alert(
@@ -28,7 +31,10 @@ export default function LoginScreen() {
           [
             {
               text: t('common.ok'),
-              onPress: () => router.replace('/(auth)/welcome'),
+              onPress: () => {
+                setLoading(false);
+                router.replace('/(auth)/welcome');
+              },
             },
           ]
         );
@@ -36,10 +42,13 @@ export default function LoginScreen() {
       }
 
       // Navigate to home
+      console.log('Navigating to home...');
+      setLoading(false);
       router.replace('/(tabs)/(home)');
     } catch (error) {
       console.error('Login success handler error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
+      setLoading(false);
     }
   };
 
@@ -60,7 +69,6 @@ export default function LoginScreen() {
       }
 
       await handleLoginSuccess(result.user.id);
-      setLoading(false);
     } catch (error: any) {
       console.error('Apple sign in error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Apple');
@@ -80,7 +88,6 @@ export default function LoginScreen() {
       }
 
       await handleLoginSuccess(result.user.id);
-      setLoading(false);
     } catch (error: any) {
       console.error('Google sign in error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Google');
@@ -100,6 +107,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
+      console.log('Starting email sign-in...');
       const result = await signInWithEmail(email, password);
       
       if (!result.success) {
@@ -108,8 +116,8 @@ export default function LoginScreen() {
         return;
       }
 
+      console.log('Email sign-in successful');
       await handleLoginSuccess(result.user.id);
-      setLoading(false);
     } catch (error: any) {
       console.error('Email sign in error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');

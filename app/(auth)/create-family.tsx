@@ -78,6 +78,7 @@ export default function CreateFamilyScreen() {
 
     setLoading(true);
     try {
+      console.log('Starting email signup...');
       const result = await signUpWithEmail(email, password, name);
       
       if (!result.success) {
@@ -85,6 +86,12 @@ export default function CreateFamilyScreen() {
         setLoading(false);
         return;
       }
+
+      console.log('Sign up result:', { 
+        hasUser: !!result.user, 
+        hasSession: !!result.session, 
+        requiresVerification: result.requiresVerification 
+      });
 
       // Check if email verification is required
       if (result.requiresVerification) {
@@ -97,16 +104,14 @@ export default function CreateFamilyScreen() {
         return;
       }
 
-      // TEMPORARY: Skip verification and continue directly to family creation
-      if (!result.session && result.user) {
-        console.log('Skipping email verification - continuing to family setup');
+      // User is authenticated (either has session or verification was skipped)
+      if (result.user) {
+        console.log('User authenticated, creating family...');
         await createFamilyAndNavigate(result.user.id, name);
-        return;
-      }
-
-      // Normal flow: user has session
-      if (result.session) {
-        await createFamilyAndNavigate(result.user.id, name);
+      } else {
+        // This shouldn't happen, but handle it gracefully
+        Alert.alert(t('common.error'), 'Er ging iets mis bij het aanmelden');
+        setLoading(false);
       }
     } catch (error: any) {
       console.error('Email sign up error:', error);
@@ -117,14 +122,19 @@ export default function CreateFamilyScreen() {
 
   const createFamilyAndNavigate = async (userId: string, userName: string) => {
     try {
+      console.log('Creating family for user:', userId);
+      
       // Create family
       const familyResult = await createFamily();
       
       if (!familyResult.success || !familyResult.family) {
+        console.error('Failed to create family:', familyResult.error);
         Alert.alert(t('common.error'), familyResult.error || 'Kon geen gezin aanmaken');
         setLoading(false);
         return;
       }
+
+      console.log('Family created:', familyResult.family.id);
 
       // Add user as parent (always parent role - first parent)
       const memberResult = await addFamilyMember(
@@ -136,14 +146,15 @@ export default function CreateFamilyScreen() {
       );
 
       if (!memberResult.success) {
+        console.error('Failed to add family member:', memberResult.error);
         Alert.alert(t('common.error'), memberResult.error || 'Kon je niet toevoegen aan het gezin');
         setLoading(false);
         return;
       }
 
-      setLoading(false);
+      console.log('Family member added successfully');
       
-      // Show family code
+      // Show family code and navigate
       Alert.alert(
         t('auth.createFamily.familyCreated'),
         t('auth.createFamily.familyCodeMessage', { code: familyResult.family.family_code }),
@@ -151,8 +162,11 @@ export default function CreateFamilyScreen() {
           {
             text: t('common.ok'),
             onPress: () => {
-              // Navigate to family setup screen to add family members
-              router.replace('/(auth)/setup-family');
+              // Navigate to home screen
+              console.log('Navigating to home...');
+              setLoading(false);
+              // Use replace to prevent going back to auth screens
+              router.replace('/(tabs)/(home)');
             },
           },
         ]

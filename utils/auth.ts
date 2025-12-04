@@ -30,6 +30,7 @@ export async function signUpWithEmail(
   name: string
 ): Promise<AuthResult> {
   try {
+    console.log('=== Starting email signup ===');
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -42,8 +43,15 @@ export async function signUpWithEmail(
     });
 
     if (error) {
+      console.error('Signup error:', error);
       return { success: false, error: error.message };
     }
+
+    console.log('Signup result:', {
+      hasUser: !!data.user,
+      hasSession: !!data.session,
+      userId: data.user?.id,
+    });
 
     // TEMPORARY WORKAROUND: Auto-confirm user for testing
     if (SKIP_EMAIL_VERIFICATION && data.user && !data.session) {
@@ -52,17 +60,46 @@ export async function signUpWithEmail(
       // Show alert that we're skipping verification
       Alert.alert(
         '⚠️ Development Mode',
-        'Email verification is temporarily disabled for testing. In production, users will need to verify their email.\n\nYou can now continue to the next screen.',
+        'Email verification is temporarily disabled for testing. In production, users will need to verify their email.\n\nAttempting to sign you in...',
         [{ text: 'Continue' }]
       );
 
-      // Return success with user but indicate verification was skipped
-      return { 
-        success: true, 
-        user: data.user, 
-        session: null,
-        requiresVerification: false // Skip verification screen
-      };
+      // Try to sign in the user immediately
+      try {
+        console.log('Attempting auto sign-in...');
+        const signInResult = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInResult.error) {
+          console.error('Auto sign-in error:', signInResult.error);
+          // If sign-in fails, return success but indicate verification is needed
+          return { 
+            success: true, 
+            user: data.user, 
+            session: null,
+            requiresVerification: false
+          };
+        }
+
+        // Successfully signed in
+        console.log('✅ Auto sign-in successful, user has session');
+        return { 
+          success: true, 
+          user: signInResult.data.user, 
+          session: signInResult.data.session,
+          requiresVerification: false
+        };
+      } catch (signInError: any) {
+        console.error('Auto sign-in exception:', signInError);
+        return { 
+          success: true, 
+          user: data.user, 
+          session: null,
+          requiresVerification: false
+        };
+      }
     }
 
     if (data.user && !data.session) {
@@ -94,12 +131,14 @@ export async function signInWithEmail(
   password: string
 ): Promise<AuthResult> {
   try {
+    console.log('=== Starting email sign-in ===');
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      console.error('Sign-in error:', error);
       // Check if error is due to unconfirmed email
       if (error.message.includes('Email not confirmed')) {
         return { 
@@ -109,6 +148,12 @@ export async function signInWithEmail(
       }
       return { success: false, error: error.message };
     }
+
+    console.log('Sign-in successful:', {
+      hasUser: !!data.user,
+      hasSession: !!data.session,
+      userId: data.user?.id,
+    });
 
     return { success: true, user: data.user, session: data.session };
   } catch (error: any) {
