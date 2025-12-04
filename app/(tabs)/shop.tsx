@@ -11,7 +11,7 @@ export default function ShopScreen() {
   const router = useRouter();
   const { setModule, accentColor } = useModuleTheme();
 
-  // Set module theme on mount
+  // Set module theme on mount - use purple color
   useEffect(() => {
     setModule('shop' as ModuleName);
   }, [setModule]);

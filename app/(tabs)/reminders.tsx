@@ -242,8 +242,8 @@ export default function RemindersScreen() {
   return (
     <View style={styles.container}>
       <ModuleHeader
-        title="Herinneringen"
-        subtitle={isParent ? 'Alle gezinsherinneringen' : 'Vergeet niets meer'}
+        title="Fotoboek"
+        subtitle="Bewaar jullie mooiste momenten"
       />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>

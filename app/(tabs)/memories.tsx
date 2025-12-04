@@ -279,7 +279,7 @@ export default function MemoriesScreen() {
     <View style={styles.container}>
       <ModuleHeader
         title="Fotoboek"
-        subtitle="Alle gezinsherinneringen"
+        subtitle="Bewaar jullie mooiste momenten"
       />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>

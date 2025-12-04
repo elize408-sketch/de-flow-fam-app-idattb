@@ -37,14 +37,14 @@ const menuItems = [
     route: '/(tabs)/finances',
   },
   {
-    title: 'Herinneringen',
+    title: 'Fotoboek',
     color: '#FF8A65',
-    icon: 'bell-outline',
-    route: '/(tabs)/reminders',
+    icon: 'camera-outline',
+    route: '/(tabs)/memories',
   },
   {
     title: 'Maaltijden',
-    color: '#29B6F6',
+    color: '#78C3FF',
     icon: 'food-outline',
     route: '/(tabs)/meals',
   },

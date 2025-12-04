@@ -18,7 +18,7 @@ interface ModuleHeaderProps {
 export default function ModuleHeader({
   title,
   subtitle,
-  showBackButton = true,
+  showBackButton = false,
   showAddButton = false,
   onAddPress,
   backRoute = '/(tabs)/(home)',
@@ -28,21 +28,7 @@ export default function ModuleHeader({
 
   return (
     <View style={[styles.headerRow, { backgroundColor: accentColor }]}>
-      {showBackButton ? (
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.push(backRoute as any)}
-        >
-          <IconSymbol
-            ios_icon_name="house"
-            android_material_icon_name="home"
-            size={24}
-            color={colors.card}
-          />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.placeholder} />
-      )}
+      <View style={styles.placeholder} />
       
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
@@ -73,22 +59,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 60,
+    paddingTop: 30,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 10,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-    marginBottom: 20,
+    marginBottom: 10,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   addButton: {
     width: 40,

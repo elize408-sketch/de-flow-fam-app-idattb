@@ -38,7 +38,7 @@ export default function MealsScreen() {
     setWeekPlanningServings,
   } = useFamily();
   
-  // Set module theme on mount
+  // Set module theme on mount - use light blue color
   useEffect(() => {
     setModule('meals' as ModuleName);
   }, [setModule]);

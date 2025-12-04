@@ -1166,7 +1166,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   dayCellToday: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#78C3FF',
     borderWidth: 2,
   },
   dayCellHeader: {
