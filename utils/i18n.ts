@@ -6,6 +6,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import nl from '../locales/nl.json';
 import en from '../locales/en.json';
+import es from '../locales/es.json';
+import fr from '../locales/fr.json';
+import de from '../locales/de.json';
+import it from '../locales/it.json';
+import pt from '../locales/pt.json';
+import tr from '../locales/tr.json';
+import ar from '../locales/ar.json';
+import zh from '../locales/zh.json';
+import ja from '../locales/ja.json';
+import pl from '../locales/pl.json';
+import hi from '../locales/hi.json';
 
 const LANGUAGE_STORAGE_KEY = '@flow_fam_language';
 
@@ -44,6 +55,17 @@ const initI18n = async () => {
       resources: {
         nl: { translation: nl },
         en: { translation: en },
+        es: { translation: es },
+        fr: { translation: fr },
+        de: { translation: de },
+        it: { translation: it },
+        pt: { translation: pt },
+        tr: { translation: tr },
+        ar: { translation: ar },
+        zh: { translation: zh },
+        ja: { translation: ja },
+        pl: { translation: pl },
+        hi: { translation: hi },
       },
       lng: initialLanguage,
       fallbackLng: 'en',
@@ -71,8 +93,19 @@ export const getCurrentLanguage = () => {
 // Get available languages
 export const getAvailableLanguages = () => {
   return [
-    { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
-    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'en', name: 'English', flag: '🇬🇧', nativeName: 'English' },
+    { code: 'nl', name: 'Nederlands', flag: '🇳🇱', nativeName: 'Nederlands' },
+    { code: 'es', name: 'Español', flag: '🇪🇸', nativeName: 'Español' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷', nativeName: 'Français' },
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪', nativeName: 'Deutsch' },
+    { code: 'it', name: 'Italiano', flag: '🇮🇹', nativeName: 'Italiano' },
+    { code: 'pt', name: 'Português', flag: '🇵🇹', nativeName: 'Português' },
+    { code: 'tr', name: 'Türkçe', flag: '🇹🇷', nativeName: 'Türkçe' },
+    { code: 'ar', name: 'العربية', flag: '🇸🇦', nativeName: 'العربية' },
+    { code: 'zh', name: '中文', flag: '🇨🇳', nativeName: '中文' },
+    { code: 'ja', name: '日本語', flag: '🇯🇵', nativeName: '日本語' },
+    { code: 'pl', name: 'Polski', flag: '🇵🇱', nativeName: 'Polski' },
+    { code: 'hi', name: 'हिन्दी', flag: '🇮🇳', nativeName: 'हिन्दी' },
   ];
 };
 
