@@ -84,47 +84,6 @@ export default function CreateFamilyScreen() {
       
       if (!result.success) {
         console.error('Signup failed:', result.error);
-        
-        // Check if it's an email sending error
-        if (result.error && (result.error.includes('bevestigingsmail') || result.error.includes('server'))) {
-          // Email sending failed - offer workaround
-          Alert.alert(
-            'E-mail probleem',
-            result.error + '\n\nWil je doorgaan zonder e-mailbevestiging? (Tijdelijke oplossing)',
-            [
-              {
-                text: 'Annuleren',
-                style: 'cancel',
-                onPress: () => setLoading(false),
-              },
-              {
-                text: 'Doorgaan',
-                onPress: async () => {
-                  // Try to sign in directly (in case auto-confirm is enabled)
-                  console.log('Attempting direct sign-in...');
-                  const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                  });
-                  
-                  if (!error && data.session) {
-                    console.log('Direct sign-in successful');
-                    await createFamilyAndNavigate(data.user.id, name);
-                  } else {
-                    console.error('Direct sign-in failed:', error);
-                    Alert.alert(
-                      t('common.error'),
-                      'Kon niet inloggen. Neem contact op met support@flowfam.nl voor hulp.'
-                    );
-                    setLoading(false);
-                  }
-                },
-              },
-            ]
-          );
-          return;
-        }
-        
         Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het aanmelden');
         setLoading(false);
         return;
@@ -133,17 +92,38 @@ export default function CreateFamilyScreen() {
       console.log('Sign up result:', { 
         hasUser: !!result.user, 
         hasSession: !!result.session, 
-        requiresVerification: result.requiresVerification 
+        requiresVerification: result.requiresVerification,
+        isRepeatedSignup: result.isRepeatedSignup
       });
 
       // Check if email verification is required
       if (result.requiresVerification) {
-        // Email confirmation required - redirect to verification
         setLoading(false);
-        router.push({
-          pathname: '/(auth)/verify-email',
-          params: { email, name, flow: 'create' },
-        });
+        
+        // Show appropriate message based on whether it's a repeated signup
+        if (result.isRepeatedSignup) {
+          Alert.alert(
+            'Account bestaat al',
+            'Er bestaat al een account met dit e-mailadres. We hebben een nieuwe bevestigingscode verstuurd naar je e-mail.',
+            [
+              {
+                text: t('common.ok'),
+                onPress: () => {
+                  router.push({
+                    pathname: '/(auth)/verify-email',
+                    params: { email, name, flow: 'create' },
+                  });
+                },
+              },
+            ]
+          );
+        } else {
+          // New signup - redirect to verification
+          router.push({
+            pathname: '/(auth)/verify-email',
+            params: { email, name, flow: 'create' },
+          });
+        }
         return;
       }
 

@@ -17,6 +17,7 @@ export interface AuthResult {
   session?: any;
   error?: string;
   requiresVerification?: boolean;
+  isRepeatedSignup?: boolean;
 }
 
 // Sign up with email and password
@@ -43,11 +44,11 @@ export async function signUpWithEmail(
     if (error) {
       console.error('Signup error:', error);
       
-      // Check if it's an email sending error
+      // Check if it's an email sending error (SendGrid issue)
       if (error.message.includes('Error sending') || error.message.includes('mail')) {
         return { 
           success: false, 
-          error: 'Er is een probleem met het versturen van de bevestigingsmail. Neem contact op met support@flowfam.nl voor hulp.' 
+          error: 'Er is een probleem met het versturen van de bevestigingsmail. Dit komt waarschijnlijk door een configuratieprobleem met de e-mailprovider. Neem contact op met support@flowfam.nl voor hulp.' 
         };
       }
       
@@ -63,6 +64,35 @@ export async function signUpWithEmail(
     });
 
     // Check if user already exists (repeated signup)
+    if (data.user && !data.session && data.user.identities && data.user.identities.length === 0) {
+      console.log('⚠️ Repeated signup detected - user already exists');
+      
+      // Try to resend the confirmation email
+      console.log('Attempting to resend confirmation email...');
+      const resendResult = await resendVerificationEmail(email);
+      
+      if (resendResult.success) {
+        return { 
+          success: true, 
+          user: data.user, 
+          session: null,
+          requiresVerification: true,
+          isRepeatedSignup: true
+        };
+      } else {
+        // Resend failed, but still allow user to proceed to verification screen
+        console.warn('Resend failed:', resendResult.error);
+        return { 
+          success: true, 
+          user: data.user, 
+          session: null,
+          requiresVerification: true,
+          isRepeatedSignup: true
+        };
+      }
+    }
+
+    // Check if user needs email verification
     if (data.user && !data.session) {
       console.log('User created but no session - email verification required');
       
@@ -98,6 +128,41 @@ export async function signUpWithEmail(
   }
 }
 
+// Resend verification email
+export async function resendVerificationEmail(email: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log('Resending verification email to:', email);
+    
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: 'https://natively.dev/email-confirmed',
+      },
+    });
+
+    if (error) {
+      console.error('Resend error:', error);
+      
+      // Check if it's a SendGrid error
+      if (error.message.includes('Error sending') || error.message.includes('mail') || error.message.includes('535')) {
+        return { 
+          success: false, 
+          error: 'Er is een probleem met de e-mailprovider. Neem contact op met support@flowfam.nl.' 
+        };
+      }
+      
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ Verification email resent successfully');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Resend error:', error);
+    return { success: false, error: error.message || 'Er ging iets mis bij het versturen van de e-mail' };
+  }
+}
+
 // Sign in with email and password
 export async function signInWithEmail(
   email: string,
@@ -119,7 +184,8 @@ export async function signInWithEmail(
       if (error.message.includes('Email not confirmed')) {
         return { 
           success: false, 
-          error: 'Je e-mailadres is nog niet bevestigd. Controleer je inbox voor de bevestigingsmail.' 
+          error: 'Je e-mailadres is nog niet bevestigd. Controleer je inbox voor de bevestigingsmail.',
+          requiresVerification: true
         };
       }
       
