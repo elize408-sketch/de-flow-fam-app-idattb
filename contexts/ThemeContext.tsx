@@ -5,7 +5,7 @@ import { colors } from '@/styles/commonStyles';
 // Module color mapping based on homepage icons
 export const MODULE_COLORS = {
   agenda: '#4A90E2',           // Blue
-  tasks: '#7ED321',            // Light green
+  tasks: '#4CAF50',            // Green (matching home button)
   shopping: '#F5A623',         // Orange
   finances: '#34C759',         // Green
   memories: '#9013FE',         // Purple (Fotoboek)
