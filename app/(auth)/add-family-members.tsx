@@ -93,19 +93,11 @@ export default function AddFamilyMembersScreen() {
       return;
     }
 
-    Alert.alert(
-      'Design Mode',
-      `Je hebt ${members.length} gezinslid${members.length > 1 ? 'den' : ''} toegevoegd. In de echte app zou je nu doorgaan naar het hoofdscherm.`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            // In design mode, just show the result
-            console.log('Family members:', members);
-          },
-        },
-      ]
-    );
+    // Log the family members for debugging
+    console.log('Family members added:', members);
+    
+    // Navigate to the homepage
+    router.replace('/(tabs)/(home)');
   };
 
   return (
