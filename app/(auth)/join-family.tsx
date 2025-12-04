@@ -110,7 +110,8 @@ export default function JoinFamilyScreen() {
         return;
       }
 
-      if (!result.session) {
+      // Check if email verification is required
+      if (result.requiresVerification) {
         // Email confirmation required - redirect to verification
         setLoading(false);
         router.push({
@@ -120,7 +121,17 @@ export default function JoinFamilyScreen() {
         return;
       }
 
-      await addToFamilyAndNavigate(result.user.id);
+      // TEMPORARY: Skip verification and continue directly
+      if (!result.session && result.user) {
+        console.log('Skipping email verification - continuing to join family');
+        await addToFamilyAndNavigate(result.user.id);
+        return;
+      }
+
+      // Normal flow: user has session
+      if (result.session) {
+        await addToFamilyAndNavigate(result.user.id);
+      }
     } catch (error: any) {
       console.error('Email sign up error:', error);
       Alert.alert('Fout', 'Er ging iets mis bij het aanmelden');
@@ -438,7 +449,7 @@ export default function JoinFamilyScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.card} />
               ) : (
-                <>
+                <React.Fragment>
                   <IconSymbol
                     ios_icon_name="apple.logo"
                     android_material_icon_name="apple"
@@ -446,7 +457,7 @@ export default function JoinFamilyScreen() {
                     color={colors.card}
                   />
                   <Text style={styles.appleButtonText}>Doorgaan met Apple</Text>
-                </>
+                </React.Fragment>
               )}
             </TouchableOpacity>
           )}
@@ -459,10 +470,10 @@ export default function JoinFamilyScreen() {
             {loading ? (
               <ActivityIndicator color={colors.text} />
             ) : (
-              <>
+              <React.Fragment>
                 <Text style={styles.googleIcon}>G</Text>
                 <Text style={styles.googleButtonText}>Doorgaan met Google</Text>
-              </>
+              </React.Fragment>
             )}
           </TouchableOpacity>
 

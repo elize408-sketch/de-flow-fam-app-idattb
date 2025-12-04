@@ -16,7 +16,12 @@ export interface AuthResult {
   user?: any;
   session?: any;
   error?: string;
+  requiresVerification?: boolean;
 }
+
+// TEMPORARY: Skip email verification for testing
+// Set to false to require email verification (production setting)
+const SKIP_EMAIL_VERIFICATION = true;
 
 // Sign up with email and password
 export async function signUpWithEmail(
@@ -40,6 +45,26 @@ export async function signUpWithEmail(
       return { success: false, error: error.message };
     }
 
+    // TEMPORARY WORKAROUND: Auto-confirm user for testing
+    if (SKIP_EMAIL_VERIFICATION && data.user && !data.session) {
+      console.log('⚠️ DEVELOPMENT MODE: Skipping email verification');
+      
+      // Show alert that we're skipping verification
+      Alert.alert(
+        '⚠️ Development Mode',
+        'Email verification is temporarily disabled for testing. In production, users will need to verify their email.\n\nYou can now continue to the next screen.',
+        [{ text: 'Continue' }]
+      );
+
+      // Return success with user but indicate verification was skipped
+      return { 
+        success: true, 
+        user: data.user, 
+        session: null,
+        requiresVerification: false // Skip verification screen
+      };
+    }
+
     if (data.user && !data.session) {
       // Email confirmation required
       Alert.alert(
@@ -47,6 +72,13 @@ export async function signUpWithEmail(
         'We hebben een bevestigingsmail gestuurd. Controleer je inbox en klik op de link om je account te activeren.',
         [{ text: 'OK' }]
       );
+      
+      return { 
+        success: true, 
+        user: data.user, 
+        session: data.session,
+        requiresVerification: true
+      };
     }
 
     return { success: true, user: data.user, session: data.session };
@@ -68,6 +100,13 @@ export async function signInWithEmail(
     });
 
     if (error) {
+      // Check if error is due to unconfirmed email
+      if (error.message.includes('Email not confirmed')) {
+        return { 
+          success: false, 
+          error: 'Je e-mailadres is nog niet bevestigd. Controleer je inbox voor de bevestigingsmail.' 
+        };
+      }
       return { success: false, error: error.message };
     }
 

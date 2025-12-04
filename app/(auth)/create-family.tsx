@@ -86,7 +86,8 @@ export default function CreateFamilyScreen() {
         return;
       }
 
-      if (!result.session) {
+      // Check if email verification is required
+      if (result.requiresVerification) {
         // Email confirmation required - redirect to verification
         setLoading(false);
         router.push({
@@ -96,8 +97,17 @@ export default function CreateFamilyScreen() {
         return;
       }
 
-      // Create family and add user as parent (always parent role)
-      await createFamilyAndNavigate(result.user.id, name);
+      // TEMPORARY: Skip verification and continue directly to family creation
+      if (!result.session && result.user) {
+        console.log('Skipping email verification - continuing to family setup');
+        await createFamilyAndNavigate(result.user.id, name);
+        return;
+      }
+
+      // Normal flow: user has session
+      if (result.session) {
+        await createFamilyAndNavigate(result.user.id, name);
+      }
     } catch (error: any) {
       console.error('Email sign up error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het aanmelden');
@@ -141,8 +151,8 @@ export default function CreateFamilyScreen() {
           {
             text: t('common.ok'),
             onPress: () => {
-              // Navigate to home
-              router.replace('/(tabs)/(home)');
+              // Navigate to family setup screen to add family members
+              router.replace('/(auth)/setup-family');
             },
           },
         ]
