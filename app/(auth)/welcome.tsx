@@ -1,206 +1,142 @@
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Platform, Modal } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '@/styles/commonStyles';
-import { changeLanguage, getAvailableLanguages, getCurrentLanguage } from '@/utils/i18n';
-import { getLocales } from 'expo-localization';
-import { IconSymbol } from '@/components/IconSymbol';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from '@/components/LanguageSelector';
 
 const LANGUAGE_SELECTED_KEY = '@flow_fam_language_selected';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-  const availableLanguages = getAvailableLanguages();
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [languageSelected, setLanguageSelected] = useState(false);
 
   useEffect(() => {
-    // Auto-detect device language and pre-select it
-    const detectLanguage = async () => {
-      const locales = getLocales();
-      if (locales && locales.length > 0) {
-        const deviceLang = locales[0].languageCode || 'en';
-        // Check if device language is supported
-        const supportedLang = availableLanguages.find(lang => lang.code === deviceLang);
-        if (supportedLang) {
-          setSelectedLanguage(deviceLang);
-          await changeLanguage(deviceLang);
-        } else {
-          // Default to English if device language not supported
-          setSelectedLanguage('en');
-          await changeLanguage('en');
-        }
-      } else {
-        setSelectedLanguage('en');
-        await changeLanguage('en');
-      }
-    };
-    
-    detectLanguage();
+    checkLanguageSelection();
   }, []);
 
+  const checkLanguageSelection = async () => {
+    const selected = await AsyncStorage.getItem(LANGUAGE_SELECTED_KEY);
+    setLanguageSelected(!!selected);
+  };
+
   const handleLanguageSelect = async (languageCode: string) => {
-    setSelectedLanguage(languageCode);
-    await changeLanguage(languageCode);
-    setDropdownVisible(false);
+    await i18n.changeLanguage(languageCode);
+    await AsyncStorage.setItem(LANGUAGE_SELECTED_KEY, 'true');
+    setLanguageSelected(true);
+    setShowLanguageSelector(false);
   };
 
-  const handleContinue = async () => {
-    if (selectedLanguage) {
-      // Mark that language has been selected
-      await AsyncStorage.setItem(LANGUAGE_SELECTED_KEY, 'true');
-      // Continue to create or join family
-    }
+  const handleCreateFamily = () => {
+    router.push('/(auth)/create-family');
   };
 
-  const getSelectedLanguageData = () => {
-    return availableLanguages.find(lang => lang.code === selectedLanguage) || availableLanguages[0];
+  const handleJoinFamily = () => {
+    router.push('/(auth)/join-family');
   };
+
+  const handleLogin = () => {
+    router.push('/(auth)/login');
+  };
+
+  const handleAddFamilyMembers = () => {
+    router.push('/(auth)/add-family-members');
+  };
+
+  if (!languageSelected) {
+    return (
+      <View style={styles.container}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            <View style={styles.logoContainer}>
+              <Text style={styles.logoEmoji}>👨‍👩‍👧‍👦</Text>
+              <Text style={styles.logoText}>Flow Fam</Text>
+            </View>
+
+            <View style={styles.textContainer}>
+              <Text style={styles.title}>{t('welcome.title')}</Text>
+              <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.languageButton}
+              onPress={() => setShowLanguageSelector(true)}
+            >
+              <Text style={styles.languageButtonText}>🌍 {t('language.change')}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        <LanguageSelector
+          visible={showLanguageSelector}
+          onClose={() => setShowLanguageSelector(false)}
+          onSelectLanguage={handleLanguageSelect}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <ScrollView 
-        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo/Icon */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/images/a3876905-0be2-4827-bf7c-0b05f4f36aff.jpeg')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>{t('welcome.title')}</Text>
-          <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
-        </View>
+        <View style={styles.content}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoEmoji}>👨‍👩‍👧‍👦</Text>
+            <Text style={styles.logoText}>Flow Fam</Text>
+          </View>
 
-        {/* Language Dropdown */}
-        <View style={styles.languageSection}>
-          <Text style={styles.languageTitle}>
-            {t('language.subtitle')}
-          </Text>
-          
-          <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => setDropdownVisible(true)}
-          >
-            <View style={styles.dropdownContent}>
-              <Text style={styles.dropdownFlag}>{getSelectedLanguageData().flag}</Text>
-              <Text style={styles.dropdownText}>{getSelectedLanguageData().nativeName}</Text>
-            </View>
-            <IconSymbol
-              ios_icon_name="chevron.down"
-              android_material_icon_name="arrow-drop-down"
-              size={24}
-              color={colors.darkBrown}
-            />
-          </TouchableOpacity>
-        </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>{t('welcome.title')}</Text>
+            <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
+          </View>
 
-        {/* Main buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.primaryButton]}
-            onPress={async () => {
-              await handleContinue();
-              router.push('/(auth)/create-family');
-            }}
-          >
-            <Text style={styles.primaryButtonText}>{t('welcome.startNewFamily')}</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.primaryButton} onPress={handleCreateFamily}>
+              <Text style={styles.primaryButtonText}>{t('welcome.startNewFamily')}</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, styles.secondaryButton]}
-            onPress={async () => {
-              await handleContinue();
-              router.push('/(auth)/join-family');
-            }}
-          >
-            <Text style={styles.secondaryButtonText}>{t('welcome.haveFamilyCode')}</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleJoinFamily}>
+              <Text style={styles.secondaryButtonText}>{t('welcome.haveFamilyCode')}</Text>
+            </TouchableOpacity>
 
-        {/* Login link */}
-        <TouchableOpacity
-          style={styles.loginLink}
-          onPress={async () => {
-            await handleContinue();
-            router.push('/(auth)/login');
-          }}
-        >
-          <Text style={styles.loginLinkText}>
-            {t('welcome.alreadyHaveAccount')}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+            <TouchableOpacity style={styles.textButton} onPress={handleLogin}>
+              <Text style={styles.textButtonText}>{t('welcome.alreadyHaveAccount')}</Text>
+            </TouchableOpacity>
 
-      {/* Language Dropdown Modal */}
-      <Modal
-        visible={dropdownVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDropdownVisible(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setDropdownVisible(false)}
-        >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('language.title')}</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setDropdownVisible(false)}
-              >
-                <IconSymbol
-                  ios_icon_name="xmark.circle.fill"
-                  android_material_icon_name="cancel"
-                  size={28}
-                  color={colors.textSecondary}
-                />
+            {/* Development/Design Mode Button */}
+            <View style={styles.devSection}>
+              <View style={styles.divider} />
+              <Text style={styles.devLabel}>🎨 Design Mode</Text>
+              <TouchableOpacity style={styles.devButton} onPress={handleAddFamilyMembers}>
+                <Text style={styles.devButtonText}>Gezinsleden toevoegen →</Text>
               </TouchableOpacity>
             </View>
-
-            <ScrollView 
-              style={styles.languageScrollView}
-              contentContainerStyle={styles.languageList}
-              showsVerticalScrollIndicator={true}
-            >
-              {availableLanguages.map((language, index) => {
-                const isSelected = selectedLanguage === language.code;
-                return (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[
-                        styles.languageOption,
-                        isSelected && styles.languageOptionActive,
-                      ]}
-                      onPress={() => handleLanguageSelect(language.code)}
-                    >
-                      <Text style={styles.languageOptionFlag}>{language.flag}</Text>
-                      <Text style={styles.languageOptionText}>{language.nativeName}</Text>
-                      {isSelected && (
-                        <IconSymbol
-                          ios_icon_name="checkmark.circle.fill"
-                          android_material_icon_name="check-circle"
-                          size={24}
-                          color={colors.warmOrange}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
-                );
-              })}
-            </ScrollView>
           </View>
-        </TouchableOpacity>
-      </Modal>
+
+          <TouchableOpacity
+            style={styles.languageChangeButton}
+            onPress={() => setShowLanguageSelector(true)}
+          >
+            <Text style={styles.languageChangeText}>🌍 {t('language.change')}</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      <LanguageSelector
+        visible={showLanguageSelector}
+        onClose={() => setShowLanguageSelector(false)}
+        onSelectLanguage={handleLanguageSelect}
+      />
     </View>
   );
 }
@@ -210,186 +146,146 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollView: {
-    flex: 1,
-  },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 48 : 60,
-    paddingBottom: 40,
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 48,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 48,
   },
-  logo: {
-    width: 120,
-    height: 120,
+  logoEmoji: {
+    fontSize: 80,
     marginBottom: 16,
+  },
+  logoText: {
+    fontSize: 42,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  textContainer: {
+    alignItems: 'center',
+    marginBottom: 48,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.darkBrown,
-    marginBottom: 8,
-    fontFamily: 'Poppins_700Bold',
+    color: colors.text,
     textAlign: 'center',
+    marginBottom: 12,
+    fontFamily: 'Poppins_700Bold',
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 16,
     color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
     fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
-  },
-  languageSection: {
-    width: '100%',
-    marginBottom: 30,
-  },
-  languageTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.darkBrown,
-    fontFamily: 'Poppins_600SemiBold',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  dropdownButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    backgroundColor: colors.card,
-    borderWidth: 2,
-    borderColor: colors.warmOrange,
-    boxShadow: `0px 2px 8px ${colors.shadow}`,
-    elevation: 2,
-  },
-  dropdownContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  dropdownFlag: {
-    fontSize: 28,
-    marginRight: 12,
-  },
-  dropdownText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.darkBrown,
-    fontFamily: 'Poppins_600SemiBold',
   },
   buttonContainer: {
     width: '100%',
-    gap: 12,
-    marginBottom: 20,
-  },
-  button: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    maxWidth: 400,
+    gap: 16,
   },
   primaryButton: {
     backgroundColor: colors.warmOrange,
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
   primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#FFFFFF',
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Poppins_700Bold',
   },
   secondaryButton: {
-    backgroundColor: colors.card,
-    borderWidth: 2,
-    borderColor: colors.warmOrange,
+    backgroundColor: colors.beige,
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
   },
   secondaryButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins_700Bold',
+  },
+  textButton: {
+    padding: 12,
+    alignItems: 'center',
+  },
+  textButtonText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_600SemiBold',
+    textDecorationLine: 'underline',
+  },
+  languageButton: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  languageButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.warmOrange,
+    color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
-  loginLink: {
-    alignSelf: 'center',
-    paddingVertical: 10,
+  languageChangeButton: {
+    marginTop: 32,
+    padding: 12,
   },
-  loginLinkText: {
+  languageChangeText: {
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
-    textDecorationLine: 'underline',
   },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(76, 59, 52, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: colors.card,
-    borderRadius: 24,
+  devSection: {
+    marginTop: 24,
     width: '100%',
-    maxWidth: 400,
-    maxHeight: '70%',
-    boxShadow: `0px 8px 32px ${colors.shadow}`,
-    elevation: 8,
-  },
-  modalHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.beige,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.darkBrown,
-    fontFamily: 'Poppins_700Bold',
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: colors.card,
+    marginBottom: 16,
   },
-  closeButton: {
-    padding: 4,
+  devLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_600SemiBold',
+    marginBottom: 12,
   },
-  languageScrollView: {
-    maxHeight: 500,
-  },
-  languageList: {
-    padding: 16,
-  },
-  languageOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
+  devButton: {
+    backgroundColor: colors.vibrantPink,
     borderRadius: 12,
-    marginBottom: 8,
-    backgroundColor: colors.background,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    padding: 16,
+    alignItems: 'center',
+    width: '100%',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
   },
-  languageOptionActive: {
-    borderColor: colors.warmOrange,
-    backgroundColor: colors.softCream,
-  },
-  languageOptionFlag: {
-    fontSize: 28,
-    marginRight: 16,
-  },
-  languageOptionText: {
+  devButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.darkBrown,
-    fontFamily: 'Poppins_600SemiBold',
-    flex: 1,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins_700Bold',
   },
 });
