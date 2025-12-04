@@ -1,163 +1,50 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
-import TaskCompletionAnimation from '@/components/TaskCompletionAnimation';
 import IconPicker from '@/components/IconPicker';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
 import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
 import ModuleHeader from '@/components/ModuleHeader';
-import ThemedButton from '@/components/ThemedButton';
+import TaskCompletionAnimation from '@/components/TaskCompletionAnimation';
 
 export default function TasksScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { setModule, accentColor } = useModuleTheme();
   const { 
     tasks, 
-    householdTasks,
-    familyMembers, 
-    completeTask, 
     addTask, 
-    currentUser 
+    completeTask, 
+    familyMembers, 
+    currentUser,
   } = useFamily();
-  
-  const [showAnimation, setShowAnimation] = useState(false);
-  const [completedTaskCoins, setCompletedTaskCoins] = useState(0);
-  const [showCoinsInAnimation, setShowCoinsInAnimation] = useState(true);
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  const [taskMode, setTaskMode] = useState<'one-time' | 'recurring' | null>(null);
-  const [newTaskName, setNewTaskName] = useState('');
-  const [newTaskAssignedTo, setNewTaskAssignedTo] = useState('');
-  const [newTaskRepeatType, setNewTaskRepeatType] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
-  const [newTaskIcon, setNewTaskIcon] = useState('checkmark-circle');
-  const [newTaskTime, setNewTaskTime] = useState('');
-  const [newTaskDate, setNewTaskDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
-
-  const isParent = currentUser?.role === 'parent';
 
   // Set module theme on mount
   useEffect(() => {
     setModule('tasks' as ModuleName);
   }, [setModule]);
 
-  // Helper functions for date comparison
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
-  };
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskCoins, setNewTaskCoins] = useState('');
+  const [newTaskIcon, setNewTaskIcon] = useState('check');
+  const [newTaskRepeat, setNewTaskRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
+  const [selectedChild, setSelectedChild] = useState<string>('');
+  const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
+  const [completedTaskName, setCompletedTaskName] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
 
-  const isTomorrow = (date: Date) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return date.getDate() === tomorrow.getDate() &&
-           date.getMonth() === tomorrow.getMonth() &&
-           date.getFullYear() === tomorrow.getFullYear();
-  };
+  const isParent = currentUser?.role === 'parent';
+  const children = familyMembers.filter(m => m.role === 'child');
 
-  const isThisWeek = (date: Date) => {
-    const today = new Date();
-    const weekFromNow = new Date();
-    weekFromNow.setDate(today.getDate() + 7);
-    return date > today && date <= weekFromNow;
-  };
-
-  const shouldShowRecurringTaskToday = (task: Task) => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    
-    if (task.repeatType === 'daily') return true;
-    if (task.repeatType === 'weekly' && dayOfWeek === 1) return true; // Monday
-    if (task.repeatType === 'monthly' && today.getDate() === 1) return true;
-    
-    return false;
-  };
-
-  // Categorize tasks
-  const categorizedTasks = useMemo(() => {
-    const userTasks = tasks.filter(t => t.assignedTo === currentUser?.id);
-    
-    const todayTasks: Task[] = [];
-    const recurringTasks: { daily: Task[], weekly: Task[], monthly: Task[] } = {
-      daily: [],
-      weekly: [],
-      monthly: []
-    };
-    const upcomingTasks: { tomorrow: Task[], thisWeek: Task[], later: Task[] } = {
-      tomorrow: [],
-      thisWeek: [],
-      later: []
-    };
-
-    userTasks.forEach(task => {
-      // Recurring tasks
-      if (task.repeatType !== 'none') {
-        // Add to today if it should show today
-        if (shouldShowRecurringTaskToday(task)) {
-          todayTasks.push(task);
-        }
-        
-        // Also add to recurring section
-        if (task.repeatType === 'daily') {
-          recurringTasks.daily.push(task);
-        } else if (task.repeatType === 'weekly') {
-          recurringTasks.weekly.push(task);
-        } else if (task.repeatType === 'monthly') {
-          recurringTasks.monthly.push(task);
-        }
-      } else {
-        // One-time tasks
-        if (task.dueDate) {
-          const dueDate = new Date(task.dueDate);
-          
-          if (isToday(dueDate)) {
-            todayTasks.push(task);
-          } else if (isTomorrow(dueDate)) {
-            upcomingTasks.tomorrow.push(task);
-          } else if (isThisWeek(dueDate)) {
-            upcomingTasks.thisWeek.push(task);
-          } else {
-            upcomingTasks.later.push(task);
-          }
-        } else {
-          // No due date, add to today
-          todayTasks.push(task);
-        }
-      }
-    });
-
-    return { todayTasks, recurringTasks, upcomingTasks };
-  }, [tasks, currentUser]);
-
-  const handleCompleteTask = (taskId: string, coins: number) => {
-    setCompletedTaskCoins(coins);
-    setShowCoinsInAnimation(!isParent && coins > 0);
-    setShowAnimation(true);
-    completeTask(taskId);
-  };
-
-  const handleAddRecurringTaskToToday = (task: Task) => {
-    // Create a one-time instance of this recurring task for today
-    addTask({
-      name: `${task.name} (vandaag)`,
-      icon: task.icon,
-      coins: task.coins,
-      assignedTo: task.assignedTo,
-      completed: false,
-      repeatType: 'none',
-      dueDate: new Date(),
-      time: task.time,
-      createdBy: currentUser?.id,
-    });
-    Alert.alert('Toegevoegd!', 'Taak is toegevoegd aan vandaag');
-  };
+  // Filter tasks based on user role
+  const visibleTasks = isParent 
+    ? tasks 
+    : tasks.filter(t => t.assignedTo === currentUser?.id);
 
   const handleAddTask = () => {
     const errors: {[key: string]: boolean} = {};
@@ -166,13 +53,18 @@ export default function TasksScreen() {
       errors.taskName = true;
     }
 
-    if (!newTaskAssignedTo) {
-      errors.assignedTo = true;
+    const coins = parseInt(newTaskCoins);
+    if (isNaN(coins) || coins < 0) {
+      errors.taskCoins = true;
+    }
+
+    if (!selectedChild) {
+      errors.selectedChild = true;
     }
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      Alert.alert('Fout', 'Vul alle verplichte velden in');
+      Alert.alert(t('common.error'), t('tasks.fillAllFields'));
       return;
     }
 
@@ -181,461 +73,268 @@ export default function TasksScreen() {
     addTask({
       name: newTaskName.trim(),
       icon: newTaskIcon,
-      coins: 0,
-      assignedTo: newTaskAssignedTo,
+      coins: coins,
+      assignedTo: selectedChild,
       completed: false,
-      repeatType: taskMode === 'recurring' ? newTaskRepeatType : 'none',
-      dueDate: taskMode === 'one-time' ? newTaskDate : undefined,
-      time: newTaskTime || undefined,
+      repeatType: newTaskRepeat,
       createdBy: currentUser?.id,
     });
 
-    // Reset form
     setNewTaskName('');
-    setNewTaskAssignedTo('');
-    setNewTaskRepeatType('none');
-    setNewTaskIcon('checkmark-circle');
-    setNewTaskTime('');
-    setNewTaskDate(new Date());
-    setTaskMode(null);
+    setNewTaskCoins('');
+    setNewTaskIcon('check');
+    setNewTaskRepeat('none');
+    setSelectedChild('');
     setShowAddTaskModal(false);
-    Alert.alert('Gelukt!', 'Taak toegevoegd');
+    Alert.alert(t('common.success'), t('tasks.taskAdded'));
   };
 
-  const renderTaskCard = (task: Task, showExecuteButton: boolean = false) => {
-    const assignedMember = familyMembers.find(m => m.id === task.assignedTo);
-    
-    return (
-      <View key={task.id} style={[styles.taskCard, task.completed && styles.taskCardCompleted]}>
-        <TouchableOpacity
-          style={styles.checkbox}
-          onPress={() => !task.completed && handleCompleteTask(task.id, task.coins)}
-          disabled={task.completed}
-        >
-          <View style={[styles.checkboxInner, { borderColor: accentColor }, task.completed && [styles.checkboxChecked, { backgroundColor: accentColor }]]}>
-            {task.completed && (
-              <IconSymbol
-                ios_icon_name="checkmark"
-                android_material_icon_name="check"
-                size={16}
-                color={colors.card}
-              />
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <View style={[styles.taskIcon, { backgroundColor: accentColor + '20' }]}>
-          <IconSymbol
-            ios_icon_name={task.icon}
-            android_material_icon_name={task.icon as any}
-            size={28}
-            color={task.completed ? colors.textSecondary : accentColor}
-          />
-        </View>
-
-        <View style={styles.taskInfo}>
-          <Text style={[styles.taskName, task.completed && styles.taskNameCompleted]}>
-            {task.name}
-          </Text>
-          {task.time && (
-            <Text style={styles.taskTime}>🕐 {task.time}</Text>
-          )}
-        </View>
-
-        {assignedMember && (
-          <View style={[styles.taskAvatar, { backgroundColor: assignedMember.color || colors.accent }]}>
-            {assignedMember.photoUri ? (
-              <Image source={{ uri: assignedMember.photoUri }} style={styles.taskAvatarPhoto} />
-            ) : (
-              <Text style={styles.taskAvatarText}>{assignedMember.name.charAt(0)}</Text>
-            )}
-          </View>
-        )}
-
-        {showExecuteButton && !task.completed && (
-          <TouchableOpacity
-            style={[styles.executeButton, { backgroundColor: accentColor }]}
-            onPress={() => handleAddRecurringTaskToToday(task)}
-          >
-            <Text style={styles.executeButtonText}>Vandaag uitvoeren</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
-
-  const renderRecurringTaskCard = (task: Task, frequency: string) => {
-    const assignedMember = familyMembers.find(m => m.id === task.assignedTo);
-    
-    return (
-      <View key={task.id} style={styles.recurringTaskCard}>
-        <View style={[styles.recurringTaskIcon, { backgroundColor: accentColor + '20' }]}>
-          <IconSymbol
-            ios_icon_name={task.icon}
-            android_material_icon_name={task.icon as any}
-            size={24}
-            color={accentColor}
-          />
-        </View>
-
-        <View style={styles.recurringTaskInfo}>
-          <Text style={[styles.recurringTaskFrequency, { color: accentColor }]}>{frequency}</Text>
-          <Text style={styles.recurringTaskName}>{task.name}</Text>
-          {task.time && (
-            <Text style={styles.recurringTaskTime}>🕐 {task.time}</Text>
-          )}
-        </View>
-
-        {assignedMember && (
-          <View style={[styles.recurringTaskAvatar, { backgroundColor: assignedMember.color || colors.accent }]}>
-            {assignedMember.photoUri ? (
-              <Image source={{ uri: assignedMember.photoUri }} style={styles.recurringTaskAvatarPhoto} />
-            ) : (
-              <Text style={styles.recurringTaskAvatarText}>{assignedMember.name.charAt(0)}</Text>
-            )}
-          </View>
-        )}
-
-        <TouchableOpacity
-          style={[styles.addTodayButton, { backgroundColor: accentColor + '20' }]}
-          onPress={() => handleAddRecurringTaskToToday(task)}
-        >
-          <IconSymbol
-            ios_icon_name="plus.circle.fill"
-            android_material_icon_name="add_circle"
-            size={20}
-            color={accentColor}
-          />
-          <Text style={[styles.addTodayButtonText, { color: accentColor }]}>Vandaag</Text>
-        </TouchableOpacity>
-      </View>
-    );
+  const handleCompleteTask = (taskId: string, taskName: string) => {
+    completeTask(taskId);
+    setCompletedTaskName(taskName);
+    setShowCompletionAnimation(true);
   };
 
   return (
     <View style={styles.container}>
       <ModuleHeader
-        title="Taken"
+        title={t('tasks.title')}
+        subtitle={t('tasks.subtitle')}
         showAddButton={isParent}
         onAddPress={() => setShowAddTaskModal(true)}
       />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        {/* Vandaag Block */}
-        <View style={styles.block}>
-          <Text style={styles.blockTitle}>📅 Vandaag</Text>
-          {categorizedTasks.todayTasks.length > 0 ? (
-            categorizedTasks.todayTasks.map(task => renderTaskCard(task))
-          ) : (
-            <View style={styles.emptyBlock}>
-              <Text style={styles.emptyBlockText}>Geen taken voor vandaag</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Herhalingstaken Block */}
-        <View style={styles.block}>
-          <Text style={styles.blockTitle}>🔄 Herhalingstaken</Text>
-          
-          {categorizedTasks.recurringTasks.daily.length > 0 && (
-            <View style={styles.subSection}>
-              <Text style={styles.subSectionTitle}>Dagelijks</Text>
-              {categorizedTasks.recurringTasks.daily.map(task => 
-                renderRecurringTaskCard(task, 'Dagelijks')
-              )}
-            </View>
-          )}
-
-          {categorizedTasks.recurringTasks.weekly.length > 0 && (
-            <View style={styles.subSection}>
-              <Text style={styles.subSectionTitle}>Wekelijks</Text>
-              {categorizedTasks.recurringTasks.weekly.map(task => 
-                renderRecurringTaskCard(task, 'Wekelijks')
-              )}
-            </View>
-          )}
-
-          {categorizedTasks.recurringTasks.monthly.length > 0 && (
-            <View style={styles.subSection}>
-              <Text style={styles.subSectionTitle}>Maandelijks</Text>
-              {categorizedTasks.recurringTasks.monthly.map(task => 
-                renderRecurringTaskCard(task, 'Maandelijks')
-              )}
-            </View>
-          )}
-
-          {categorizedTasks.recurringTasks.daily.length === 0 &&
-           categorizedTasks.recurringTasks.weekly.length === 0 &&
-           categorizedTasks.recurringTasks.monthly.length === 0 && (
-            <View style={styles.emptyBlock}>
-              <Text style={styles.emptyBlockText}>Geen herhalingstaken</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Komende taken Block */}
-        <View style={styles.block}>
-          <Text style={styles.blockTitle}>📆 Komende taken</Text>
-          
-          {categorizedTasks.upcomingTasks.tomorrow.length > 0 && (
-            <View style={styles.subSection}>
-              <Text style={styles.subSectionTitle}>Morgen</Text>
-              {categorizedTasks.upcomingTasks.tomorrow.map(task => renderTaskCard(task))}
-            </View>
-          )}
-
-          {categorizedTasks.upcomingTasks.thisWeek.length > 0 && (
-            <View style={styles.subSection}>
-              <Text style={styles.subSectionTitle}>Deze week</Text>
-              {categorizedTasks.upcomingTasks.thisWeek.map(task => renderTaskCard(task))}
-            </View>
-          )}
-
-          {categorizedTasks.upcomingTasks.later.length > 0 && (
-            <View style={styles.subSection}>
-              <Text style={styles.subSectionTitle}>Later</Text>
-              {categorizedTasks.upcomingTasks.later.map(task => renderTaskCard(task))}
-            </View>
-          )}
-
-          {categorizedTasks.upcomingTasks.tomorrow.length === 0 &&
-           categorizedTasks.upcomingTasks.thisWeek.length === 0 &&
-           categorizedTasks.upcomingTasks.later.length === 0 && (
-            <View style={styles.emptyBlock}>
-              <Text style={styles.emptyBlockText}>Geen komende taken</Text>
-            </View>
-          )}
-        </View>
+        {visibleTasks.length === 0 ? (
+          <View style={styles.emptyState}>
+            <IconSymbol
+              ios_icon_name="checkmark.circle"
+              android_material_icon_name="check-circle"
+              size={64}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.emptyStateTitle}>
+              {isParent ? t('tasks.noTasksParent') : t('tasks.noTasksChild')}
+            </Text>
+            <Text style={styles.emptyStateText}>
+              {isParent ? t('tasks.addFirstTask') : t('tasks.waitForTasks')}
+            </Text>
+          </View>
+        ) : (
+          visibleTasks.map((task, index) => {
+            const assignedChild = children.find(c => c.id === task.assignedTo);
+            return (
+              <React.Fragment key={index}>
+                <View style={styles.taskCard}>
+                  <View style={[styles.taskIconContainer, { backgroundColor: accentColor + '20' }]}>
+                    <IconSymbol
+                      ios_icon_name={task.icon}
+                      android_material_icon_name={task.icon}
+                      size={32}
+                      color={accentColor}
+                    />
+                  </View>
+                  <View style={styles.taskInfo}>
+                    <Text style={styles.taskName}>{task.name}</Text>
+                    {isParent && assignedChild && (
+                      <Text style={styles.taskAssignee}>
+                        {t('tasks.assignedTo')}: {assignedChild.name}
+                      </Text>
+                    )}
+                    <View style={styles.taskMeta}>
+                      <View style={styles.coinsContainer}>
+                        <Text style={styles.coinsText}>{task.coins}</Text>
+                        <Text style={styles.coinEmoji}>🪙</Text>
+                      </View>
+                      {task.repeatType !== 'none' && (
+                        <View style={styles.repeatBadge}>
+                          <IconSymbol
+                            ios_icon_name="arrow.clockwise"
+                            android_material_icon_name="refresh"
+                            size={14}
+                            color={colors.textSecondary}
+                          />
+                          <Text style={styles.repeatText}>
+                            {task.repeatType === 'daily' && t('tasks.daily')}
+                            {task.repeatType === 'weekly' && t('tasks.weekly')}
+                            {task.repeatType === 'monthly' && t('tasks.monthly')}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  {!task.completed && (
+                    <TouchableOpacity
+                      style={[styles.completeButton, { backgroundColor: accentColor }]}
+                      onPress={() => handleCompleteTask(task.id, task.name)}
+                    >
+                      <IconSymbol
+                        ios_icon_name="checkmark"
+                        android_material_icon_name="check"
+                        size={24}
+                        color={colors.card}
+                      />
+                    </TouchableOpacity>
+                  )}
+                  {task.completed && (
+                    <View style={styles.completedBadge}>
+                      <IconSymbol
+                        ios_icon_name="checkmark.circle.fill"
+                        android_material_icon_name="check-circle"
+                        size={32}
+                        color={colors.vibrantGreen}
+                      />
+                    </View>
+                  )}
+                </View>
+              </React.Fragment>
+            );
+          })
+        )}
       </ScrollView>
-
-      <TaskCompletionAnimation
-        visible={showAnimation}
-        coins={completedTaskCoins}
-        onComplete={() => setShowAnimation(false)}
-        showCoins={showCoinsInAnimation}
-      />
 
       {/* Add Task Modal */}
       <Modal
         visible={showAddTaskModal}
         transparent
         animationType="slide"
-        onRequestClose={() => {
-          setShowAddTaskModal(false);
-          setTaskMode(null);
-        }}
+        onRequestClose={() => setShowAddTaskModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={() => {
-                  if (taskMode) {
-                    setTaskMode(null);
-                  } else {
-                    setShowAddTaskModal(false);
-                    setNewTaskName('');
-                    setNewTaskAssignedTo('');
-                    setNewTaskRepeatType('none');
-                    setNewTaskIcon('checkmark-circle');
-                    setNewTaskTime('');
-                    setNewTaskDate(new Date());
-                    setValidationErrors({});
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>{t('tasks.addTask')}</Text>
+
+              <TextInput
+                style={[
+                  styles.input,
+                  validationErrors.taskName && styles.inputError
+                ]}
+                placeholder={t('tasks.taskName')}
+                placeholderTextColor={validationErrors.taskName ? '#E74C3C' : colors.textSecondary}
+                value={newTaskName}
+                onChangeText={(text) => {
+                  setNewTaskName(text);
+                  if (validationErrors.taskName && text.trim()) {
+                    setValidationErrors(prev => ({ ...prev, taskName: false }));
                   }
                 }}
-              >
-                <Ionicons name="close-outline" size={28} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>
-                {!taskMode ? 'Type taak kiezen' : 'Nieuwe taak toevoegen'}
-              </Text>
-              <View style={styles.placeholder} />
-            </View>
+              />
 
-            <ScrollView contentContainerStyle={styles.modalScrollContent}>
-              {!taskMode ? (
-                // Step 1: Choose task type
-                <View style={styles.taskTypeSelection}>
-                  <TouchableOpacity
-                    style={[styles.taskTypeCard, { borderColor: accentColor + '40' }]}
-                    onPress={() => setTaskMode('one-time')}
-                  >
-                    <IconSymbol
-                      ios_icon_name="calendar"
-                      android_material_icon_name="event"
-                      size={48}
-                      color={accentColor}
-                    />
-                    <Text style={styles.taskTypeCardTitle}>Eenmalige taak</Text>
-                    <Text style={styles.taskTypeCardDescription}>
-                      Voor taken met een specifieke datum
-                    </Text>
-                  </TouchableOpacity>
+              <TextInput
+                style={[
+                  styles.input,
+                  validationErrors.taskCoins && styles.inputError
+                ]}
+                placeholder={t('rewards.coins', { count: 0 })}
+                placeholderTextColor={validationErrors.taskCoins ? '#E74C3C' : colors.textSecondary}
+                value={newTaskCoins}
+                onChangeText={(text) => {
+                  setNewTaskCoins(text);
+                  if (validationErrors.taskCoins && text.trim()) {
+                    setValidationErrors(prev => ({ ...prev, taskCoins: false }));
+                  }
+                }}
+                keyboardType="numeric"
+              />
 
-                  <TouchableOpacity
-                    style={[styles.taskTypeCard, { borderColor: accentColor + '40' }]}
-                    onPress={() => setTaskMode('recurring')}
-                  >
-                    <IconSymbol
-                      ios_icon_name="arrow.clockwise"
-                      android_material_icon_name="refresh"
-                      size={48}
-                      color={accentColor}
-                    />
-                    <Text style={styles.taskTypeCardTitle}>Herhalende taak</Text>
-                    <Text style={styles.taskTypeCardDescription}>
-                      Voor dagelijkse, wekelijkse of maandelijkse taken
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                // Step 2: Task details
-                <View style={styles.taskForm}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      validationErrors.taskName && styles.inputError
-                    ]}
-                    placeholder="Taaknaam *"
-                    placeholderTextColor={validationErrors.taskName ? '#E74C3C' : colors.textSecondary}
-                    value={newTaskName}
-                    onChangeText={(text) => {
-                      setNewTaskName(text);
-                      if (validationErrors.taskName && text.trim()) {
-                        setValidationErrors(prev => ({ ...prev, taskName: false }));
-                      }
-                    }}
-                  />
+              <IconPicker
+                selectedIcon={newTaskIcon}
+                onSelectIcon={setNewTaskIcon}
+                type="task"
+                taskName={newTaskName}
+              />
 
-                  <IconPicker
-                    selectedIcon={newTaskIcon}
-                    onSelectIcon={setNewTaskIcon}
-                    type="task"
-                    taskName={newTaskName}
-                  />
-
-                  <Text style={styles.inputLabel}>Toewijzen aan: *</Text>
-                  <View style={styles.memberSelector}>
-                    {familyMembers.map((member, index) => (
-                      <React.Fragment key={index}>
-                        <TouchableOpacity
-                          style={[
-                            styles.memberOption,
-                            newTaskAssignedTo === member.id && [styles.memberOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
-                            validationErrors.assignedTo && !newTaskAssignedTo && styles.memberOptionError,
-                          ]}
-                          onPress={() => {
-                            setNewTaskAssignedTo(member.id);
-                            if (validationErrors.assignedTo) {
-                              setValidationErrors(prev => ({ ...prev, assignedTo: false }));
-                            }
-                          }}
-                        >
-                          <View style={[styles.memberOptionAvatar, { backgroundColor: member.color || colors.accent }]}>
-                            {member.photoUri ? (
-                              <Image source={{ uri: member.photoUri }} style={styles.memberOptionPhoto} />
-                            ) : (
-                              <Text style={styles.memberOptionAvatarText}>{member.name.charAt(0)}</Text>
-                            )}
-                          </View>
-                          <Text style={styles.memberOptionName}>{member.name}</Text>
-                        </TouchableOpacity>
-                      </React.Fragment>
-                    ))}
-                  </View>
-
-                  {taskMode === 'one-time' && (
-                    <>
-                      <Text style={styles.inputLabel}>Datum:</Text>
-                      <TouchableOpacity
-                        style={styles.dateButton}
-                        onPress={() => setShowDatePicker(true)}
-                      >
-                        <IconSymbol
-                          ios_icon_name="calendar"
-                          android_material_icon_name="event"
-                          size={20}
-                          color={colors.text}
-                        />
-                        <Text style={styles.dateButtonText}>
-                          {newTaskDate.toLocaleDateString('nl-NL', { 
-                            weekday: 'short', 
-                            day: 'numeric', 
-                            month: 'short' 
-                          })}
-                        </Text>
-                      </TouchableOpacity>
-
-                      {showDatePicker && (
-                        <DateTimePicker
-                          value={newTaskDate}
-                          mode="date"
-                          display="default"
-                          onChange={(event, selectedDate) => {
-                            setShowDatePicker(false);
-                            if (selectedDate) {
-                              setNewTaskDate(selectedDate);
-                            }
-                          }}
-                        />
-                      )}
-                    </>
-                  )}
-
-                  {taskMode === 'recurring' && (
-                    <>
-                      <Text style={styles.inputLabel}>Herhaling:</Text>
-                      <View style={styles.repeatSelector}>
-                        {[
-                          { value: 'daily', label: 'Dagelijks' },
-                          { value: 'weekly', label: 'Wekelijks' },
-                          { value: 'monthly', label: 'Maandelijks' },
-                        ].map((option, index) => (
-                          <React.Fragment key={index}>
-                            <TouchableOpacity
-                              style={[
-                                styles.repeatOption,
-                                newTaskRepeatType === option.value && [styles.repeatOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
-                              ]}
-                              onPress={() => setNewTaskRepeatType(option.value as any)}
-                            >
-                              <Text
-                                style={[
-                                  styles.repeatOptionText,
-                                  newTaskRepeatType === option.value && styles.repeatOptionTextActive,
-                                ]}
-                              >
-                                {option.label}
-                              </Text>
-                            </TouchableOpacity>
-                          </React.Fragment>
-                        ))}
+              <Text style={styles.inputLabel}>{t('tasks.assignTo')}</Text>
+              <View style={[
+                styles.childSelector,
+                validationErrors.selectedChild && styles.childSelectorError
+              ]}>
+                {children.map((child, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.childOption,
+                        selectedChild === child.id && styles.childOptionActive,
+                      ]}
+                      onPress={() => {
+                        setSelectedChild(child.id);
+                        if (validationErrors.selectedChild) {
+                          setValidationErrors(prev => ({ ...prev, selectedChild: false }));
+                        }
+                      }}
+                    >
+                      <View style={[styles.childAvatar, { backgroundColor: child.color }]}>
+                        <Text style={styles.childAvatarText}>{child.name.charAt(0)}</Text>
                       </View>
-                    </>
-                  )}
+                      <Text style={styles.childName}>{child.name}</Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
 
-                  <Text style={styles.inputLabel}>Tijd (optioneel):</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="bijv. 09:00"
-                    placeholderTextColor={colors.textSecondary}
-                    value={newTaskTime}
-                    onChangeText={setNewTaskTime}
-                  />
+              <Text style={styles.inputLabel}>{t('tasks.repeat')}</Text>
+              <View style={styles.repeatSelector}>
+                {[
+                  { value: 'none', label: t('tasks.repeatNone') },
+                  { value: 'daily', label: t('tasks.repeatDaily') },
+                  { value: 'weekly', label: t('tasks.repeatWeekly') },
+                  { value: 'monthly', label: t('tasks.repeatMonthly') },
+                ].map((option, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.repeatOption,
+                        newTaskRepeat === option.value && styles.repeatOptionActive,
+                      ]}
+                      onPress={() => setNewTaskRepeat(option.value as any)}
+                    >
+                      <Text
+                        style={[
+                          styles.repeatOptionText,
+                          newTaskRepeat === option.value && styles.repeatOptionTextActive,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
 
-                  <TouchableOpacity
-                    style={[styles.submitButton, { backgroundColor: accentColor }]}
-                    onPress={handleAddTask}
-                  >
-                    <Text style={styles.submitButtonText}>Taak toevoegen</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </ScrollView>
-          </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowAddTaskModal(false);
+                    setNewTaskName('');
+                    setNewTaskCoins('');
+                    setNewTaskIcon('check');
+                    setNewTaskRepeat('none');
+                    setSelectedChild('');
+                    setValidationErrors({});
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
+                  onPress={handleAddTask}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.add')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
         </View>
       </Modal>
+
+      {/* Task Completion Animation */}
+      <TaskCompletionAnimation
+        visible={showCompletionAnimation}
+        taskName={completedTaskName}
+        onComplete={() => setShowCompletionAnimation(false)}
+      />
     </View>
   );
 }
@@ -647,264 +346,138 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 140,
   },
-  placeholder: {
-    width: 40,
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
   },
-  block: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-  },
-  blockTitle: {
+  emptyStateTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 15,
+    marginTop: 20,
+    marginBottom: 10,
     fontFamily: 'Poppins_700Bold',
   },
-  subSection: {
-    marginTop: 15,
-  },
-  subSectionTitle: {
+  emptyStateText: {
     fontSize: 16,
-    fontWeight: '600',
     color: colors.textSecondary,
-    marginBottom: 10,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  emptyBlock: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyBlockText: {
-    fontSize: 14,
-    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 40,
     fontFamily: 'Nunito_400Regular',
   },
   taskCard: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
+    backgroundColor: colors.card,
+    borderRadius: 20,
     padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
   },
-  taskCardCompleted: {
-    opacity: 0.5,
-  },
-  checkbox: {
-    marginRight: 12,
-  },
-  checkboxInner: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
+  taskIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  checkboxChecked: {
-  },
-  taskIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    marginRight: 15,
   },
   taskInfo: {
     flex: 1,
   },
   taskName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: colors.text,
+    marginBottom: 4,
     fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 2,
   },
-  taskNameCompleted: {
-    textDecorationLine: 'line-through',
+  taskAssignee: {
+    fontSize: 14,
     color: colors.textSecondary,
-  },
-  taskTime: {
-    fontSize: 12,
-    color: colors.textSecondary,
+    marginBottom: 6,
     fontFamily: 'Nunito_400Regular',
   },
-  taskAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-    overflow: 'hidden',
-  },
-  taskAvatarPhoto: {
-    width: '100%',
-    height: '100%',
-  },
-  taskAvatarText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  executeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginLeft: 8,
-  },
-  executeButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.card,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  recurringTaskCard: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
+  taskMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    gap: 10,
   },
-  recurringTaskIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+  coinsContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    backgroundColor: colors.highlight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  recurringTaskInfo: {
-    flex: 1,
-  },
-  recurringTaskFrequency: {
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 2,
-  },
-  recurringTaskName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 2,
-  },
-  recurringTaskTime: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  recurringTaskAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-    overflow: 'hidden',
-  },
-  recurringTaskAvatarPhoto: {
-    width: '100%',
-    height: '100%',
-  },
-  recurringTaskAvatarText: {
+  coinsText: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.card,
+    marginRight: 4,
     fontFamily: 'Poppins_700Bold',
   },
-  addTodayButton: {
+  coinEmoji: {
+    fontSize: 14,
+  },
+  repeatBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: colors.background,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
-    marginLeft: 8,
+    gap: 4,
   },
-  addTodayButtonText: {
-    fontSize: 11,
-    fontWeight: '600',
-    fontFamily: 'Poppins_600SemiBold',
-    marginLeft: 4,
+  repeatText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  completeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  completedBadge: {
+    marginLeft: 10,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   modalContent: {
     backgroundColor: colors.card,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    maxHeight: '90%',
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.background,
-  },
-  modalBackButton: {
-    width: 40,
-    height: 40,
     borderRadius: 20,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    boxShadow: `0px 8px 24px ${colors.shadow}`,
+    elevation: 5,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'Poppins_700Bold',
+    marginBottom: 20,
     textAlign: 'center',
-    flex: 1,
-  },
-  modalScrollContent: {
-    padding: 20,
-  },
-  taskTypeSelection: {
-    gap: 15,
-  },
-  taskTypeCard: {
-    backgroundColor: colors.background,
-    borderRadius: 20,
-    padding: 25,
-    alignItems: 'center',
-    borderWidth: 2,
-  },
-  taskTypeCardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
     fontFamily: 'Poppins_700Bold',
-    marginTop: 15,
-    marginBottom: 5,
-  },
-  taskTypeCardDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
-  },
-  taskForm: {
-    gap: 15,
   },
   input: {
     backgroundColor: colors.background,
@@ -912,6 +485,7 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 16,
     color: colors.text,
+    marginBottom: 15,
     fontFamily: 'Nunito_400Regular',
     borderWidth: 2,
     borderColor: 'transparent',
@@ -924,14 +498,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
+    marginBottom: 10,
     fontFamily: 'Poppins_600SemiBold',
   },
-  memberSelector: {
+  childSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    marginBottom: 20,
   },
-  memberOption: {
+  childSelectorError: {
+    borderWidth: 2,
+    borderColor: '#E74C3C',
+    borderRadius: 15,
+    padding: 10,
+  },
+  childOption: {
     backgroundColor: colors.background,
     borderRadius: 15,
     padding: 10,
@@ -940,66 +522,52 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  memberOptionActive: {
+  childOptionActive: {
+    borderColor: colors.vibrantOrange,
+    backgroundColor: colors.primary,
   },
-  memberOptionError: {
-    borderColor: '#E74C3C',
-  },
-  memberOptionAvatar: {
+  childAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 5,
-    overflow: 'hidden',
   },
-  memberOptionPhoto: {
-    width: '100%',
-    height: '100%',
-  },
-  memberOptionAvatarText: {
+  childAvatarText: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
   },
-  memberOptionName: {
+  childName: {
     fontSize: 12,
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
-  dateButton: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: colors.text,
-    fontFamily: 'Nunito_400Regular',
-  },
   repeatSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
+    marginBottom: 20,
   },
   repeatOption: {
     backgroundColor: colors.background,
     borderRadius: 15,
-    padding: 15,
-    flexDirection: 'row',
+    padding: 12,
+    flex: 1,
+    minWidth: '45%',
     alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   repeatOptionActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.primary,
   },
   repeatOptionText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.textSecondary,
     fontFamily: 'Poppins_600SemiBold',
@@ -1007,16 +575,28 @@ const styles = StyleSheet.create({
   repeatOptionTextActive: {
     color: colors.text,
   },
-  submitButton: {
-    borderRadius: 15,
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 10,
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  submitButtonText: {
+  modalButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: colors.background,
+  },
+  modalButtonConfirm: {
+  },
+  modalButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  modalButtonTextConfirm: {
     color: colors.card,
-    fontFamily: 'Poppins_700Bold',
   },
 });

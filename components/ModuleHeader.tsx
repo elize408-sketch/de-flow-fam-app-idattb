@@ -1,101 +1,91 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-import { IconSymbol } from '@/components/IconSymbol';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { IconSymbol } from './IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import { useModuleTheme } from '@/contexts/ThemeContext';
+import { useFamily } from '@/contexts/FamilyContext';
 
 interface ModuleHeaderProps {
   title: string;
   subtitle?: string;
-  showBackButton?: boolean;
-  showAddButton?: boolean;
   onAddPress?: () => void;
-  backRoute?: string;
+  showAddButton?: boolean;
+  addButtonIcon?: { ios: string; android: string };
 }
 
 export default function ModuleHeader({
   title,
   subtitle,
-  showBackButton = false,
-  showAddButton = false,
   onAddPress,
-  backRoute = '/(tabs)/(home)',
+  showAddButton = false,
+  addButtonIcon = { ios: 'plus', android: 'add' },
 }: ModuleHeaderProps) {
-  const router = useRouter();
   const { accentColor } = useModuleTheme();
+  const { currentUser } = useFamily();
+
+  // Only show add button if user is a parent and showAddButton is true
+  const shouldShowAddButton = showAddButton && currentUser?.role === 'parent' && onAddPress;
 
   return (
-    <View style={[styles.headerRow, { backgroundColor: accentColor }]}>
-      <View style={styles.placeholder} />
-      
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={styles.textContainer}>
         <Text style={styles.title}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
-      
-      {showAddButton && onAddPress ? (
+      {shouldShowAddButton && (
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: accentColor }]}
           onPress={onAddPress}
+          activeOpacity={0.7}
         >
           <IconSymbol
-            ios_icon_name="plus"
-            android_material_icon_name="add"
+            ios_icon_name={addButtonIcon.ios}
+            android_material_icon_name={addButtonIcon.android}
             size={24}
             color={colors.card}
           />
         </TouchableOpacity>
-      ) : (
-        <View style={styles.placeholder} />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
+  container: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 30,
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 10,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    marginBottom: 10,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
+    paddingTop: Platform.OS === 'android' ? 48 : 12,
+    paddingBottom: 16,
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.background,
   },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    alignItems: 'center',
+  textContainer: {
     flex: 1,
   },
-  placeholder: {
-    width: 40,
-  },
   title: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '700',
-    color: colors.card,
+    color: colors.text,
     fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.card,
-    marginTop: 5,
+    color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
-    opacity: 0.9,
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
   },
 });
