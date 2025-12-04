@@ -205,11 +205,11 @@ export default function ChildDashboardScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
   },
   emptySection: {
-    backgroundColor: '#F9F9F9',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 32,
     alignItems: 'center',
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   taskCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   },
   appointmentCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,

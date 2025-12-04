@@ -136,13 +136,13 @@ export default function FloatingTabBar({
       ...styles.blurContainer,
       ...Platform.select({
         ios: {
-          backgroundColor: 'rgba(244, 234, 225, 0.9)',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
         },
         android: {
-          backgroundColor: 'rgba(244, 234, 225, 0.95)',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
         },
         web: {
-          backgroundColor: 'rgba(244, 234, 225, 0.95)',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(10px)',
         },
       }),

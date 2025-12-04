@@ -123,21 +123,21 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.softCream,
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
   },
   container: {
     flexGrow: 1,
-    backgroundColor: colors.softCream,
+    backgroundColor: colors.background,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 120,
     alignItems: 'stretch',
   },
   userBanner: {
-    backgroundColor: colors.beige,
+    backgroundColor: colors.softCream,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.lightGrey,
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   illustrationCard: {
-    backgroundColor: colors.lightGrey,
+    backgroundColor: colors.card,
     borderRadius: 20,
     padding: 16,
     alignItems: 'center',

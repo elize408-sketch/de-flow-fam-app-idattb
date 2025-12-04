@@ -7,18 +7,18 @@ export const colors = {
   redPink: '#e53f59',           // red/pink - primary accent
   beige: '#cfa692',             // soft beige-rose - secondary accent
   warmOrange: '#f08a48',        // warm orange - primary buttons
-  softCream: '#f4eae1',         // soft cream - backgrounds
+  softCream: '#f4eae1',         // soft cream - for cards/accents only
   darkBrown: '#4c3b34',         // dark brown - text
   lightGrey: '#f5f5f5',         // light grey - cards/surfaces
   
-  // Semantic mappings
-  background: '#f4eae1',        // soft cream
+  // Semantic mappings - REVERTED TO NEUTRAL BACKGROUNDS
+  background: '#FFFFFF',        // white background (original neutral)
   text: '#4c3b34',              // dark brown
   textSecondary: '#8a7a72',     // lighter brown for secondary text
-  primary: '#e53f59',           // red/pink
-  secondary: '#cfa692',         // soft beige-rose
-  accent: '#f08a48',            // warm orange
-  card: '#f5f5f5',              // light grey
+  primary: '#e53f59',           // red/pink - for buttons
+  secondary: '#cfa692',         // soft beige-rose - for buttons
+  accent: '#f08a48',            // warm orange - for buttons
+  card: '#f5f5f5',              // light grey - for cards
   highlight: '#e53f59',         // red/pink for highlights
   shadow: 'rgba(76, 59, 52, 0.12)',  // dark brown with transparency
   

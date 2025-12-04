@@ -208,7 +208,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.softCream,
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderRadius: 16,
-    backgroundColor: colors.lightGrey,
+    backgroundColor: colors.card,
     borderWidth: 2,
     borderColor: colors.warmOrange,
     boxShadow: `0px 2px 8px ${colors.shadow}`,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
   },
   secondaryButton: {
-    backgroundColor: colors.lightGrey,
+    backgroundColor: colors.card,
     borderWidth: 2,
     borderColor: colors.warmOrange,
   },
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: colors.lightGrey,
+    backgroundColor: colors.card,
     borderRadius: 24,
     width: '100%',
     maxWidth: 400,
@@ -373,13 +373,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
-    backgroundColor: colors.softCream,
+    backgroundColor: colors.background,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   languageOptionActive: {
     borderColor: colors.warmOrange,
-    backgroundColor: colors.beige,
+    backgroundColor: colors.softCream,
   },
   languageOptionFlag: {
     fontSize: 28,
