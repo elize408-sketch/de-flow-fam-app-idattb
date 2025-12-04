@@ -6,6 +6,7 @@ import {
   View,
   SafeAreaView,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { HomeMenuItem } from '@/components/HomeMenuItem';
@@ -67,6 +68,11 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroContainer}>
+          <Image
+            source={require('@/assets/images/ff16279a-fb4e-41ec-9013-daf7a31fa2fb.png')}
+            style={styles.familyImage}
+            resizeMode="contain"
+          />
           <View style={styles.titlePill}>
             <Text style={styles.title}>Flow Fam</Text>
           </View>
@@ -111,10 +117,15 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     marginTop: 16,
   },
+  familyImage: {
+    width: 180,
+    height: 120,
+    marginBottom: 16,
+  },
   titlePill: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
     borderRadius: 30,
     shadowColor: '#000',
     shadowOffset: {
@@ -127,7 +138,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '700',
     color: '#FF8A3C',
     fontFamily: 'Poppins_700Bold',
