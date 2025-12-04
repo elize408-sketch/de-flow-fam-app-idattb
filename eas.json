@@ -1,48 +1,32 @@
 {
+  "cli": {
+    "version": ">= 3.0.0"
+  },
   "build": {
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "resourceClass": "m1-medium"
+      }
+    },
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "autoIncrement": true,
-      "ios": {
-        "simulator": true
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "autoIncrement": true,
-      "ios": {
-        "simulator": false,
-        "buildConfiguration": "Release"
-      }
-    },
-    "production": {
-      "autoIncrement": true,
-      "env": {
-        "EXPO_NO_DOTENV": "1"
-      },
-      "ios": {
-        "buildConfiguration": "Release",
-        "simulator": false,
-        "developmentClient": false,
-        "image": "latest",
-        "resourceClass": "m1-large",
-        "credentialsSource": "remote",
-        "cache": {
-          "disabled": true
-        }
-      },
-      "android": {
-        "buildType": "apk"
-      }
+      "distribution": "internal"
     }
   },
   "submit": {
     "production": {
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json"
+      },
       "ios": {
-        "appleId": "info@flowfam.nl",
-        "ascAppId": "6738992901",
-        "appleTeamId": "4KNTRYN57N"
+        "appleId": "[YOUR-APPLE-ID]",
+        "ascAppId": "[YOUR-APPSTORECONNECT-APP-ID]"
       }
     }
   }
