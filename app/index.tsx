@@ -2,9 +2,12 @@
 import { useEffect } from 'react';
 import { Redirect, useRouter } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '@/styles/commonStyles';
 import { getCurrentUser } from '@/utils/auth';
 import { userHasFamily } from '@/utils/familyService';
+
+const LANGUAGE_SELECTED_KEY = '@flow_fam_language_selected';
 
 export default function Index() {
   const router = useRouter();
@@ -16,6 +19,15 @@ export default function Index() {
   const checkAuthAndRedirect = async () => {
     try {
       console.log('Checking authentication status...');
+      
+      // Check if language has been selected
+      const languageSelected = await AsyncStorage.getItem(LANGUAGE_SELECTED_KEY);
+      
+      if (!languageSelected) {
+        console.log('Language not selected, showing welcome screen');
+        router.replace('/(auth)/welcome');
+        return;
+      }
       
       // Check if user is authenticated
       const user = await getCurrentUser();

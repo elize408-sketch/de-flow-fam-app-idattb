@@ -15,23 +15,27 @@ import { colors } from '@/styles/commonStyles';
 import { useRouter } from 'expo-router';
 import { useFamily } from '@/contexts/FamilyContext';
 import { signOut } from '@/utils/auth';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from '@/components/LanguageSelector';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { currentUser, familyCode, shareFamilyInvite, reloadCurrentUser } = useFamily();
   const [refreshing, setRefreshing] = useState(false);
+  const [languageSelectorVisible, setLanguageSelectorVisible] = useState(false);
 
   const handleLogout = async () => {
     Alert.alert(
-      'Uitloggen',
-      'Weet je zeker dat je wilt uitloggen?',
+      t('common.logout'),
+      t('settings.logoutConfirm'),
       [
         {
-          text: 'Annuleren',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Uitloggen',
+          text: t('common.logout'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -39,7 +43,7 @@ export default function SettingsScreen() {
               router.replace('/(auth)/welcome');
             } catch (error) {
               console.error('Logout error:', error);
-              Alert.alert('Fout', 'Er ging iets mis bij het uitloggen');
+              Alert.alert(t('common.error'), t('settings.logoutError'));
             }
           },
         },
@@ -51,10 +55,10 @@ export default function SettingsScreen() {
     setRefreshing(true);
     try {
       await reloadCurrentUser();
-      Alert.alert('Gelukt!', 'Je gegevens zijn opnieuw geladen');
+      Alert.alert(t('common.success'), t('settings.dataRefreshed'));
     } catch (error) {
       console.error('Refresh error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het vernieuwen van je gegevens');
+      Alert.alert(t('common.error'), t('settings.refreshError'));
     } finally {
       setRefreshing(false);
     }
@@ -65,7 +69,7 @@ export default function SettingsScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Instellingen</Text>
+          <Text style={styles.headerTitle}>{t('common.settings')}</Text>
         </View>
 
         {/* Content */}
@@ -76,17 +80,17 @@ export default function SettingsScreen() {
         >
           {/* User Info */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Account</Text>
+            <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
             <View style={styles.card}>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Naam</Text>
-                <Text style={styles.infoValue}>{currentUser?.name || 'Niet ingesteld'}</Text>
+                <Text style={styles.infoLabel}>{t('common.name')}</Text>
+                <Text style={styles.infoValue}>{currentUser?.name || t('settings.notSet')}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Rol</Text>
+                <Text style={styles.infoLabel}>{t('settings.role')}</Text>
                 <Text style={styles.infoValue}>
-                  {currentUser?.role === 'parent' ? 'Ouder' : 'Kind'}
+                  {currentUser?.role === 'parent' ? t('settings.parent') : t('settings.child')}
                 </Text>
               </View>
             </View>
@@ -95,7 +99,7 @@ export default function SettingsScreen() {
           {/* Family Settings */}
           {currentUser?.role === 'parent' && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Gezin</Text>
+              <Text style={styles.sectionTitle}>{t('settings.family')}</Text>
               <View style={styles.card}>
                 <TouchableOpacity
                   style={styles.settingRow}
@@ -108,7 +112,7 @@ export default function SettingsScreen() {
                       size={24}
                       color={colors.vibrantOrange}
                     />
-                    <Text style={styles.settingText}>Gezinsleden beheren</Text>
+                    <Text style={styles.settingText}>{t('settings.manageFamilyMembers')}</Text>
                   </View>
                   <IconSymbol
                     ios_icon_name="chevron.right"
@@ -132,9 +136,9 @@ export default function SettingsScreen() {
                       color={colors.vibrantOrange}
                     />
                     <View style={styles.settingTextContainer}>
-                      <Text style={styles.settingText}>Gezinscode delen</Text>
+                      <Text style={styles.settingText}>{t('settings.shareFamilyCode')}</Text>
                       {familyCode && (
-                        <Text style={styles.settingSubtext}>Code: {familyCode}</Text>
+                        <Text style={styles.settingSubtext}>{t('settings.code')}: {familyCode}</Text>
                       )}
                     </View>
                   </View>
@@ -151,8 +155,31 @@ export default function SettingsScreen() {
 
           {/* App Settings */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>App</Text>
+            <Text style={styles.sectionTitle}>{t('settings.appSettings')}</Text>
             <View style={styles.card}>
+              <TouchableOpacity
+                style={styles.settingRow}
+                onPress={() => setLanguageSelectorVisible(true)}
+              >
+                <View style={styles.settingLeft}>
+                  <IconSymbol
+                    ios_icon_name="globe"
+                    android_material_icon_name="language"
+                    size={24}
+                    color={colors.vibrantOrange}
+                  />
+                  <Text style={styles.settingText}>{t('settings.changeLanguage')}</Text>
+                </View>
+                <IconSymbol
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="chevron-right"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+
+              <View style={styles.divider} />
+
               <TouchableOpacity
                 style={styles.settingRow}
                 onPress={handleRefreshData}
@@ -166,7 +193,7 @@ export default function SettingsScreen() {
                     color={colors.vibrantOrange}
                   />
                   <Text style={styles.settingText}>
-                    {refreshing ? 'Vernieuwen...' : 'Gegevens vernieuwen'}
+                    {refreshing ? t('settings.refreshing') : t('settings.refreshData')}
                   </Text>
                 </View>
                 <IconSymbol
@@ -190,7 +217,7 @@ export default function SettingsScreen() {
                     size={24}
                     color="#E74C3C"
                   />
-                  <Text style={[styles.settingText, styles.logoutText]}>Uitloggen</Text>
+                  <Text style={[styles.settingText, styles.logoutText]}>{t('common.logout')}</Text>
                 </View>
                 <IconSymbol
                   ios_icon_name="chevron.right"
@@ -221,6 +248,12 @@ export default function SettingsScreen() {
           )}
         </ScrollView>
       </View>
+
+      {/* Language Selector Modal */}
+      <LanguageSelector
+        visible={languageSelectorVisible}
+        onClose={() => setLanguageSelectorVisible(false)}
+      />
     </SafeAreaView>
   );
 }

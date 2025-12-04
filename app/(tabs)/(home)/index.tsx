@@ -11,58 +11,60 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { HomeMenuItem } from '@/components/HomeMenuItem';
 import { useFamily } from '@/contexts/FamilyContext';
 import { colors } from '@/styles/commonStyles';
 
-const menuItems = [
-  {
-    title: 'Agenda',
-    color: '#3A8DFF',
-    icon: 'calendar-month-outline',
-    route: '/(tabs)/agenda',
-  },
-  {
-    title: 'Taken',
-    color: '#4CAF50',
-    icon: 'check-circle-outline',
-    route: '/(tabs)/tasks',
-  },
-  {
-    title: 'Boodschappen',
-    color: '#FFB74D',
-    icon: 'cart-outline',
-    route: '/(tabs)/shopping',
-  },
-  {
-    title: 'Financiën',
-    color: '#7ED957',
-    icon: 'currency-eur',
-    route: '/(tabs)/finances',
-  },
-  {
-    title: 'Fotoboek',
-    color: '#FF8A65',
-    icon: 'camera-outline',
-    route: '/(tabs)/memories',
-  },
-  {
-    title: 'Maaltijden',
-    color: '#78C3FF',
-    icon: 'food-outline',
-    route: '/(tabs)/meals',
-  },
-  {
-    title: 'Shop',
-    color: '#AB47BC',
-    icon: 'shopping-outline',
-    route: '/(tabs)/shop',
-  },
-];
-
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { currentUser, reloadCurrentUser } = useFamily();
+
+  const menuItems = [
+    {
+      title: t('home.menu.agenda'),
+      color: '#3A8DFF',
+      icon: 'calendar-month-outline',
+      route: '/(tabs)/agenda',
+    },
+    {
+      title: t('home.menu.tasks'),
+      color: '#4CAF50',
+      icon: 'check-circle-outline',
+      route: '/(tabs)/tasks',
+    },
+    {
+      title: t('home.menu.shopping'),
+      color: '#FFB74D',
+      icon: 'cart-outline',
+      route: '/(tabs)/shopping',
+    },
+    {
+      title: t('home.menu.finances'),
+      color: '#7ED957',
+      icon: 'currency-eur',
+      route: '/(tabs)/finances',
+    },
+    {
+      title: t('home.menu.photobook'),
+      color: '#FF8A65',
+      icon: 'camera-outline',
+      route: '/(tabs)/memories',
+    },
+    {
+      title: t('home.menu.meals'),
+      color: '#78C3FF',
+      icon: 'food-outline',
+      route: '/(tabs)/meals',
+    },
+    {
+      title: t('home.menu.shop'),
+      color: '#AB47BC',
+      icon: 'shopping-outline',
+      route: '/(tabs)/shop',
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -75,9 +77,11 @@ export default function HomeScreen() {
         {currentUser && (
           <View style={styles.userBanner}>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>Welkom, {currentUser.name}!</Text>
+              <Text style={styles.userName}>
+                {t('home.greeting', { name: currentUser.name })}
+              </Text>
               <Text style={styles.userRole}>
-                {currentUser.role === 'parent' ? '👨‍👩‍👧‍👦 Ouder' : '👶 Kind'}
+                {currentUser.role === 'parent' ? t('home.parent') : t('home.child')}
               </Text>
             </View>
             <TouchableOpacity

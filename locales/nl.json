@@ -54,6 +54,25 @@
     "haveFamilyCode": "Deelnemen met uitnodigingscode",
     "alreadyHaveAccount": "Ik heb al een account – Inloggen"
   },
+  "settings": {
+    "account": "Account",
+    "notSet": "Niet ingesteld",
+    "role": "Rol",
+    "parent": "Ouder",
+    "child": "Kind",
+    "family": "Gezin",
+    "manageFamilyMembers": "Gezinsleden beheren",
+    "shareFamilyCode": "Gezinscode delen",
+    "code": "Code",
+    "appSettings": "App",
+    "changeLanguage": "Taal wijzigen",
+    "refreshData": "Gegevens vernieuwen",
+    "refreshing": "Vernieuwen...",
+    "dataRefreshed": "Je gegevens zijn opnieuw geladen",
+    "refreshError": "Er ging iets mis bij het vernieuwen van je gegevens",
+    "logoutConfirm": "Weet je zeker dat je wilt uitloggen?",
+    "logoutError": "Er ging iets mis bij het uitloggen"
+  },
   "auth": {
     "login": {
       "title": "Inloggen",

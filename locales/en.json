@@ -54,6 +54,25 @@
     "haveFamilyCode": "Join with invitation code",
     "alreadyHaveAccount": "I already have an account – Login"
   },
+  "settings": {
+    "account": "Account",
+    "notSet": "Not set",
+    "role": "Role",
+    "parent": "Parent",
+    "child": "Child",
+    "family": "Family",
+    "manageFamilyMembers": "Manage family members",
+    "shareFamilyCode": "Share family code",
+    "code": "Code",
+    "appSettings": "App",
+    "changeLanguage": "Change language",
+    "refreshData": "Refresh data",
+    "refreshing": "Refreshing...",
+    "dataRefreshed": "Your data has been refreshed",
+    "refreshError": "Something went wrong while refreshing your data",
+    "logoutConfirm": "Are you sure you want to logout?",
+    "logoutError": "Something went wrong while logging out"
+  },
   "auth": {
     "login": {
       "title": "Login",
