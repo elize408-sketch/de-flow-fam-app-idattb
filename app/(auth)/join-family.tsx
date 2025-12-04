@@ -7,6 +7,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { signUpWithEmail, signInWithEmail, signInWithApple, signInWithGoogle } from '@/utils/auth';
 import { joinFamily, addFamilyMember } from '@/utils/familyService';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/utils/supabase';
 
 export default function JoinFamilyScreen() {
   const router = useRouter();
@@ -107,6 +108,48 @@ export default function JoinFamilyScreen() {
       const result = await signUpWithEmail(email, password, name);
       
       if (!result.success) {
+        console.error('Signup failed:', result.error);
+        
+        // Check if it's an email sending error
+        if (result.error && (result.error.includes('bevestigingsmail') || result.error.includes('server'))) {
+          // Email sending failed - offer workaround
+          Alert.alert(
+            'E-mail probleem',
+            result.error + '\n\nWil je doorgaan zonder e-mailbevestiging? (Tijdelijke oplossing)',
+            [
+              {
+                text: 'Annuleren',
+                style: 'cancel',
+                onPress: () => setLoading(false),
+              },
+              {
+                text: 'Doorgaan',
+                onPress: async () => {
+                  // Try to sign in directly (in case auto-confirm is enabled)
+                  console.log('Attempting direct sign-in...');
+                  const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                  });
+                  
+                  if (!error && data.session) {
+                    console.log('Direct sign-in successful');
+                    await addToFamilyAndNavigate(data.user.id);
+                  } else {
+                    console.error('Direct sign-in failed:', error);
+                    Alert.alert(
+                      t('common.error'),
+                      'Kon niet inloggen. Neem contact op met support@flowfam.nl voor hulp.'
+                    );
+                    setLoading(false);
+                  }
+                },
+              },
+            ]
+          );
+          return;
+        }
+        
         Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het aanmelden');
         setLoading(false);
         return;

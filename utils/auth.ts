@@ -42,6 +42,15 @@ export async function signUpWithEmail(
 
     if (error) {
       console.error('Signup error:', error);
+      
+      // Check if it's an email sending error
+      if (error.message.includes('Error sending') || error.message.includes('mail')) {
+        return { 
+          success: false, 
+          error: 'Er is een probleem met het versturen van de bevestigingsmail. Neem contact op met support@flowfam.nl voor hulp.' 
+        };
+      }
+      
       return { success: false, error: error.message };
     }
 
@@ -50,6 +59,7 @@ export async function signUpWithEmail(
       hasSession: !!data.session,
       userId: data.user?.id,
       userEmail: data.user?.email,
+      emailConfirmedAt: data.user?.email_confirmed_at,
     });
 
     // Check if user already exists (repeated signup)
@@ -75,6 +85,15 @@ export async function signUpWithEmail(
     return { success: true, user: data.user, session: data.session };
   } catch (error: any) {
     console.error('Sign up error:', error);
+    
+    // Check if it's a network error
+    if (error.message && error.message.includes('500')) {
+      return { 
+        success: false, 
+        error: 'Er is een probleem met de server. Probeer het later opnieuw of neem contact op met support@flowfam.nl.' 
+      };
+    }
+    
     return { success: false, error: error.message || 'Er ging iets mis bij het aanmelden' };
   }
 }
