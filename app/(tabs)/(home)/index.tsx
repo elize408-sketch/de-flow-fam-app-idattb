@@ -2,7 +2,6 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   SafeAreaView,
   ScrollView,
@@ -70,14 +69,10 @@ export default function HomeScreen() {
       >
         <View style={styles.heroContainer}>
           <Image
-            source={require('@/assets/images/ff16279a-fb4e-41ec-9013-daf7a31fa2fb.png')}
+            source={require('@/assets/images/ed920307-19f7-48d1-96f4-53ed71f8af30.jpeg')}
             style={styles.familyImage}
             resizeMode="contain"
           />
-          <View style={styles.titlePill}>
-            <Text style={styles.title}>Flow Fam</Text>
-          </View>
-          <Text style={styles.subtitle}>Rust. Overzicht. Liefde.</Text>
         </View>
 
         <View style={styles.menuContainer}>
@@ -119,32 +114,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   familyImage: {
-    width: 180,
-    height: 120,
+    width: 280,
+    height: 180,
     marginBottom: 16,
-  },
-  titlePill: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 30,
-    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
-    elevation: 4,
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FF8A3C',
-    fontFamily: 'Poppins_700Bold',
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.text,
-    fontFamily: 'Poppins_400Regular',
-    textAlign: 'center',
-    letterSpacing: 0.3,
   },
   menuContainer: {
     gap: 14,
