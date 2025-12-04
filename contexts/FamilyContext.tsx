@@ -117,6 +117,7 @@ interface FamilyContextType {
   loadShoppingItemsFromDB: () => Promise<void>;
   loadPantryItemsFromDB: () => Promise<void>;
   loadNotesFromDB: () => Promise<void>;
+  reloadCurrentUser: () => Promise<void>;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -127,8 +128,8 @@ const FINANCE_LAST_RESET_DATE_KEY = '@flow_fam_finance_last_reset_date';
 const FINANCE_PREVIOUS_MONTH_LEFTOVER_KEY = '@flow_fam_finance_previous_month_leftover';
 
 export function FamilyProvider({ children }: { children: ReactNode }) {
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialFamilyMembers);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [rewards] = useState<Reward[]>(initialRewards);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [householdTasks, setHouseholdTasks] = useState<HouseholdTask[]>([]);
@@ -345,6 +346,96 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     }
   }, [currentFamily]);
 
+  const reloadCurrentUser = useCallback(async () => {
+    try {
+      console.log('Reloading current user...');
+      
+      // Get authenticated user from Supabase
+      const authUser = await getCurrentUser();
+      console.log('Auth user:', authUser?.id);
+      
+      if (!authUser) {
+        console.log('No authenticated user found');
+        setCurrentUserState(null);
+        return;
+      }
+
+      // Try to get family member from database
+      const { data: familyMemberData, error: familyMemberError } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .single();
+
+      if (familyMemberError) {
+        console.log('No family member found in database:', familyMemberError.message);
+        setCurrentUserState(null);
+        return;
+      }
+
+      if (familyMemberData) {
+        console.log('Found family member:', familyMemberData.id, 'Role:', familyMemberData.role);
+        
+        // Convert database family member to app format
+        const member: FamilyMember = {
+          id: familyMemberData.id,
+          userId: familyMemberData.user_id,
+          name: familyMemberData.name,
+          role: familyMemberData.role,
+          color: familyMemberData.color || '#CBA85B',
+          photoUri: familyMemberData.photo_uri,
+          coins: familyMemberData.coins || 0,
+        };
+
+        setCurrentUserState(member);
+        console.log('Set current user with role:', member.role);
+
+        // Get family
+        const { data: familyData, error: familyError } = await supabase
+          .from('families')
+          .select('*')
+          .eq('id', familyMemberData.family_id)
+          .single();
+
+        if (familyError) {
+          console.error('Error loading family:', familyError);
+          return;
+        }
+
+        if (familyData) {
+          console.log('Found family:', familyData.id);
+          setCurrentFamily(familyData);
+          setFamilyCode(familyData.family_code);
+
+          // Load all family members
+          const { data: allMembersData, error: allMembersError } = await supabase
+            .from('family_members')
+            .select('*')
+            .eq('family_id', familyData.id);
+
+          if (allMembersError) {
+            console.error('Error loading family members:', allMembersError);
+          } else if (allMembersData) {
+            const members: FamilyMember[] = allMembersData.map(m => ({
+              id: m.id,
+              userId: m.user_id,
+              name: m.name,
+              role: m.role,
+              color: m.color || '#CBA85B',
+              photoUri: m.photo_uri,
+              coins: m.coins || 0,
+            }));
+            setFamilyMembers(members);
+            saveFamilyMembers(members);
+            console.log('Loaded family members:', members.length);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error reloading current user:', error);
+    }
+  }, []);
+
   const loadInitialData = useCallback(async () => {
     try {
       console.log('Loading initial data...');
@@ -372,7 +463,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       }
 
       if (familyMemberData) {
-        console.log('Found family member:', familyMemberData.id);
+        console.log('Found family member:', familyMemberData.id, 'Role:', familyMemberData.role);
         
         // Convert database family member to app format
         const member: FamilyMember = {
@@ -386,7 +477,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         };
 
         setCurrentUserState(member);
-        console.log('Set current user:', member.id);
+        console.log('Set current user with role:', member.role);
 
         // Get family
         const { data: familyData, error: familyError } = await supabase
@@ -467,13 +558,16 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
 
   // Save family members whenever they change
   useEffect(() => {
-    saveFamilyMembers(familyMembers);
+    if (familyMembers.length > 0) {
+      saveFamilyMembers(familyMembers);
+    }
   }, [familyMembers]);
 
   // Save current user whenever it changes
   useEffect(() => {
     if (currentUser) {
       saveCurrentUserId(currentUser.id);
+      console.log('Current user role:', currentUser.role);
     }
   }, [currentUser]);
 
@@ -1609,6 +1703,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         loadShoppingItemsFromDB,
         loadPantryItemsFromDB,
         loadNotesFromDB,
+        reloadCurrentUser,
       }}
     >
       {children}

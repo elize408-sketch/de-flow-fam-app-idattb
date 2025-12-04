@@ -7,34 +7,19 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Platform,
-  Switch,
   Alert,
+  Platform,
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import { useRouter } from 'expo-router';
 import { useFamily } from '@/contexts/FamilyContext';
-import { supabase } from '@/utils/supabase';
-
-interface SettingItem {
-  id: string;
-  title: string;
-  subtitle?: string;
-  icon: { ios: string; android: string };
-  type: 'navigation' | 'toggle' | 'info';
-  value?: boolean;
-  onPress?: () => void;
-  onToggle?: (value: boolean) => void;
-}
+import { signOut } from '@/utils/auth';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { currentUser } = useFamily();
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const [soundEnabled, setSoundEnabled] = React.useState(true);
-
-  const isParent = currentUser?.role === 'parent';
+  const { currentUser, familyCode, shareFamilyInvite, reloadCurrentUser } = useFamily();
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -50,14 +35,9 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const { error } = await supabase.auth.signOut();
-              if (error) {
-                console.error('Logout error:', error);
-                Alert.alert('Fout', 'Er ging iets mis bij het uitloggen');
-                return;
-              }
+              await signOut();
               router.replace('/(auth)/welcome');
-            } catch (error: any) {
+            } catch (error) {
               console.error('Logout error:', error);
               Alert.alert('Fout', 'Er ging iets mis bij het uitloggen');
             }
@@ -67,127 +47,17 @@ export default function SettingsScreen() {
     );
   };
 
-  const settingsSections = [
-    {
-      title: 'Account',
-      items: [
-        {
-          id: 'family',
-          title: 'Gezinsinstellingen',
-          subtitle: 'Beheer gezinsleden',
-          icon: { ios: 'person.2.fill', android: 'people' },
-          type: 'navigation' as const,
-          onPress: () => router.push('/(tabs)/family-settings'),
-        },
-      ],
-    },
-    {
-      title: 'Notificaties',
-      items: [
-        {
-          id: 'notifications',
-          title: 'Push notificaties',
-          subtitle: 'Ontvang meldingen',
-          icon: { ios: 'bell.fill', android: 'notifications' },
-          type: 'toggle' as const,
-          value: notificationsEnabled,
-          onToggle: setNotificationsEnabled,
-        },
-        {
-          id: 'sound',
-          title: 'Geluid',
-          subtitle: 'Geluid bij notificaties',
-          icon: { ios: 'speaker.wave.2.fill', android: 'volume-up' },
-          type: 'toggle' as const,
-          value: soundEnabled,
-          onToggle: setSoundEnabled,
-        },
-      ],
-    },
-    {
-      title: 'App',
-      items: [
-        {
-          id: 'language',
-          title: 'Taal',
-          subtitle: 'Nederlands',
-          icon: { ios: 'globe', android: 'language' },
-          type: 'navigation' as const,
-          onPress: () => console.log('Navigate to language settings'),
-        },
-      ],
-    },
-    {
-      title: 'Informatie',
-      items: [
-        {
-          id: 'help',
-          title: 'Help & Support',
-          icon: { ios: 'questionmark.circle.fill', android: 'help' },
-          type: 'navigation' as const,
-          onPress: () => console.log('Navigate to help'),
-        },
-        {
-          id: 'privacy',
-          title: 'Privacy',
-          icon: { ios: 'lock.fill', android: 'lock' },
-          type: 'navigation' as const,
-          onPress: () => console.log('Navigate to privacy'),
-        },
-        {
-          id: 'about',
-          title: 'Over Flow Fam',
-          subtitle: 'Versie 1.0.0',
-          icon: { ios: 'info.circle.fill', android: 'info' },
-          type: 'info' as const,
-        },
-      ],
-    },
-  ];
-
-  const renderSettingItem = (item: SettingItem, index: number) => {
-    return (
-      <React.Fragment key={index}>
-        <TouchableOpacity
-          style={styles.settingItem}
-          onPress={item.onPress}
-          activeOpacity={item.type === 'info' ? 1 : 0.7}
-          disabled={item.type === 'info'}
-        >
-          <View style={styles.settingIconContainer}>
-            <IconSymbol
-              ios_icon_name={item.icon.ios}
-              android_material_icon_name={item.icon.android as any}
-              size={24}
-              color={colors.vibrantOrange}
-            />
-          </View>
-          <View style={styles.settingContent}>
-            <Text style={styles.settingTitle}>{item.title}</Text>
-            {item.subtitle && (
-              <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
-            )}
-          </View>
-          {item.type === 'toggle' && (
-            <Switch
-              value={item.value}
-              onValueChange={item.onToggle}
-              trackColor={{ false: '#D1D1D6', true: colors.vibrantOrange + '80' }}
-              thumbColor={item.value ? colors.vibrantOrange : '#F4F3F4'}
-              ios_backgroundColor="#D1D1D6"
-            />
-          )}
-          {item.type === 'navigation' && (
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron-right"
-              size={20}
-              color={colors.text + '40'}
-            />
-          )}
-        </TouchableOpacity>
-      </React.Fragment>
-    );
+  const handleRefreshData = async () => {
+    setRefreshing(true);
+    try {
+      await reloadCurrentUser();
+      Alert.alert('Gelukt!', 'Je gegevens zijn opnieuw geladen');
+    } catch (error) {
+      console.error('Refresh error:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het vernieuwen van je gegevens');
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
@@ -198,37 +68,157 @@ export default function SettingsScreen() {
           <Text style={styles.headerTitle}>Instellingen</Text>
         </View>
 
-        {/* Settings List */}
+        {/* Content */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {settingsSections.map((section, sectionIndex) => (
-            <React.Fragment key={sectionIndex}>
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                <View style={styles.sectionContent}>
-                  {section.items.map((item, itemIndex) => renderSettingItem(item, itemIndex))}
-                </View>
+          {/* User Info */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account</Text>
+            <View style={styles.card}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Naam</Text>
+                <Text style={styles.infoValue}>{currentUser?.name || 'Niet ingesteld'}</Text>
               </View>
-            </React.Fragment>
-          ))}
+              <View style={styles.divider} />
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Rol</Text>
+                <Text style={styles.infoValue}>
+                  {currentUser?.role === 'parent' ? 'Ouder' : 'Kind'}
+                </Text>
+              </View>
+            </View>
+          </View>
 
-          {/* Logout Button */}
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-            activeOpacity={0.7}
-          >
-            <IconSymbol
-              ios_icon_name="arrow.right.square.fill"
-              android_material_icon_name="logout"
-              size={24}
-              color="#FF3B30"
-            />
-            <Text style={styles.logoutText}>Uitloggen</Text>
-          </TouchableOpacity>
+          {/* Family Settings */}
+          {currentUser?.role === 'parent' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Gezin</Text>
+              <View style={styles.card}>
+                <TouchableOpacity
+                  style={styles.settingRow}
+                  onPress={() => router.push('/(tabs)/family-settings')}
+                >
+                  <View style={styles.settingLeft}>
+                    <IconSymbol
+                      ios_icon_name="person.3.fill"
+                      android_material_icon_name="group"
+                      size={24}
+                      color={colors.vibrantOrange}
+                    />
+                    <Text style={styles.settingText}>Gezinsleden beheren</Text>
+                  </View>
+                  <IconSymbol
+                    ios_icon_name="chevron.right"
+                    android_material_icon_name="chevron-right"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+
+                <View style={styles.divider} />
+
+                <TouchableOpacity
+                  style={styles.settingRow}
+                  onPress={shareFamilyInvite}
+                >
+                  <View style={styles.settingLeft}>
+                    <IconSymbol
+                      ios_icon_name="square.and.arrow.up"
+                      android_material_icon_name="share"
+                      size={24}
+                      color={colors.vibrantOrange}
+                    />
+                    <View style={styles.settingTextContainer}>
+                      <Text style={styles.settingText}>Gezinscode delen</Text>
+                      {familyCode && (
+                        <Text style={styles.settingSubtext}>Code: {familyCode}</Text>
+                      )}
+                    </View>
+                  </View>
+                  <IconSymbol
+                    ios_icon_name="chevron.right"
+                    android_material_icon_name="chevron-right"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* App Settings */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>App</Text>
+            <View style={styles.card}>
+              <TouchableOpacity
+                style={styles.settingRow}
+                onPress={handleRefreshData}
+                disabled={refreshing}
+              >
+                <View style={styles.settingLeft}>
+                  <IconSymbol
+                    ios_icon_name="arrow.clockwise"
+                    android_material_icon_name="refresh"
+                    size={24}
+                    color={colors.vibrantOrange}
+                  />
+                  <Text style={styles.settingText}>
+                    {refreshing ? 'Vernieuwen...' : 'Gegevens vernieuwen'}
+                  </Text>
+                </View>
+                <IconSymbol
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="chevron-right"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+
+              <View style={styles.divider} />
+
+              <TouchableOpacity
+                style={styles.settingRow}
+                onPress={handleLogout}
+              >
+                <View style={styles.settingLeft}>
+                  <IconSymbol
+                    ios_icon_name="rectangle.portrait.and.arrow.right"
+                    android_material_icon_name="logout"
+                    size={24}
+                    color="#E74C3C"
+                  />
+                  <Text style={[styles.settingText, styles.logoutText]}>Uitloggen</Text>
+                </View>
+                <IconSymbol
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="chevron-right"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Debug Info */}
+          {__DEV__ && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Debug Info</Text>
+              <View style={styles.card}>
+                <Text style={styles.debugText}>
+                  User ID: {currentUser?.id || 'None'}
+                </Text>
+                <Text style={styles.debugText}>
+                  User Role: {currentUser?.role || 'None'}
+                </Text>
+                <Text style={styles.debugText}>
+                  Family Code: {familyCode || 'None'}
+                </Text>
+              </View>
+            </View>
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -238,11 +228,10 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingHorizontal: 20,
@@ -268,99 +257,75 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text + '80',
-    fontFamily: 'Poppins_600SemiBold',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
     marginBottom: 12,
-    paddingHorizontal: 4,
   },
-  sectionContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 2,
-        },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
-      },
-    }),
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  settingIconContainer: {
-    width: 40,
-    height: 40,
+  card: {
+    backgroundColor: colors.card,
     borderRadius: 20,
-    backgroundColor: colors.vibrantOrange + '15',
+    padding: 16,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 3,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    paddingVertical: 12,
   },
-  settingContent: {
-    flex: 1,
-  },
-  settingTitle: {
+  infoLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 2,
   },
-  settingSubtitle: {
-    fontSize: 13,
-    color: colors.text + '80',
-    fontFamily: 'Poppins_400Regular',
+  infoValue: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
   },
-  logoutButton: {
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 2,
-        },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
-      },
-    }),
+    flex: 1,
+    gap: 12,
   },
-  logoutText: {
+  settingTextContainer: {
+    flex: 1,
+  },
+  settingText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF3B30',
+    color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
-    marginLeft: 8,
+  },
+  settingSubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+    marginTop: 2,
+  },
+  logoutText: {
+    color: '#E74C3C',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 8,
+  },
+  debugText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+    marginBottom: 4,
   },
 });
