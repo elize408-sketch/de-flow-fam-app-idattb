@@ -73,6 +73,67 @@
     "logoutConfirm": "ログアウトしてもよろしいですか？",
     "logoutError": "ログアウト中にエラーが発生しました"
   },
+  "auth": {
+    "login": {
+      "title": "ログイン",
+      "subtitle": "おかえりなさい！",
+      "withEmail": "メールでログイン",
+      "withApple": "Appleで続ける",
+      "withGoogle": "Googleで続ける",
+      "emailPlaceholder": "you@email.com",
+      "passwordPlaceholder": "パスワード",
+      "fillEmail": "メールアドレスを入力してください",
+      "fillPassword": "パスワードを入力してください",
+      "fillDetails": "詳細を入力してください",
+      "noFamilyFound": "家族が見つかりません",
+      "noFamilyMessage": "まだ家族に追加されていません。家族メンバーに招待してもらうか、新しい家族を始めてください。",
+      "appleNotAvailable": "利用できません",
+      "appleOnlyIOS": "Apple Sign-InはiOSでのみ利用可能です"
+    },
+    "verifyEmail": {
+      "title": "メールを確認",
+      "subtitle": "6桁の確認コードを送信しました",
+      "verify": "確認",
+      "noCodeReceived": "コードが届きませんでしたか？",
+      "resendCode": "コードを再送信",
+      "sending": "送信中...",
+      "codeSent": "送信しました！",
+      "codeSentMessage": "新しい確認コードをメールに送信しました。",
+      "invalidCode": "確認コードが無効です。もう一度お試しください。",
+      "fillCompleteCode": "6桁のコードを完全に入力してください"
+    },
+    "createFamily": {
+      "title": "新しい家族を始める",
+      "subtitle": "ログイン方法を選択してください",
+      "registerWithEmail": "メールで登録",
+      "fillDetails": "開始するために詳細を入力してください",
+      "namePlaceholder": "お名前",
+      "passwordMinLength": "パスワードは6文字以上である必要があります",
+      "createFamily": "家族を作成",
+      "familyCreated": "家族が作成されました！🎉",
+      "familyCodeMessage": "家族コードは：{{code}}\n\nパートナーとこのコードを共有して、参加できるようにしてください。"
+    },
+    "joinFamily": {
+      "title": "家族に参加",
+      "subtitle": "家族コードとお名前を入力してください",
+      "familyCodePlaceholder": "ABCDEF",
+      "namePlaceholder": "お名前",
+      "continue": "続ける",
+      "invalidCode": "申し訳ありませんが、このコードは正しくありません。",
+      "registerWithEmail": "メールで登録",
+      "createNewAccount": "新しいアカウントを作成",
+      "loginWithEmail": "メールでログイン",
+      "loginExistingAccount": "既存のアカウントでログイン",
+      "haveAccount": "すでにアカウントをお持ちですか？ログイン",
+      "noAccount": "アカウントをお持ちでないですか？登録",
+      "welcome": "ようこそ！🎉",
+      "welcomeMessage": "家族に正常に追加されました。",
+      "addingToFamily": "家族に追加しています..."
+    },
+    "setupFamily": {
+      "creatingFamily": "家族を作成しています..."
+    }
+  },
   "language": {
     "title": "言語",
     "subtitle": "言語を選択",

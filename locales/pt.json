@@ -73,6 +73,67 @@
     "logoutConfirm": "Tem certeza de que deseja sair?",
     "logoutError": "Algo deu errado ao sair"
   },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "subtitle": "Bem-vindo de volta!",
+      "withEmail": "Entrar com e-mail",
+      "withApple": "Continuar com Apple",
+      "withGoogle": "Continuar com Google",
+      "emailPlaceholder": "voce@email.com",
+      "passwordPlaceholder": "Sua senha",
+      "fillEmail": "Digite seu endereço de e-mail",
+      "fillPassword": "Digite sua senha",
+      "fillDetails": "Preencha seus dados",
+      "noFamilyFound": "Nenhuma família encontrada",
+      "noFamilyMessage": "Você ainda não foi adicionado a uma família. Peça a um membro da família para convidá-lo ou inicie uma nova família.",
+      "appleNotAvailable": "Não disponível",
+      "appleOnlyIOS": "Apple Sign-In está disponível apenas no iOS"
+    },
+    "verifyEmail": {
+      "title": "Verifique seu e-mail",
+      "subtitle": "Enviamos um código de verificação de 6 dígitos para",
+      "verify": "Verificar",
+      "noCodeReceived": "Não recebeu um código?",
+      "resendCode": "Reenviar código",
+      "sending": "Enviando...",
+      "codeSent": "Enviado!",
+      "codeSentMessage": "Enviamos um novo código de verificação para seu e-mail.",
+      "invalidCode": "Código de verificação inválido. Por favor, tente novamente.",
+      "fillCompleteCode": "Digite o código completo de 6 dígitos"
+    },
+    "createFamily": {
+      "title": "Iniciar nova família",
+      "subtitle": "Escolha como você quer entrar",
+      "registerWithEmail": "Registrar com e-mail",
+      "fillDetails": "Preencha seus dados para começar",
+      "namePlaceholder": "Seu nome",
+      "passwordMinLength": "A senha deve ter pelo menos 6 caracteres",
+      "createFamily": "Criar família",
+      "familyCreated": "Família criada! 🎉",
+      "familyCodeMessage": "Seu código familiar é: {{code}}\n\nCompartilhe este código com seu parceiro para que ele possa participar."
+    },
+    "joinFamily": {
+      "title": "Participar da família",
+      "subtitle": "Digite o código familiar e seu nome",
+      "familyCodePlaceholder": "ABCDEF",
+      "namePlaceholder": "Seu nome",
+      "continue": "Continuar",
+      "invalidCode": "Ops, este código está incorreto.",
+      "registerWithEmail": "Registrar com e-mail",
+      "createNewAccount": "Criar uma nova conta",
+      "loginWithEmail": "Entrar com e-mail",
+      "loginExistingAccount": "Entrar com sua conta existente",
+      "haveAccount": "Já tem uma conta? Entrar",
+      "noAccount": "Não tem uma conta? Registrar",
+      "welcome": "Bem-vindo! 🎉",
+      "welcomeMessage": "Você foi adicionado com sucesso à família.",
+      "addingToFamily": "Adicionando você à família..."
+    },
+    "setupFamily": {
+      "creatingFamily": "Criando sua família..."
+    }
+  },
   "language": {
     "title": "Idioma",
     "subtitle": "Escolha seu idioma",

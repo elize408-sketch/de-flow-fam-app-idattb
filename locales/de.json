@@ -73,6 +73,67 @@
     "logoutConfirm": "Sind Sie sicher, dass Sie sich abmelden möchten?",
     "logoutError": "Beim Abmelden ist ein Fehler aufgetreten"
   },
+  "auth": {
+    "login": {
+      "title": "Anmelden",
+      "subtitle": "Willkommen zurück!",
+      "withEmail": "Mit E-Mail anmelden",
+      "withApple": "Mit Apple fortfahren",
+      "withGoogle": "Mit Google fortfahren",
+      "emailPlaceholder": "du@email.com",
+      "passwordPlaceholder": "Ihr Passwort",
+      "fillEmail": "Geben Sie Ihre E-Mail-Adresse ein",
+      "fillPassword": "Geben Sie Ihr Passwort ein",
+      "fillDetails": "Füllen Sie Ihre Daten aus",
+      "noFamilyFound": "Keine Familie gefunden",
+      "noFamilyMessage": "Sie wurden noch nicht zu einer Familie hinzugefügt. Bitten Sie ein Familienmitglied, Sie einzuladen, oder gründen Sie eine neue Familie.",
+      "appleNotAvailable": "Nicht verfügbar",
+      "appleOnlyIOS": "Apple Sign-In ist nur auf iOS verfügbar"
+    },
+    "verifyEmail": {
+      "title": "Bestätigen Sie Ihre E-Mail",
+      "subtitle": "Wir haben einen 6-stelligen Bestätigungscode an",
+      "verify": "Bestätigen",
+      "noCodeReceived": "Keinen Code erhalten?",
+      "resendCode": "Code erneut senden",
+      "sending": "Senden...",
+      "codeSent": "Gesendet!",
+      "codeSentMessage": "Wir haben einen neuen Bestätigungscode an Ihre E-Mail gesendet.",
+      "invalidCode": "Ungültiger Bestätigungscode. Bitte versuchen Sie es erneut.",
+      "fillCompleteCode": "Geben Sie den vollständigen 6-stelligen Code ein"
+    },
+    "createFamily": {
+      "title": "Neue Familie gründen",
+      "subtitle": "Wählen Sie, wie Sie sich anmelden möchten",
+      "registerWithEmail": "Mit E-Mail registrieren",
+      "fillDetails": "Füllen Sie Ihre Daten aus, um zu beginnen",
+      "namePlaceholder": "Ihr Name",
+      "passwordMinLength": "Das Passwort muss mindestens 6 Zeichen lang sein",
+      "createFamily": "Familie erstellen",
+      "familyCreated": "Familie erstellt! 🎉",
+      "familyCodeMessage": "Ihr Familiencode lautet: {{code}}\n\nTeilen Sie diesen Code mit Ihrem Partner, damit er beitreten kann."
+    },
+    "joinFamily": {
+      "title": "Familie beitreten",
+      "subtitle": "Geben Sie den Familiencode und Ihren Namen ein",
+      "familyCodePlaceholder": "ABCDEF",
+      "namePlaceholder": "Ihr Name",
+      "continue": "Fortfahren",
+      "invalidCode": "Ups, dieser Code ist falsch.",
+      "registerWithEmail": "Mit E-Mail registrieren",
+      "createNewAccount": "Neues Konto erstellen",
+      "loginWithEmail": "Mit E-Mail anmelden",
+      "loginExistingAccount": "Mit Ihrem bestehenden Konto anmelden",
+      "haveAccount": "Haben Sie bereits ein Konto? Anmelden",
+      "noAccount": "Noch kein Konto? Registrieren",
+      "welcome": "Willkommen! 🎉",
+      "welcomeMessage": "Sie wurden erfolgreich zur Familie hinzugefügt.",
+      "addingToFamily": "Sie werden zur Familie hinzugefügt..."
+    },
+    "setupFamily": {
+      "creatingFamily": "Ihre Familie wird erstellt..."
+    }
+  },
   "language": {
     "title": "Sprache",
     "subtitle": "Wählen Sie Ihre Sprache",

@@ -73,6 +73,67 @@
     "logoutConfirm": "Czy na pewno chcesz się wylogować?",
     "logoutError": "Coś poszło nie tak podczas wylogowywania"
   },
+  "auth": {
+    "login": {
+      "title": "Zaloguj się",
+      "subtitle": "Witaj ponownie!",
+      "withEmail": "Zaloguj się przez e-mail",
+      "withApple": "Kontynuuj z Apple",
+      "withGoogle": "Kontynuuj z Google",
+      "emailPlaceholder": "ty@email.com",
+      "passwordPlaceholder": "Twoje hasło",
+      "fillEmail": "Wprowadź swój adres e-mail",
+      "fillPassword": "Wprowadź swoje hasło",
+      "fillDetails": "Wypełnij swoje dane",
+      "noFamilyFound": "Nie znaleziono rodziny",
+      "noFamilyMessage": "Nie zostałeś jeszcze dodany do rodziny. Poproś członka rodziny o zaproszenie lub rozpocznij nową rodzinę.",
+      "appleNotAvailable": "Niedostępne",
+      "appleOnlyIOS": "Apple Sign-In jest dostępny tylko na iOS"
+    },
+    "verifyEmail": {
+      "title": "Zweryfikuj swój e-mail",
+      "subtitle": "Wysłaliśmy 6-cyfrowy kod weryfikacyjny na",
+      "verify": "Zweryfikuj",
+      "noCodeReceived": "Nie otrzymałeś kodu?",
+      "resendCode": "Wyślij kod ponownie",
+      "sending": "Wysyłanie...",
+      "codeSent": "Wysłano!",
+      "codeSentMessage": "Wysłaliśmy nowy kod weryfikacyjny na Twój e-mail.",
+      "invalidCode": "Nieprawidłowy kod weryfikacyjny. Spróbuj ponownie.",
+      "fillCompleteCode": "Wprowadź pełny 6-cyfrowy kod"
+    },
+    "createFamily": {
+      "title": "Rozpocznij nową rodzinę",
+      "subtitle": "Wybierz sposób logowania",
+      "registerWithEmail": "Zarejestruj się przez e-mail",
+      "fillDetails": "Wypełnij swoje dane, aby rozpocząć",
+      "namePlaceholder": "Twoje imię",
+      "passwordMinLength": "Hasło musi mieć co najmniej 6 znaków",
+      "createFamily": "Utwórz rodzinę",
+      "familyCreated": "Rodzina utworzona! 🎉",
+      "familyCodeMessage": "Twój kod rodziny to: {{code}}\n\nUdostępnij ten kod swojemu partnerowi, aby mógł dołączyć."
+    },
+    "joinFamily": {
+      "title": "Dołącz do rodziny",
+      "subtitle": "Wprowadź kod rodziny i swoje imię",
+      "familyCodePlaceholder": "ABCDEF",
+      "namePlaceholder": "Twoje imię",
+      "continue": "Kontynuuj",
+      "invalidCode": "Ups, ten kod jest nieprawidłowy.",
+      "registerWithEmail": "Zarejestruj się przez e-mail",
+      "createNewAccount": "Utwórz nowe konto",
+      "loginWithEmail": "Zaloguj się przez e-mail",
+      "loginExistingAccount": "Zaloguj się na swoje istniejące konto",
+      "haveAccount": "Masz już konto? Zaloguj się",
+      "noAccount": "Nie masz konta? Zarejestruj się",
+      "welcome": "Witaj! 🎉",
+      "welcomeMessage": "Zostałeś pomyślnie dodany do rodziny.",
+      "addingToFamily": "Dodawanie do rodziny..."
+    },
+    "setupFamily": {
+      "creatingFamily": "Tworzenie rodziny..."
+    }
+  },
   "language": {
     "title": "Język",
     "subtitle": "Wybierz swój język",

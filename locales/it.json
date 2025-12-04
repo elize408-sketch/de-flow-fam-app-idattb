@@ -73,6 +73,67 @@
     "logoutConfirm": "Sei sicuro di voler uscire?",
     "logoutError": "Si è verificato un errore durante l'uscita"
   },
+  "auth": {
+    "login": {
+      "title": "Accedi",
+      "subtitle": "Bentornato!",
+      "withEmail": "Accedi con email",
+      "withApple": "Continua con Apple",
+      "withGoogle": "Continua con Google",
+      "emailPlaceholder": "tu@email.com",
+      "passwordPlaceholder": "La tua password",
+      "fillEmail": "Inserisci il tuo indirizzo email",
+      "fillPassword": "Inserisci la tua password",
+      "fillDetails": "Compila i tuoi dati",
+      "noFamilyFound": "Nessuna famiglia trovata",
+      "noFamilyMessage": "Non sei ancora stato aggiunto a una famiglia. Chiedi a un membro della famiglia di invitarti o inizia una nuova famiglia.",
+      "appleNotAvailable": "Non disponibile",
+      "appleOnlyIOS": "Apple Sign-In è disponibile solo su iOS"
+    },
+    "verifyEmail": {
+      "title": "Verifica la tua email",
+      "subtitle": "Abbiamo inviato un codice di verifica a 6 cifre a",
+      "verify": "Verifica",
+      "noCodeReceived": "Non hai ricevuto un codice?",
+      "resendCode": "Invia di nuovo il codice",
+      "sending": "Invio...",
+      "codeSent": "Inviato!",
+      "codeSentMessage": "Abbiamo inviato un nuovo codice di verifica alla tua email.",
+      "invalidCode": "Codice di verifica non valido. Riprova.",
+      "fillCompleteCode": "Inserisci il codice completo a 6 cifre"
+    },
+    "createFamily": {
+      "title": "Inizia una nuova famiglia",
+      "subtitle": "Scegli come vuoi accedere",
+      "registerWithEmail": "Registrati con email",
+      "fillDetails": "Compila i tuoi dati per iniziare",
+      "namePlaceholder": "Il tuo nome",
+      "passwordMinLength": "La password deve contenere almeno 6 caratteri",
+      "createFamily": "Crea famiglia",
+      "familyCreated": "Famiglia creata! 🎉",
+      "familyCodeMessage": "Il tuo codice famiglia è: {{code}}\n\nCondividi questo codice con il tuo partner per permettergli di unirsi."
+    },
+    "joinFamily": {
+      "title": "Unisciti alla famiglia",
+      "subtitle": "Inserisci il codice famiglia e il tuo nome",
+      "familyCodePlaceholder": "ABCDEF",
+      "namePlaceholder": "Il tuo nome",
+      "continue": "Continua",
+      "invalidCode": "Ops, questo codice non è corretto.",
+      "registerWithEmail": "Registrati con email",
+      "createNewAccount": "Crea un nuovo account",
+      "loginWithEmail": "Accedi con email",
+      "loginExistingAccount": "Accedi con il tuo account esistente",
+      "haveAccount": "Hai già un account? Accedi",
+      "noAccount": "Non hai un account? Registrati",
+      "welcome": "Benvenuto! 🎉",
+      "welcomeMessage": "Sei stato aggiunto con successo alla famiglia.",
+      "addingToFamily": "Ti stiamo aggiungendo alla famiglia..."
+    },
+    "setupFamily": {
+      "creatingFamily": "Creazione della tua famiglia..."
+    }
+  },
   "language": {
     "title": "Lingua",
     "subtitle": "Scegli la tua lingua",

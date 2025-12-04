@@ -73,6 +73,67 @@
     "logoutConfirm": "您确定要退出登录吗？",
     "logoutError": "退出登录时出错"
   },
+  "auth": {
+    "login": {
+      "title": "登录",
+      "subtitle": "欢迎回来！",
+      "withEmail": "使用电子邮件登录",
+      "withApple": "使用 Apple 继续",
+      "withGoogle": "使用 Google 继续",
+      "emailPlaceholder": "you@email.com",
+      "passwordPlaceholder": "您的密码",
+      "fillEmail": "输入您的电子邮件地址",
+      "fillPassword": "输入您的密码",
+      "fillDetails": "填写您的详细信息",
+      "noFamilyFound": "未找到家庭",
+      "noFamilyMessage": "您尚未被添加到家庭。请家庭成员邀请您或创建新家庭。",
+      "appleNotAvailable": "不可用",
+      "appleOnlyIOS": "Apple 登录仅在 iOS 上可用"
+    },
+    "verifyEmail": {
+      "title": "验证您的电子邮件",
+      "subtitle": "我们已向以下地址发送了 6 位验证码",
+      "verify": "验证",
+      "noCodeReceived": "没有收到验证码？",
+      "resendCode": "重新发送验证码",
+      "sending": "发送中...",
+      "codeSent": "已发送！",
+      "codeSentMessage": "我们已向您的电子邮件发送了新的验证码。",
+      "invalidCode": "验证码无效。请重试。",
+      "fillCompleteCode": "输入完整的 6 位验证码"
+    },
+    "createFamily": {
+      "title": "创建新家庭",
+      "subtitle": "选择您想要的登录方式",
+      "registerWithEmail": "使用电子邮件注册",
+      "fillDetails": "填写您的详细信息以开始",
+      "namePlaceholder": "您的姓名",
+      "passwordMinLength": "密码必须至少为 6 个字符",
+      "createFamily": "创建家庭",
+      "familyCreated": "家庭已创建！🎉",
+      "familyCodeMessage": "您的家庭代码是：{{code}}\n\n与您的伴侣分享此代码，以便他们可以加入。"
+    },
+    "joinFamily": {
+      "title": "加入家庭",
+      "subtitle": "输入家庭代码和您的姓名",
+      "familyCodePlaceholder": "ABCDEF",
+      "namePlaceholder": "您的姓名",
+      "continue": "继续",
+      "invalidCode": "抱歉，此代码不正确。",
+      "registerWithEmail": "使用电子邮件注册",
+      "createNewAccount": "创建新账户",
+      "loginWithEmail": "使用电子邮件登录",
+      "loginExistingAccount": "使用您现有的账户登录",
+      "haveAccount": "已有账户？登录",
+      "noAccount": "没有账户？注册",
+      "welcome": "欢迎！🎉",
+      "welcomeMessage": "您已成功添加到家庭。",
+      "addingToFamily": "正在将您添加到家庭..."
+    },
+    "setupFamily": {
+      "creatingFamily": "正在创建您的家庭..."
+    }
+  },
   "language": {
     "title": "语言",
     "subtitle": "选择您的语言",

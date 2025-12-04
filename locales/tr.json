@@ -73,6 +73,67 @@
     "logoutConfirm": "Çıkış yapmak istediğinizden emin misiniz?",
     "logoutError": "Çıkış yapılırken bir şeyler ters gitti"
   },
+  "auth": {
+    "login": {
+      "title": "Giriş Yap",
+      "subtitle": "Tekrar hoş geldiniz!",
+      "withEmail": "E-posta ile giriş yap",
+      "withApple": "Apple ile devam et",
+      "withGoogle": "Google ile devam et",
+      "emailPlaceholder": "sen@email.com",
+      "passwordPlaceholder": "Şifreniz",
+      "fillEmail": "E-posta adresinizi girin",
+      "fillPassword": "Şifrenizi girin",
+      "fillDetails": "Bilgilerinizi doldurun",
+      "noFamilyFound": "Aile bulunamadı",
+      "noFamilyMessage": "Henüz bir aileye eklenmemişsiniz. Bir aile üyesinden sizi davet etmesini isteyin veya yeni bir aile başlatın.",
+      "appleNotAvailable": "Kullanılamıyor",
+      "appleOnlyIOS": "Apple Sign-In yalnızca iOS'ta kullanılabilir"
+    },
+    "verifyEmail": {
+      "title": "E-postanızı doğrulayın",
+      "subtitle": "6 haneli bir doğrulama kodu gönderdik",
+      "verify": "Doğrula",
+      "noCodeReceived": "Kod almadınız mı?",
+      "resendCode": "Kodu tekrar gönder",
+      "sending": "Gönderiliyor...",
+      "codeSent": "Gönderildi!",
+      "codeSentMessage": "E-postanıza yeni bir doğrulama kodu gönderdik.",
+      "invalidCode": "Geçersiz doğrulama kodu. Lütfen tekrar deneyin.",
+      "fillCompleteCode": "Tam 6 haneli kodu girin"
+    },
+    "createFamily": {
+      "title": "Yeni aile başlat",
+      "subtitle": "Nasıl giriş yapmak istediğinizi seçin",
+      "registerWithEmail": "E-posta ile kayıt ol",
+      "fillDetails": "Başlamak için bilgilerinizi doldurun",
+      "namePlaceholder": "Adınız",
+      "passwordMinLength": "Şifre en az 6 karakter olmalıdır",
+      "createFamily": "Aile oluştur",
+      "familyCreated": "Aile oluşturuldu! 🎉",
+      "familyCodeMessage": "Aile kodunuz: {{code}}\n\nBu kodu partnerinizle paylaşın, böylece katılabilir."
+    },
+    "joinFamily": {
+      "title": "Aileye katıl",
+      "subtitle": "Aile kodunu ve adınızı girin",
+      "familyCodePlaceholder": "ABCDEF",
+      "namePlaceholder": "Adınız",
+      "continue": "Devam et",
+      "invalidCode": "Hata, bu kod yanlış.",
+      "registerWithEmail": "E-posta ile kayıt ol",
+      "createNewAccount": "Yeni hesap oluştur",
+      "loginWithEmail": "E-posta ile giriş yap",
+      "loginExistingAccount": "Mevcut hesabınızla giriş yapın",
+      "haveAccount": "Zaten hesabınız var mı? Giriş yap",
+      "noAccount": "Hesabınız yok mu? Kayıt ol",
+      "welcome": "Hoş geldiniz! 🎉",
+      "welcomeMessage": "Aileye başarıyla eklendiniz.",
+      "addingToFamily": "Aileye ekleniyorsunuz..."
+    },
+    "setupFamily": {
+      "creatingFamily": "Aileniz oluşturuluyor..."
+    }
+  },
   "language": {
     "title": "Dil",
     "subtitle": "Dilinizi seçin",

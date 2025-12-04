@@ -73,6 +73,67 @@
     "logoutConfirm": "Êtes-vous sûr de vouloir vous déconnecter?",
     "logoutError": "Une erreur s'est produite lors de la déconnexion"
   },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Bon retour!",
+      "withEmail": "Se connecter avec e-mail",
+      "withApple": "Continuer avec Apple",
+      "withGoogle": "Continuer avec Google",
+      "emailPlaceholder": "vous@email.com",
+      "passwordPlaceholder": "Votre mot de passe",
+      "fillEmail": "Entrez votre adresse e-mail",
+      "fillPassword": "Entrez votre mot de passe",
+      "fillDetails": "Remplissez vos informations",
+      "noFamilyFound": "Aucune famille trouvée",
+      "noFamilyMessage": "Vous n'avez pas encore été ajouté à une famille. Demandez à un membre de la famille de vous inviter ou créez une nouvelle famille.",
+      "appleNotAvailable": "Non disponible",
+      "appleOnlyIOS": "Apple Sign-In n'est disponible que sur iOS"
+    },
+    "verifyEmail": {
+      "title": "Vérifiez votre e-mail",
+      "subtitle": "Nous avons envoyé un code de vérification à 6 chiffres à",
+      "verify": "Vérifier",
+      "noCodeReceived": "Vous n'avez pas reçu de code?",
+      "resendCode": "Renvoyer le code",
+      "sending": "Envoi...",
+      "codeSent": "Envoyé!",
+      "codeSentMessage": "Nous avons envoyé un nouveau code de vérification à votre e-mail.",
+      "invalidCode": "Code de vérification invalide. Veuillez réessayer.",
+      "fillCompleteCode": "Entrez le code complet à 6 chiffres"
+    },
+    "createFamily": {
+      "title": "Créer une nouvelle famille",
+      "subtitle": "Choisissez comment vous souhaitez vous connecter",
+      "registerWithEmail": "S'inscrire avec e-mail",
+      "fillDetails": "Remplissez vos informations pour commencer",
+      "namePlaceholder": "Votre nom",
+      "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères",
+      "createFamily": "Créer une famille",
+      "familyCreated": "Famille créée! 🎉",
+      "familyCodeMessage": "Votre code familial est: {{code}}\n\nPartagez ce code avec votre partenaire pour qu'il puisse rejoindre."
+    },
+    "joinFamily": {
+      "title": "Rejoindre la famille",
+      "subtitle": "Entrez le code familial et votre nom",
+      "familyCodePlaceholder": "ABCDEF",
+      "namePlaceholder": "Votre nom",
+      "continue": "Continuer",
+      "invalidCode": "Oups, ce code est incorrect.",
+      "registerWithEmail": "S'inscrire avec e-mail",
+      "createNewAccount": "Créer un nouveau compte",
+      "loginWithEmail": "Se connecter avec e-mail",
+      "loginExistingAccount": "Se connecter avec votre compte existant",
+      "haveAccount": "Vous avez déjà un compte? Se connecter",
+      "noAccount": "Vous n'avez pas de compte? S'inscrire",
+      "welcome": "Bienvenue! 🎉",
+      "welcomeMessage": "Vous avez été ajouté avec succès à la famille.",
+      "addingToFamily": "Ajout à la famille..."
+    },
+    "setupFamily": {
+      "creatingFamily": "Création de votre famille..."
+    }
+  },
   "language": {
     "title": "Langue",
     "subtitle": "Choisissez votre langue",
