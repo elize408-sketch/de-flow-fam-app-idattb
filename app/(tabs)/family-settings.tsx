@@ -433,13 +433,14 @@ export default function FamilySettingsScreen() {
                   <Image source={{ uri: newMemberPhoto }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <IconSymbol
-                      ios_icon_name="camera"
-                      android_material_icon_name="camera-alt"
-                      size={32}
-                      color={colors.textSecondary}
-                    />
-                    <Text style={styles.photoPlaceholderText}>Foto toevoegen</Text>
+                    <View style={styles.cameraIconCircle}>
+                      <IconSymbol
+                        ios_icon_name="camera.fill"
+                        android_material_icon_name="camera-alt"
+                        size={40}
+                        color={colors.card}
+                      />
+                    </View>
                   </View>
                 )}
               </TouchableOpacity>
@@ -501,7 +502,7 @@ export default function FamilySettingsScreen() {
                     <Image source={{ uri: newMemberPhoto }} style={styles.previewPhoto} />
                   ) : (
                     <Text style={styles.previewAvatarText}>
-                      {newMemberName ? newMemberName.charAt(0).toUpperCase() : '?'}
+                      {newMemberName ? newMemberName.charAt(0).toUpperCase() : ''}
                     </Text>
                   )}
                 </View>
@@ -550,13 +551,14 @@ export default function FamilySettingsScreen() {
                   <Image source={{ uri: newMemberPhoto }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <IconSymbol
-                      ios_icon_name="camera"
-                      android_material_icon_name="camera-alt"
-                      size={32}
-                      color={colors.textSecondary}
-                    />
-                    <Text style={styles.photoPlaceholderText}>Foto toevoegen</Text>
+                    <View style={styles.cameraIconCircle}>
+                      <IconSymbol
+                        ios_icon_name="camera.fill"
+                        android_material_icon_name="camera-alt"
+                        size={40}
+                        color={colors.card}
+                      />
+                    </View>
                   </View>
                 )}
               </TouchableOpacity>
@@ -603,7 +605,7 @@ export default function FamilySettingsScreen() {
                     <Image source={{ uri: newMemberPhoto }} style={styles.previewPhoto} />
                   ) : (
                     <Text style={styles.previewAvatarText}>
-                      {newMemberName ? newMemberName.charAt(0).toUpperCase() : '?'}
+                      {newMemberName ? newMemberName.charAt(0).toUpperCase() : ''}
                     </Text>
                   )}
                 </View>
@@ -870,12 +872,16 @@ const styles = StyleSheet.create({
   photoPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
+    height: '100%',
   },
-  photoPlaceholderText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 5,
-    fontFamily: 'Nunito_400Regular',
+  cameraIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.vibrantOrange,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     backgroundColor: colors.background,
