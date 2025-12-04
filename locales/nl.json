@@ -49,9 +49,9 @@
   },
   "welcome": {
     "title": "Welkom bij Flow Fam",
-    "subtitle": "Rust, overzicht en liefde voor je gezin",
+    "subtitle": "Breng structuur en rust in je gezinsleven",
     "startNewFamily": "Nieuw gezin starten",
-    "haveFamilyCode": "Ik heb een gezinscode",
+    "haveFamilyCode": "Deelnemen met uitnodigingscode",
     "alreadyHaveAccount": "Ik heb al een account – Inloggen"
   },
   "auth": {
@@ -92,7 +92,7 @@
       "passwordMinLength": "Wachtwoord moet minimaal 6 tekens zijn",
       "createFamily": "Gezin aanmaken",
       "familyCreated": "Gezin aangemaakt! 🎉",
-      "familyCodeMessage": "Je gezinscode is: {{code}}\n\nDeel deze code met andere gezinsleden zodat zij kunnen deelnemen."
+      "familyCodeMessage": "Je gezinscode is: {{code}}\n\nDeel deze code met je partner zodat hij/zij kan deelnemen."
     },
     "joinFamily": {
       "title": "Gezin deelnemen",

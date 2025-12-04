@@ -185,9 +185,9 @@ export default function ProfileScreen() {
       return;
     }
 
+    // Don't allow changing role - keep the original role
     updateFamilyMember(editingMember.id, {
       name: newMemberName.trim(),
-      role: newMemberRole,
       color: newMemberColor,
       photoUri: newMemberPhoto || undefined,
     });
@@ -849,15 +849,10 @@ export default function ProfileScreen() {
                     {t('home.child')}
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.roleButton, newMemberRole === 'parent' && styles.roleButtonActive]}
-                  onPress={() => setNewMemberRole('parent')}
-                >
-                  <Text style={[styles.roleButtonText, newMemberRole === 'parent' && styles.roleButtonTextActive]}>
-                    {t('home.parent')}
-                  </Text>
-                </TouchableOpacity>
               </View>
+              <Text style={styles.roleHint}>
+                Opmerking: Ouders kunnen alleen worden toegevoegd via de uitnodigingscode.
+              </Text>
 
               <Text style={styles.inputLabel}>{t('profile.chooseColor')}</Text>
               <Text style={styles.colorHint}>{t('profile.colorHint')}</Text>
@@ -972,15 +967,10 @@ export default function ProfileScreen() {
                     {t('home.child')}
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.roleButton, newMemberRole === 'parent' && styles.roleButtonActive]}
-                  onPress={() => setNewMemberRole('parent')}
-                >
-                  <Text style={[styles.roleButtonText, newMemberRole === 'parent' && styles.roleButtonTextActive]}>
-                    {t('home.parent')}
-                  </Text>
-                </TouchableOpacity>
               </View>
+              <Text style={styles.roleHint}>
+                Opmerking: Ouders kunnen alleen worden toegevoegd via de uitnodigingscode.
+              </Text>
 
               <Text style={styles.inputLabel}>{t('profile.chooseColor')}</Text>
               <Text style={styles.colorHint}>{t('profile.colorHint')}</Text>
@@ -1869,6 +1859,28 @@ const styles = StyleSheet.create({
   },
   roleButtonTextActive: {
     color: colors.text,
+  },
+  roleHint: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 8,
+    marginBottom: 15,
+    fontFamily: 'Nunito_400Regular',
+    fontStyle: 'italic',
+  },
+  infoBox: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+  },
+  infoBoxText: {
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+    lineHeight: 20,
   },
   colorHint: {
     fontSize: 12,

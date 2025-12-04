@@ -49,9 +49,9 @@
   },
   "welcome": {
     "title": "Welcome to Flow Fam",
-    "subtitle": "Peace, overview and love for your family",
+    "subtitle": "Bring structure and peace to your family life",
     "startNewFamily": "Start new family",
-    "haveFamilyCode": "I have a family code",
+    "haveFamilyCode": "Join with invitation code",
     "alreadyHaveAccount": "I already have an account – Login"
   },
   "auth": {
@@ -92,7 +92,7 @@
       "passwordMinLength": "Password must be at least 6 characters",
       "createFamily": "Create family",
       "familyCreated": "Family created! 🎉",
-      "familyCodeMessage": "Your family code is: {{code}}\n\nShare this code with other family members so they can join."
+      "familyCodeMessage": "Your family code is: {{code}}\n\nShare this code with your partner so they can join."
     },
     "joinFamily": {
       "title": "Join family",

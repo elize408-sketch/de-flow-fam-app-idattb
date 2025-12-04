@@ -6,7 +6,6 @@ import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { signUpWithEmail, signInWithApple, signInWithGoogle } from '@/utils/auth';
 import { createFamily, addFamilyMember } from '@/utils/familyService';
-import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function CreateFamilyScreen() {
   const router = useRouter();
@@ -32,7 +31,7 @@ export default function CreateFamilyScreen() {
         return;
       }
 
-      // Create family and add user as parent
+      // Create family and add user as parent (always parent role)
       await createFamilyAndNavigate(result.user.id, result.user.user_metadata?.full_name || 'Ouder');
     } catch (error: any) {
       console.error('Apple sign in error:', error);
@@ -52,7 +51,7 @@ export default function CreateFamilyScreen() {
         return;
       }
 
-      // Create family and add user as parent
+      // Create family and add user as parent (always parent role)
       await createFamilyAndNavigate(result.user.id, result.user.user_metadata?.name || 'Ouder');
     } catch (error: any) {
       console.error('Google sign in error:', error);
@@ -95,7 +94,7 @@ export default function CreateFamilyScreen() {
         return;
       }
 
-      // Create family and add user as parent
+      // Create family and add user as parent (always parent role)
       await createFamilyAndNavigate(result.user.id, name);
     } catch (error: any) {
       console.error('Email sign up error:', error);
@@ -115,7 +114,7 @@ export default function CreateFamilyScreen() {
         return;
       }
 
-      // Add user as parent
+      // Add user as parent (always parent role - first parent)
       const memberResult = await addFamilyMember(
         familyResult.family.id,
         userId,
@@ -135,13 +134,13 @@ export default function CreateFamilyScreen() {
       // Show family code
       Alert.alert(
         'Gezin aangemaakt! 🎉',
-        `Je gezinscode is: ${familyResult.family.family_code}\n\nDeel deze code met andere gezinsleden zodat zij kunnen deelnemen.`,
+        `Je gezinscode is: ${familyResult.family.family_code}\n\nDeel deze code met je partner zodat hij/zij kan deelnemen.`,
         [
           {
             text: 'OK',
             onPress: () => {
-              // Navigate to settings to set up family members
-              router.replace('/(tabs)/profile');
+              // Navigate to home
+              router.replace('/(tabs)/(home)');
             },
           },
         ]

@@ -164,6 +164,7 @@ export default function JoinFamilyScreen() {
     }
 
     try {
+      // Add user as parent (always parent role - second parent joining)
       const memberResult = await addFamilyMember(
         familyId,
         userId,
@@ -187,7 +188,7 @@ export default function JoinFamilyScreen() {
           {
             text: 'OK',
             onPress: () => {
-              router.replace('/(tabs)/profile');
+              router.replace('/(tabs)/(home)');
             },
           },
         ]

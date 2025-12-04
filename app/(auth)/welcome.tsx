@@ -20,7 +20,7 @@ export default function WelcomeScreen() {
             resizeMode="contain"
           />
           <Text style={styles.title}>{t('welcome.title')}</Text>
-          <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
+          <Text style={styles.subtitle}>Breng structuur en rust in je gezinsleven</Text>
         </View>
 
         {/* Main buttons */}
@@ -36,7 +36,7 @@ export default function WelcomeScreen() {
             style={[styles.button, styles.secondaryButton]}
             onPress={() => router.push('/(auth)/join-family')}
           >
-            <Text style={styles.secondaryButtonText}>{t('welcome.haveFamilyCode')}</Text>
+            <Text style={styles.secondaryButtonText}>Deelnemen met uitnodigingscode</Text>
           </TouchableOpacity>
         </View>
 
