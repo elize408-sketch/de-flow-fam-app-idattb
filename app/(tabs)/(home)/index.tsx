@@ -24,43 +24,43 @@ export default function HomeScreen() {
   const menuItems = [
     {
       title: t('home.menu.agenda'),
-      color: '#3A8DFF',
+      color: '#4A90E2',
       icon: 'calendar-month-outline',
       route: '/(tabs)/agenda',
     },
     {
       title: t('home.menu.tasks'),
-      color: '#4CAF50',
+      color: '#7ED321',
       icon: 'check-circle-outline',
       route: '/(tabs)/tasks',
     },
     {
       title: t('home.menu.shopping'),
-      color: '#FFB74D',
+      color: colors.warmOrange,
       icon: 'cart-outline',
       route: '/(tabs)/shopping',
     },
     {
       title: t('home.menu.finances'),
-      color: '#7ED957',
+      color: '#34C759',
       icon: 'currency-eur',
       route: '/(tabs)/finances',
     },
     {
       title: t('home.menu.photobook'),
-      color: '#FF8A65',
+      color: colors.redPink,
       icon: 'camera-outline',
       route: '/(tabs)/memories',
     },
     {
       title: t('home.menu.meals'),
-      color: '#78C3FF',
+      color: colors.warmOrange,
       icon: 'food-outline',
       route: '/(tabs)/meals',
     },
     {
       title: t('home.menu.shop'),
-      color: '#AB47BC',
+      color: colors.redPink,
       icon: 'shopping-outline',
       route: '/(tabs)/shop',
     },
@@ -123,21 +123,21 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.softCream,
   },
   scrollView: {
     flex: 1,
   },
   container: {
     flexGrow: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.softCream,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 120,
     alignItems: 'stretch',
   },
   userBanner: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.beige,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
@@ -145,22 +145,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderLeftWidth: 4,
-    borderLeftColor: colors.vibrantOrange,
+    borderLeftColor: colors.redPink,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: colors.darkBrown,
         shadowOffset: {
           width: 0,
           height: 2,
         },
-        shadowOpacity: 0.08,
+        shadowOpacity: 0.12,
         shadowRadius: 8,
       },
       android: {
         elevation: 2,
       },
       web: {
-        boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
+        boxShadow: `0px 2px 12px ${colors.shadow}`,
       },
     }),
   },
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_700Bold',
     marginBottom: 4,
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: colors.lightGrey,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -191,26 +191,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   illustrationCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.lightGrey,
     borderRadius: 20,
     padding: 16,
     alignItems: 'center',
     marginBottom: 8,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: colors.darkBrown,
         shadowOffset: {
           width: 0,
           height: 2,
         },
-        shadowOpacity: 0.08,
+        shadowOpacity: 0.12,
         shadowRadius: 8,
       },
       android: {
         elevation: 2,
       },
       web: {
-        boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
+        boxShadow: `0px 2px 12px ${colors.shadow}`,
       },
     }),
   },

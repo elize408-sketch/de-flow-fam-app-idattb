@@ -97,7 +97,7 @@ export default function WelcomeScreen() {
               ios_icon_name="chevron.down"
               android_material_icon_name="arrow-drop-down"
               size={24}
-              color={colors.text}
+              color={colors.darkBrown}
             />
           </TouchableOpacity>
         </View>
@@ -190,7 +190,7 @@ export default function WelcomeScreen() {
                           ios_icon_name="checkmark.circle.fill"
                           android_material_icon_name="check-circle"
                           size={24}
-                          color={colors.vibrantOrange}
+                          color={colors.warmOrange}
                         />
                       )}
                     </TouchableOpacity>
@@ -208,7 +208,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.softCream,
   },
   scrollView: {
     flex: 1,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0D1A2D',
+    color: colors.darkBrown,
     marginBottom: 8,
     fontFamily: 'Poppins_700Bold',
     textAlign: 'center',
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   languageTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_600SemiBold',
     textAlign: 'center',
     marginBottom: 16,
@@ -260,9 +260,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderRadius: 16,
-    backgroundColor: colors.card,
+    backgroundColor: colors.lightGrey,
     borderWidth: 2,
-    borderColor: colors.vibrantOrange,
+    borderColor: colors.warmOrange,
     boxShadow: `0px 2px 8px ${colors.shadow}`,
     elevation: 2,
   },
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontSize: 17,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_600SemiBold',
   },
   buttonContainer: {
@@ -294,25 +294,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButton: {
-    backgroundColor: colors.vibrantOrange,
+    backgroundColor: colors.warmOrange,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.card,
+    color: '#FFFFFF',
     fontFamily: 'Poppins_600SemiBold',
   },
   secondaryButton: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.lightGrey,
     borderWidth: 2,
-    borderColor: colors.vibrantOrange,
+    borderColor: colors.warmOrange,
   },
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.vibrantOrange,
+    color: colors.warmOrange,
     fontFamily: 'Poppins_600SemiBold',
   },
   loginLink: {
@@ -328,13 +328,13 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(76, 59, 52, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.lightGrey,
     borderRadius: 24,
     width: '100%',
     maxWidth: 400,
@@ -350,12 +350,12 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: colors.beige,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_700Bold',
   },
   closeButton: {
@@ -373,13 +373,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   languageOptionActive: {
-    borderColor: colors.vibrantOrange,
-    backgroundColor: colors.primary,
+    borderColor: colors.warmOrange,
+    backgroundColor: colors.beige,
   },
   languageOptionFlag: {
     fontSize: 28,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   languageOptionText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_600SemiBold',
     flex: 1,
   },

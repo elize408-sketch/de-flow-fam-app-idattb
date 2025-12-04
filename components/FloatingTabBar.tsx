@@ -19,11 +19,9 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { Href } from 'expo-router';
+import { colors } from '@/styles/commonStyles';
 
 const { width: screenWidth } = Dimensions.get('window');
-
-const FLOW_FAM_ORANGE = '#F28F45';
-const INACTIVE_GREY = '#A0A0A0';
 
 export interface TabBarItem {
   name: string;
@@ -138,20 +136,20 @@ export default function FloatingTabBar({
       ...styles.blurContainer,
       ...Platform.select({
         ios: {
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          backgroundColor: 'rgba(244, 234, 225, 0.9)',
         },
         android: {
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backgroundColor: 'rgba(244, 234, 225, 0.95)',
         },
         web: {
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backgroundColor: 'rgba(244, 234, 225, 0.95)',
           backdropFilter: 'blur(10px)',
         },
       }),
     },
     indicator: {
       ...styles.indicator,
-      backgroundColor: FLOW_FAM_ORANGE,
+      backgroundColor: colors.warmOrange,
       width: tabWidth,
       borderRadius: 50,
       height: 52,
@@ -178,8 +176,8 @@ export default function FloatingTabBar({
           <View style={styles.tabsContainer}>
             {tabs.map((tab, index) => {
               const isActive = activeTabIndex === index;
-              const iconColor = isActive ? '#FFFFFF' : INACTIVE_GREY;
-              const labelColor = isActive ? '#FFFFFF' : INACTIVE_GREY;
+              const iconColor = isActive ? '#FFFFFF' : colors.darkBrown;
+              const labelColor = isActive ? '#FFFFFF' : colors.darkBrown;
 
               return (
                 <React.Fragment key={index}>

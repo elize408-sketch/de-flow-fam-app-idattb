@@ -43,7 +43,7 @@ export default function ModuleHeader({
             ios_icon_name={addButtonIcon.ios}
             android_material_icon_name={addButtonIcon.android}
             size={24}
-            color={colors.card}
+            color="#FFFFFF"
           />
         </TouchableOpacity>
       )}
@@ -59,9 +59,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 16,
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     borderBottomWidth: 1,
-    borderBottomColor: colors.background,
+    borderBottomColor: colors.beige,
   },
   textContainer: {
     flex: 1,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_700Bold',
     marginBottom: 4,
   },

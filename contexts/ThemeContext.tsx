@@ -2,19 +2,19 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { colors } from '@/styles/commonStyles';
 
-// Module color mapping based on homepage icons
+// Module color mapping using Flow Fam palette
 export const MODULE_COLORS = {
-  agenda: '#4A90E2',           // Blue
-  tasks: '#4CAF50',            // Green (matching home button)
-  shopping: '#F5A623',         // Orange
-  finances: '#34C759',         // Green
-  memories: '#FF8A65',         // Red-Orange (Fotoboek - matching home button)
-  meals: '#78C3FF',            // Light Blue (matching home button)
-  notes: '#F5A623',            // Orange
-  documents: '#50E3C2',        // Turquoise
-  shop: '#AB47BC',             // Purple (matching home button)
-  profile: '#999999',          // Grey
-  home: colors.accent,         // Default
+  agenda: '#4A90E2',           // Blue (keep for calendar)
+  tasks: '#7ED321',            // Green (keep for tasks)
+  shopping: '#f08a48',         // warm orange
+  finances: '#34C759',         // Green (keep for money)
+  memories: '#e53f59',         // red/pink
+  meals: '#f08a48',            // warm orange
+  notes: '#cfa692',            // soft beige-rose
+  documents: '#50E3C2',        // Turquoise (keep for docs)
+  shop: '#e53f59',             // red/pink
+  profile: '#cfa692',          // soft beige-rose
+  home: colors.warmOrange,     // warm orange
 } as const;
 
 export type ModuleName = keyof typeof MODULE_COLORS;

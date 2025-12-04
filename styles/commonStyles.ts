@@ -1,33 +1,45 @@
 
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
+// Official Flow Fam Color Palette
 export const colors = {
-  background: '#F9F6F1',      // Sand Beige
-  text: '#333333',            // Dark Gray
-  textSecondary: '#666666',   // Medium Gray
-  primary: '#F5D9CF',         // Blush Pink
-  secondary: '#C8D3C0',       // Sage Green
-  accent: '#D5A093',          // Warm Terracotta
-  card: '#FFFFFF',            // White
-  highlight: '#CBA85B',       // Gold
-  shadow: 'rgba(0, 0, 0, 0.08)',
-  vibrantPink: '#FF6B9D',     // Vibrant Pink
-  vibrantBlue: '#4A90E2',     // Vibrant Blue
-  vibrantGreen: '#7ED321',    // Vibrant Green
-  vibrantOrange: '#F5A623',   // Vibrant Orange
-  vibrantPurple: '#9013FE',   // Vibrant Purple
-  vibrantTeal: '#50E3C2',     // Vibrant Teal
-  vibrantRed: '#FF3B30',      // Vibrant Red
+  // Primary Flow Fam Colors
+  redPink: '#e53f59',           // red/pink - primary accent
+  beige: '#cfa692',             // soft beige-rose - secondary accent
+  warmOrange: '#f08a48',        // warm orange - primary buttons
+  softCream: '#f4eae1',         // soft cream - backgrounds
+  darkBrown: '#4c3b34',         // dark brown - text
+  lightGrey: '#f5f5f5',         // light grey - cards/surfaces
+  
+  // Semantic mappings
+  background: '#f4eae1',        // soft cream
+  text: '#4c3b34',              // dark brown
+  textSecondary: '#8a7a72',     // lighter brown for secondary text
+  primary: '#e53f59',           // red/pink
+  secondary: '#cfa692',         // soft beige-rose
+  accent: '#f08a48',            // warm orange
+  card: '#f5f5f5',              // light grey
+  highlight: '#e53f59',         // red/pink for highlights
+  shadow: 'rgba(76, 59, 52, 0.12)',  // dark brown with transparency
+  
+  // Additional UI colors derived from palette
+  vibrantPink: '#e53f59',       // red/pink
+  vibrantBlue: '#4A90E2',       // Keep for specific modules
+  vibrantGreen: '#7ED321',      // Keep for specific modules
+  vibrantOrange: '#f08a48',     // warm orange
+  vibrantPurple: '#9013FE',     // Keep for specific modules
+  vibrantTeal: '#50E3C2',       // Keep for specific modules
+  vibrantRed: '#e53f59',        // red/pink
 };
 
 export const buttonStyles = StyleSheet.create({
   instructionsButton: {
-    backgroundColor: colors.vibrantBlue,
+    backgroundColor: colors.warmOrange,
     alignSelf: 'center',
     width: '100%',
   },
   backButton: {
-    backgroundColor: colors.vibrantGreen,
+    backgroundColor: colors.beige,
     alignSelf: 'center',
     width: '100%',
   },
