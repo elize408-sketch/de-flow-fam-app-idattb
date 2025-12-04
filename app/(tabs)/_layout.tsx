@@ -2,6 +2,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Stack } from 'expo-router';
+import FloatingTabBar from '@/components/FloatingTabBar';
 
 export default function TabLayout() {
   return (
@@ -13,6 +14,9 @@ export default function TabLayout() {
         }}
       >
         <Stack.Screen key="home" name="(home)" />
+        <Stack.Screen key="notifications" name="notifications" />
+        <Stack.Screen key="profile" name="profile" />
+        <Stack.Screen key="settings" name="settings" />
         <Stack.Screen key="tasks" name="tasks" />
         <Stack.Screen key="rewards" name="rewards" />
         <Stack.Screen key="agenda" name="agenda" />
@@ -25,8 +29,8 @@ export default function TabLayout() {
         <Stack.Screen key="memories" name="memories" />
         <Stack.Screen key="reminders" name="reminders" />
         <Stack.Screen key="shop" name="shop" />
-        <Stack.Screen key="profile" name="profile" />
       </Stack>
+      <FloatingTabBar />
     </View>
   );
 }
