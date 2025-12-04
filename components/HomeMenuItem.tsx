@@ -41,7 +41,7 @@ export function HomeMenuItem({ title, color, icon, onPress }: HomeMenuItemProps)
         activeOpacity={0.9}
       >
         <View style={styles.contentWrapper}>
-          <MaterialCommunityIcons name={icon as any} size={28} color="#FFFFFF" />
+          <MaterialCommunityIcons name={icon as any} size={26} color="#FFFFFF" />
           <Text style={styles.title}>{title}</Text>
         </View>
       </TouchableOpacity>
@@ -52,34 +52,34 @@ export function HomeMenuItem({ title, color, icon, onPress }: HomeMenuItemProps)
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingVertical: 18,
+    paddingVertical: 15,
     paddingHorizontal: 20,
-    borderRadius: 16,
+    borderRadius: 18,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: {
           width: 0,
-          height: 3,
+          height: 2,
         },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
+        shadowOpacity: 0.12,
+        shadowRadius: 5,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
       web: {
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.15)',
+        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.12)',
       },
     }),
   },
   contentWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 14,
   },
   title: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'Poppins_600SemiBold',

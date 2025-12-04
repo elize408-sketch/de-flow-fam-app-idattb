@@ -6,10 +6,10 @@ import {
   SafeAreaView,
   ScrollView,
   Image,
+  Text,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { HomeMenuItem } from '@/components/HomeMenuItem';
-import { colors } from '@/styles/commonStyles';
 
 const menuItems = [
   {
@@ -66,7 +66,8 @@ export default function HomeScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroContainer}>
+        {/* Illustration Block */}
+        <View style={styles.illustrationCard}>
           <Image
             source={require('@/assets/images/ed920307-19f7-48d1-96f4-53ed71f8af30.jpeg')}
             style={styles.familyImage}
@@ -74,6 +75,17 @@ export default function HomeScreen() {
           />
         </View>
 
+        {/* Flow Fam Logo */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoPill}>
+            <Text style={styles.logoText}>Flow Fam</Text>
+          </View>
+        </View>
+
+        {/* Subtitle */}
+        <Text style={styles.subtitle}>Rust. Overzicht. Liefde.</Text>
+
+        {/* Menu Items */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
             <React.Fragment key={index}>
@@ -94,30 +106,71 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
   },
   scrollView: {
     flex: 1,
   },
   container: {
     flexGrow: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 140,
+    paddingTop: 12,
+    paddingBottom: 120,
     alignItems: 'stretch',
   },
-  heroContainer: {
+  illustrationCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
     alignItems: 'center',
-    marginBottom: 28,
-    marginTop: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   familyImage: {
-    width: 280,
-    height: 180,
-    marginBottom: 16,
+    width: 260,
+    height: 160,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logoPill: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 28,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  logoText: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#F28F45',
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#333333',
+    fontFamily: 'Poppins_400Regular',
+    textAlign: 'center',
+    marginBottom: 24,
+    letterSpacing: 0.3,
   },
   menuContainer: {
-    gap: 14,
+    gap: 10,
   },
 });
