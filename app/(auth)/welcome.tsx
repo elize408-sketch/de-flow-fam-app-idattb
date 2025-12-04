@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Platform, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '@/styles/commonStyles';
-import { changeLanguage, getAvailableLanguages } from '@/utils/i18n';
+import { changeLanguage, getAvailableLanguages, getCurrentLanguage } from '@/utils/i18n';
 import { getLocales } from 'expo-localization';
+import { IconSymbol } from '@/components/IconSymbol';
 
 const LANGUAGE_SELECTED_KEY = '@flow_fam_language_selected';
 
@@ -14,6 +15,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
   const availableLanguages = getAvailableLanguages();
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function WelcomeScreen() {
   const handleLanguageSelect = async (languageCode: string) => {
     setSelectedLanguage(languageCode);
     await changeLanguage(languageCode);
+    setDropdownVisible(false);
   };
 
   const handleContinue = async () => {
@@ -52,6 +55,10 @@ export default function WelcomeScreen() {
       await AsyncStorage.setItem(LANGUAGE_SELECTED_KEY, 'true');
       // Continue to create or join family
     }
+  };
+
+  const getSelectedLanguageData = () => {
+    return availableLanguages.find(lang => lang.code === selectedLanguage) || availableLanguages[0];
   };
 
   return (
@@ -72,33 +79,27 @@ export default function WelcomeScreen() {
           <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
         </View>
 
-        {/* Language Selection */}
+        {/* Language Dropdown */}
         <View style={styles.languageSection}>
           <Text style={styles.languageTitle}>
             {t('language.subtitle')}
           </Text>
           
-          <View style={styles.languageGrid}>
-            {availableLanguages.map((language, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
-                  style={[
-                    styles.languageCard,
-                    selectedLanguage === language.code && styles.languageCardActive,
-                  ]}
-                  onPress={() => handleLanguageSelect(language.code)}
-                >
-                  <Text style={styles.languageFlag}>{language.flag}</Text>
-                  <Text style={[
-                    styles.languageText,
-                    selectedLanguage === language.code && styles.languageTextActive,
-                  ]}>
-                    {language.nativeName}
-                  </Text>
-                </TouchableOpacity>
-              </React.Fragment>
-            ))}
-          </View>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setDropdownVisible(true)}
+          >
+            <View style={styles.dropdownContent}>
+              <Text style={styles.dropdownFlag}>{getSelectedLanguageData().flag}</Text>
+              <Text style={styles.dropdownText}>{getSelectedLanguageData().nativeName}</Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.down"
+              android_material_icon_name="arrow-drop-down"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Main buttons */}
@@ -137,6 +138,69 @@ export default function WelcomeScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Language Dropdown Modal */}
+      <Modal
+        visible={dropdownVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDropdownVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setDropdownVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('language.title')}</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setDropdownVisible(false)}
+              >
+                <IconSymbol
+                  ios_icon_name="xmark.circle.fill"
+                  android_material_icon_name="cancel"
+                  size={28}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              style={styles.languageScrollView}
+              contentContainerStyle={styles.languageList}
+              showsVerticalScrollIndicator={true}
+            >
+              {availableLanguages.map((language, index) => {
+                const isSelected = selectedLanguage === language.code;
+                return (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.languageOption,
+                        isSelected && styles.languageOptionActive,
+                      ]}
+                      onPress={() => handleLanguageSelect(language.code)}
+                    >
+                      <Text style={styles.languageOptionFlag}>{language.flag}</Text>
+                      <Text style={styles.languageOptionText}>{language.nativeName}</Text>
+                      {isSelected && (
+                        <IconSymbol
+                          ios_icon_name="checkmark.circle.fill"
+                          android_material_icon_name="check-circle"
+                          size={24}
+                          color={colors.vibrantOrange}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -187,46 +251,35 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  languageGrid: {
+  dropdownButton: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'center',
-  },
-  languageCard: {
-    width: '30%',
-    minWidth: 100,
-    aspectRatio: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderRadius: 16,
     backgroundColor: colors.card,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: colors.vibrantOrange,
     boxShadow: `0px 2px 8px ${colors.shadow}`,
     elevation: 2,
   },
-  languageCardActive: {
-    borderColor: colors.vibrantOrange,
-    backgroundColor: colors.primary,
+  dropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
-  languageFlag: {
-    fontSize: 32,
-    marginBottom: 8,
+  dropdownFlag: {
+    fontSize: 28,
+    marginRight: 12,
   },
-  languageText: {
-    fontSize: 13,
+  dropdownText: {
+    fontSize: 17,
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
-    textAlign: 'center',
-  },
-  languageTextActive: {
-    color: colors.vibrantOrange,
   },
   buttonContainer: {
     width: '100%',
@@ -271,5 +324,72 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
     textDecorationLine: 'underline',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '70%',
+    boxShadow: `0px 8px 32px ${colors.shadow}`,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  languageScrollView: {
+    maxHeight: 500,
+  },
+  languageList: {
+    padding: 16,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  languageOptionActive: {
+    borderColor: colors.vibrantOrange,
+    backgroundColor: colors.primary,
+  },
+  languageOptionFlag: {
+    fontSize: 28,
+    marginRight: 16,
+  },
+  languageOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+    flex: 1,
   },
 });
