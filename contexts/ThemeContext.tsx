@@ -9,10 +9,10 @@ export const MODULE_COLORS = {
   shopping: '#F5A623',         // Orange
   finances: '#34C759',         // Green
   memories: '#FF8A65',         // Red-Orange (Fotoboek - matching home button)
-  meals: '#FF6B9D',            // Pink
+  meals: '#78C3FF',            // Light Blue (matching home button)
   notes: '#F5A623',            // Orange
   documents: '#50E3C2',        // Turquoise
-  shop: '#50E3C2',             // Mint/Turquoise
+  shop: '#AB47BC',             // Purple (matching home button)
   profile: '#999999',          // Grey
   home: colors.accent,         // Default
 } as const;
