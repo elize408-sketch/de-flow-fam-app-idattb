@@ -6,9 +6,11 @@ import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { signInWithEmail, signInWithApple, signInWithGoogle } from '@/utils/auth';
 import { userHasFamily } from '@/utils/familyService';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [step, setStep] = useState<'auth' | 'email'>('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,11 +23,11 @@ export default function LoginScreen() {
       
       if (!hasFamily) {
         Alert.alert(
-          'Geen gezin gevonden',
-          'Je bent nog niet toegevoegd aan een gezin. Vraag een gezinslid om je uit te nodigen of start een nieuw gezin.',
+          t('auth.login.noFamilyFound'),
+          t('auth.login.noFamilyMessage'),
           [
             {
-              text: 'OK',
+              text: t('common.ok'),
               onPress: () => router.replace('/(auth)/welcome'),
             },
           ]
@@ -37,13 +39,13 @@ export default function LoginScreen() {
       router.replace('/(tabs)/(home)');
     } catch (error) {
       console.error('Login success handler error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het inloggen');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
     }
   };
 
   const handleAppleSignIn = async () => {
     if (Platform.OS !== 'ios') {
-      Alert.alert('Niet beschikbaar', 'Apple Sign-In is alleen beschikbaar op iOS');
+      Alert.alert(t('auth.login.appleNotAvailable'), t('auth.login.appleOnlyIOS'));
       return;
     }
 
@@ -52,7 +54,7 @@ export default function LoginScreen() {
       const result = await signInWithApple();
       
       if (!result.success) {
-        Alert.alert('Fout', result.error || 'Er ging iets mis bij het inloggen');
+        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
@@ -61,7 +63,7 @@ export default function LoginScreen() {
       setLoading(false);
     } catch (error: any) {
       console.error('Apple sign in error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het inloggen met Apple');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Apple');
       setLoading(false);
     }
   };
@@ -72,7 +74,7 @@ export default function LoginScreen() {
       const result = await signInWithGoogle();
       
       if (!result.success) {
-        Alert.alert('Fout', result.error || 'Er ging iets mis bij het inloggen');
+        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
@@ -81,18 +83,18 @@ export default function LoginScreen() {
       setLoading(false);
     } catch (error: any) {
       console.error('Google sign in error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het inloggen met Google');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Google');
       setLoading(false);
     }
   };
 
   const handleEmailSignIn = async () => {
     if (!email.trim()) {
-      Alert.alert('Fout', 'Vul je e-mailadres in');
+      Alert.alert(t('common.error'), t('auth.login.fillEmail'));
       return;
     }
     if (!password.trim()) {
-      Alert.alert('Fout', 'Vul je wachtwoord in');
+      Alert.alert(t('common.error'), t('auth.login.fillPassword'));
       return;
     }
 
@@ -101,7 +103,7 @@ export default function LoginScreen() {
       const result = await signInWithEmail(email, password);
       
       if (!result.success) {
-        Alert.alert('Fout', result.error || 'Er ging iets mis bij het inloggen');
+        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
@@ -110,7 +112,7 @@ export default function LoginScreen() {
       setLoading(false);
     } catch (error: any) {
       console.error('Email sign in error:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het inloggen');
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
       setLoading(false);
     }
   };
@@ -131,15 +133,15 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Inloggen met e-mail</Text>
-          <Text style={styles.subtitle}>Vul je gegevens in</Text>
+          <Text style={styles.title}>{t('auth.login.withEmail')}</Text>
+          <Text style={styles.subtitle}>{t('auth.login.fillDetails')}</Text>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>E-mail</Text>
+              <Text style={styles.label}>{t('common.email')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="je@email.com"
+                placeholder={t('auth.login.emailPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={email}
                 onChangeText={setEmail}
@@ -150,10 +152,10 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Wachtwoord</Text>
+              <Text style={styles.label}>{t('common.password')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Je wachtwoord"
+                placeholder={t('auth.login.passwordPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={password}
                 onChangeText={setPassword}
@@ -163,14 +165,15 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton]}
+              style={[styles.button, styles.orangeButton]}
               onPress={handleEmailSignIn}
               disabled={loading}
+              activeOpacity={0.8}
             >
               {loading ? (
                 <ActivityIndicator color={colors.card} />
               ) : (
-                <Text style={styles.primaryButtonText}>Inloggen</Text>
+                <Text style={styles.orangeButtonText}>{t('common.login')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -194,51 +197,59 @@ export default function LoginScreen() {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Inloggen</Text>
-        <Text style={styles.subtitle}>Welkom terug!</Text>
+        <Text style={styles.title}>{t('auth.login.title')}</Text>
+        <Text style={styles.subtitle}>{t('auth.login.subtitle')}</Text>
 
         <View style={styles.authButtons}>
           {Platform.OS === 'ios' && (
             <TouchableOpacity
-              style={[styles.button, styles.appleButton]}
+              style={[styles.button, styles.orangeButton]}
               onPress={handleAppleSignIn}
               disabled={loading}
+              activeOpacity={0.8}
             >
               {loading ? (
                 <ActivityIndicator color={colors.card} />
               ) : (
-                <>
+                <React.Fragment>
                   <IconSymbol
                     ios_icon_name="apple.logo"
                     android_material_icon_name="apple"
                     size={20}
                     color={colors.card}
                   />
-                  <Text style={styles.appleButtonText}>Doorgaan met Apple</Text>
-                </>
+                  <Text style={styles.orangeButtonText}>{t('auth.login.withApple')}</Text>
+                </React.Fragment>
               )}
             </TouchableOpacity>
           )}
 
           <TouchableOpacity
-            style={[styles.button, styles.googleButton]}
+            style={[styles.button, styles.orangeButton]}
             onPress={handleGoogleSignIn}
             disabled={loading}
+            activeOpacity={0.8}
           >
             {loading ? (
-              <ActivityIndicator color={colors.text} />
+              <ActivityIndicator color={colors.card} />
             ) : (
-              <>
-                <Text style={styles.googleIcon}>G</Text>
-                <Text style={styles.googleButtonText}>Doorgaan met Google</Text>
-              </>
+              <React.Fragment>
+                <IconSymbol
+                  ios_icon_name="globe"
+                  android_material_icon_name="language"
+                  size={20}
+                  color={colors.card}
+                />
+                <Text style={styles.orangeButtonText}>{t('auth.login.withGoogle')}</Text>
+              </React.Fragment>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.button, styles.emailButton]}
+            style={[styles.button, styles.orangeButton]}
             onPress={() => setStep('email')}
             disabled={loading}
+            activeOpacity={0.8}
           >
             <IconSymbol
               ios_icon_name="envelope.fill"
@@ -246,7 +257,7 @@ export default function LoginScreen() {
               size={20}
               color={colors.card}
             />
-            <Text style={styles.emailButtonText}>Inloggen met e-mail</Text>
+            <Text style={styles.orangeButtonText}>{t('auth.login.withEmail')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -293,38 +304,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     gap: 10,
+    boxShadow: '0px 4px 12px rgba(245, 166, 35, 0.25)',
+    elevation: 4,
   },
-  appleButton: {
-    backgroundColor: '#000',
+  orangeButton: {
+    backgroundColor: colors.vibrantOrange,
   },
-  appleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.card,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  googleButton: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.textSecondary + '40',
-  },
-  googleIcon: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#4285F4',
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  emailButton: {
-    backgroundColor: colors.accent,
-  },
-  emailButtonText: {
+  orangeButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.card,
@@ -352,15 +340,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
     borderWidth: 1,
     borderColor: colors.textSecondary + '20',
-  },
-  primaryButton: {
-    backgroundColor: colors.accent,
-    marginTop: 10,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.card,
-    fontFamily: 'Poppins_600SemiBold',
   },
 });
