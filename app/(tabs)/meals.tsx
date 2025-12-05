@@ -396,6 +396,7 @@ export default function MealsScreen() {
       <ModuleHeader
         title="Maaltijden"
         subtitle="Recepten en maaltijdplanning"
+        backgroundColor="#FFFFFF"
       />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>

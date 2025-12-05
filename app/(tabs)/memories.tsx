@@ -280,6 +280,7 @@ export default function MemoriesScreen() {
       <ModuleHeader
         title="Fotoboek"
         subtitle="Bewaar jullie mooiste momenten"
+        backgroundColor="#FFFFFF"
       />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -294,7 +295,7 @@ export default function MemoriesScreen() {
               size={24}
               color={colors.card}
             />
-            <Text style={styles.actionButtonText}>Herinnering toevoegen</Text>
+            <Text style={styles.actionButtonText}>Foto toevoegen</Text>
           </TouchableOpacity>
 
           {memories.length > 0 && (

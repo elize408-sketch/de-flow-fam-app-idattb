@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
-import ModuleHeader from '@/components/ModuleHeader';
 
 export default function ShopScreen() {
   const router = useRouter();
@@ -29,11 +28,6 @@ export default function ShopScreen() {
 
   return (
     <View style={styles.container}>
-      <ModuleHeader
-        title="🛍️ Shop"
-        subtitle="Flow Fam Webshop"
-      />
-
       <View style={styles.content}>
         <Text style={styles.shopTitle}>Welkom bij de Flow Fam Shop!</Text>
         <Text style={styles.shopDescription}>

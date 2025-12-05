@@ -158,6 +158,7 @@ export default function ShoppingScreen() {
       <ModuleHeader
         title="Boodschappen"
         subtitle="Gezamenlijke boodschappenlijst"
+        backgroundColor="#FFFFFF"
       />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
