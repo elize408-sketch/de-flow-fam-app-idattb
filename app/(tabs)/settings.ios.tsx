@@ -17,6 +17,22 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useFamily } from '@/contexts/FamilyContext';
+import { signOut } from '@/utils/auth';
+import { supabase } from '@/utils/supabase';
+
+const AVAILABLE_COLORS = [
+  { name: 'Blush Roze', value: '#F5D9CF' },
+  { name: 'Salie Groen', value: '#C8D3C0' },
+  { name: 'Terracotta', value: '#D5A093' },
+  { name: 'Goud', value: '#CBA85B' },
+  { name: 'Licht Blauw', value: '#A8C5DD' },
+  { name: 'Lavendel', value: '#C5B9CD' },
+  { name: 'Perzik', value: '#F4C2A8' },
+  { name: 'Mint', value: '#B8E0D2' },
+  { name: 'Koraal', value: '#E8A598' },
+  { name: 'Lemon', value: '#F7E7A1' },
+];
 
 interface SettingItem {
   id: string;
@@ -31,13 +47,31 @@ interface SettingItem {
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { 
+    currentUser,
+    familyCode,
+    shareFamilyInvite,
+    familyMembers,
+    addFamilyMember,
+    updateFamilyMember,
+    deleteFamilyMember,
+    currentFamily,
+  } = useFamily();
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showEditMemberModal, setShowEditMemberModal] = useState(false);
+  const [editingMember, setEditingMember] = useState<any>(null);
   const [profileName, setProfileName] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | undefined>(undefined);
   const [language, setLanguage] = useState('Nederlands');
   const [avatarColor, setAvatarColor] = useState('#F28F45');
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState<'parent' | 'child'>('child');
+  const [newMemberColor, setNewMemberColor] = useState(AVAILABLE_COLORS[0].value);
+  const [newMemberPhoto, setNewMemberPhoto] = useState<string | null>(null);
+  const [designMode, setDesignMode] = useState<'parent' | 'child'>(currentUser?.role || 'child');
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -65,9 +99,199 @@ export default function SettingsScreen() {
       return;
     }
 
-    // TODO: Save profile changes
     Alert.alert('Gelukt!', 'Profiel bijgewerkt');
     setShowEditProfileModal(false);
+  };
+
+  const handleModeSwitch = (mode: 'parent' | 'child') => {
+    setDesignMode(mode);
+    Alert.alert(
+      'Modus gewijzigd',
+      `Je bekijkt nu de app in ${mode === 'parent' ? 'ouder' : 'kind'} modus (alleen voor design doeleinden)`,
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handlePickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (permissionResult.granted === false) {
+      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setNewMemberPhoto(result.assets[0].uri);
+    }
+  };
+
+  const handleAddMember = async () => {
+    if (!newMemberName.trim()) {
+      Alert.alert('Fout', 'Vul een naam in');
+      return;
+    }
+
+    if (!currentFamily) {
+      Alert.alert('Fout', 'Geen gezin gevonden');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('family_members')
+        .insert([{
+          family_id: currentFamily.id,
+          user_id: null,
+          name: newMemberName.trim(),
+          role: newMemberRole,
+          color: newMemberColor,
+          photo_uri: newMemberPhoto,
+          coins: 0,
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding family member:', error);
+        Alert.alert('Fout', 'Kon gezinslid niet toevoegen');
+        return;
+      }
+
+      addFamilyMember({
+        id: data.id,
+        userId: data.user_id,
+        name: data.name,
+        role: data.role,
+        color: data.color || '#CBA85B',
+        photoUri: data.photo_uri,
+        coins: data.coins || 0,
+      });
+
+      setNewMemberName('');
+      setNewMemberRole('child');
+      setNewMemberColor(AVAILABLE_COLORS[0].value);
+      setNewMemberPhoto(null);
+      setShowAddMemberModal(false);
+      Alert.alert('Gelukt!', `${newMemberName} is toegevoegd aan het gezin`);
+    } catch (error: any) {
+      console.error('Error adding member:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het toevoegen van het gezinslid');
+    }
+  };
+
+  const openEditMemberModal = (member: any) => {
+    setEditingMember(member);
+    setNewMemberName(member.name);
+    setNewMemberRole(member.role);
+    setNewMemberColor(member.color);
+    setNewMemberPhoto(member.photoUri || null);
+    setShowEditMemberModal(true);
+  };
+
+  const handleEditMember = async () => {
+    if (!newMemberName.trim()) {
+      Alert.alert('Fout', 'Vul een naam in');
+      return;
+    }
+
+    if (!currentFamily) {
+      Alert.alert('Fout', 'Geen gezin gevonden');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('family_members')
+        .update({
+          name: newMemberName.trim(),
+          color: newMemberColor,
+          photo_uri: newMemberPhoto,
+        })
+        .eq('id', editingMember.id)
+        .eq('family_id', currentFamily.id);
+
+      if (error) {
+        console.error('Error updating family member:', error);
+        Alert.alert('Fout', 'Kon gezinslid niet bijwerken');
+        return;
+      }
+
+      updateFamilyMember(editingMember.id, {
+        name: newMemberName.trim(),
+        color: newMemberColor,
+        photoUri: newMemberPhoto || undefined,
+      });
+
+      setEditingMember(null);
+      setNewMemberName('');
+      setNewMemberRole('child');
+      setNewMemberColor(AVAILABLE_COLORS[0].value);
+      setNewMemberPhoto(null);
+      setShowEditMemberModal(false);
+      Alert.alert('Gelukt!', 'Gezinslid bijgewerkt');
+    } catch (error: any) {
+      console.error('Error updating member:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het bijwerken van het gezinslid');
+    }
+  };
+
+  const handleDeleteMember = (memberId: string, memberName: string) => {
+    Alert.alert(
+      'Weet je het zeker?',
+      `Wil je ${memberName} verwijderen uit het gezin?`,
+      [
+        { 
+          text: 'Annuleren', 
+          style: 'cancel' 
+        },
+        {
+          text: 'Verwijderen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteFamilyMember(memberId);
+              Alert.alert('Gelukt!', `${memberName} is verwijderd uit het gezin`);
+            } catch (error) {
+              console.error('Error deleting member:', error);
+              Alert.alert('Fout', 'Kon gezinslid niet verwijderen');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Uitloggen',
+      'Weet je zeker dat je wilt uitloggen?',
+      [
+        {
+          text: 'Annuleren',
+          style: 'cancel',
+        },
+        {
+          text: 'Uitloggen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/(auth)/welcome');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Fout', 'Er ging iets mis bij het uitloggen');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const settingsSections = [
@@ -81,14 +305,6 @@ export default function SettingsScreen() {
           icon: { ios: 'person.circle.fill', android: 'account-circle' },
           type: 'navigation' as const,
           onPress: () => setShowEditProfileModal(true),
-        },
-        {
-          id: 'family',
-          title: 'Gezinsinstellingen',
-          subtitle: 'Beheer gezinsleden',
-          icon: { ios: 'person.2.fill', android: 'people' },
-          type: 'navigation' as const,
-          onPress: () => console.log('Navigate to family settings'),
         },
       ],
     },
@@ -202,14 +418,14 @@ export default function SettingsScreen() {
   };
 
   const colorOptions = [
-    '#F28F45', // Orange
-    '#FF6B9D', // Pink
-    '#4A90E2', // Blue
-    '#7ED321', // Green
-    '#9013FE', // Purple
-    '#50E3C2', // Teal
-    '#FF3B30', // Red
-    '#CBA85B', // Gold
+    '#F28F45',
+    '#FF6B9D',
+    '#4A90E2',
+    '#7ED321',
+    '#9013FE',
+    '#50E3C2',
+    '#FF3B30',
+    '#CBA85B',
   ];
 
   return (
@@ -226,6 +442,145 @@ export default function SettingsScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Mode Switcher */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Design Modus</Text>
+            <View style={styles.sectionContent}>
+              <View style={styles.modeSwitcher}>
+                <TouchableOpacity
+                  style={[
+                    styles.modeButton,
+                    designMode === 'parent' && styles.modeButtonActive,
+                  ]}
+                  onPress={() => handleModeSwitch('parent')}
+                >
+                  <Text
+                    style={[
+                      styles.modeButtonText,
+                      designMode === 'parent' && styles.modeButtonTextActive,
+                    ]}
+                  >
+                    Ouder
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.modeButton,
+                    designMode === 'child' && styles.modeButtonActive,
+                  ]}
+                  onPress={() => handleModeSwitch('child')}
+                >
+                  <Text
+                    style={[
+                      styles.modeButtonText,
+                      designMode === 'child' && styles.modeButtonTextActive,
+                    ]}
+                  >
+                    Kind
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Family Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Gezin</Text>
+            <View style={styles.sectionContent}>
+              {/* Invitation Code */}
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={shareFamilyInvite}
+              >
+                <View style={styles.settingIconContainer}>
+                  <IconSymbol
+                    ios_icon_name="square.and.arrow.up"
+                    android_material_icon_name="share"
+                    size={24}
+                    color={colors.vibrantOrange}
+                  />
+                </View>
+                <View style={styles.settingContent}>
+                  <Text style={styles.settingTitle}>Uitnodigingscode</Text>
+                  {familyCode && (
+                    <Text style={styles.settingSubtitle}>Code: {familyCode}</Text>
+                  )}
+                </View>
+                <IconSymbol
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="chevron-right"
+                  size={20}
+                  color={colors.text + '40'}
+                />
+              </TouchableOpacity>
+
+              {/* Family Members */}
+              <View style={styles.familyMembersSection}>
+                <View style={styles.familyMembersHeader}>
+                  <Text style={styles.familyMembersTitle}>Gezinsleden</Text>
+                  <TouchableOpacity
+                    style={styles.addMemberButton}
+                    onPress={() => setShowAddMemberModal(true)}
+                  >
+                    <IconSymbol
+                      ios_icon_name="plus.circle.fill"
+                      android_material_icon_name="add-circle"
+                      size={28}
+                      color={colors.vibrantOrange}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {familyMembers.map((member, index) => (
+                  <React.Fragment key={index}>
+                    <View style={styles.memberRow}>
+                      <View style={[styles.memberAvatar, { backgroundColor: member.color }]}>
+                        {member.photoUri ? (
+                          <Image source={{ uri: member.photoUri }} style={styles.memberPhoto} />
+                        ) : (
+                          <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
+                        )}
+                      </View>
+                      <View style={styles.memberInfo}>
+                        <Text style={styles.memberName}>{member.name}</Text>
+                        <Text style={styles.memberRole}>
+                          {member.role === 'parent' ? 'Ouder' : 'Kind'}
+                        </Text>
+                      </View>
+                      <View style={styles.memberActions}>
+                        <TouchableOpacity
+                          style={styles.editIconButton}
+                          onPress={() => openEditMemberModal(member)}
+                        >
+                          <IconSymbol
+                            ios_icon_name="pencil"
+                            android_material_icon_name="edit"
+                            size={20}
+                            color={colors.vibrantOrange}
+                          />
+                        </TouchableOpacity>
+                        {member.role === 'child' && (
+                          <TouchableOpacity
+                            style={styles.deleteIconButton}
+                            onPress={() => handleDeleteMember(member.id, member.name)}
+                          >
+                            <IconSymbol
+                              ios_icon_name="trash"
+                              android_material_icon_name="delete"
+                              size={20}
+                              color="#E74C3C"
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                    {index < familyMembers.length - 1 && <View style={styles.memberDivider} />}
+                  </React.Fragment>
+                ))}
+              </View>
+            </View>
+          </View>
+
           {settingsSections.map((section, sectionIndex) => (
             <React.Fragment key={sectionIndex}>
               <View style={styles.section}>
@@ -240,7 +595,7 @@ export default function SettingsScreen() {
           {/* Logout Button */}
           <TouchableOpacity
             style={styles.logoutButton}
-            onPress={() => console.log('Logout')}
+            onPress={handleLogout}
             activeOpacity={0.7}
           >
             <IconSymbol
@@ -266,7 +621,6 @@ export default function SettingsScreen() {
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Profiel bewerken</Text>
 
-              {/* Profile Photo */}
               <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
                 {profilePhoto ? (
                   <Image source={{ uri: profilePhoto }} style={styles.photoPreview} />
@@ -283,7 +637,6 @@ export default function SettingsScreen() {
                 )}
               </TouchableOpacity>
 
-              {/* Name */}
               <Text style={styles.inputLabel}>Naam wijzigen</Text>
               <TextInput
                 style={styles.input}
@@ -293,7 +646,6 @@ export default function SettingsScreen() {
                 onChangeText={setProfileName}
               />
 
-              {/* Avatar Color */}
               <Text style={styles.inputLabel}>Avatar kleur</Text>
               <View style={styles.colorSelector}>
                 {colorOptions.map((color, index) => (
@@ -319,7 +671,6 @@ export default function SettingsScreen() {
                 ))}
               </View>
 
-              {/* Language */}
               <Text style={styles.inputLabel}>Taal</Text>
               <View style={styles.languageSelector}>
                 {['Nederlands', 'English'].map((lang, index) => (
@@ -344,7 +695,6 @@ export default function SettingsScreen() {
                 ))}
               </View>
 
-              {/* Notifications Preference */}
               <View style={styles.preferenceRow}>
                 <Text style={styles.preferenceLabel}>Notificaties</Text>
                 <Switch
@@ -366,6 +716,179 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleSaveProfile}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Add Member Modal */}
+      <Modal
+        visible={showAddMemberModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddMemberModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Gezinslid toevoegen</Text>
+
+              <TouchableOpacity style={styles.photoButton} onPress={handlePickImage}>
+                {newMemberPhoto ? (
+                  <Image source={{ uri: newMemberPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <IconSymbol
+                      ios_icon_name="camera"
+                      android_material_icon_name="camera-alt"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.photoPlaceholderText}>Foto uploaden</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Naam"
+                placeholderTextColor={colors.textSecondary}
+                value={newMemberName}
+                onChangeText={setNewMemberName}
+              />
+
+              <Text style={styles.inputLabel}>Kies een kleur</Text>
+              <View style={styles.colorSelector}>
+                {AVAILABLE_COLORS.map((colorOption, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.colorOption,
+                        { backgroundColor: colorOption.value },
+                        newMemberColor === colorOption.value && styles.colorOptionActive,
+                      ]}
+                      onPress={() => setNewMemberColor(colorOption.value)}
+                    >
+                      {newMemberColor === colorOption.value && (
+                        <IconSymbol
+                          ios_icon_name="checkmark"
+                          android_material_icon_name="check"
+                          size={20}
+                          color="#FFFFFF"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowAddMemberModal(false);
+                    setNewMemberName('');
+                    setNewMemberRole('child');
+                    setNewMemberColor(AVAILABLE_COLORS[0].value);
+                    setNewMemberPhoto(null);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleAddMember}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Edit Member Modal */}
+      <Modal
+        visible={showEditMemberModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditMemberModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Gezinslid bewerken</Text>
+
+              <TouchableOpacity style={styles.photoButton} onPress={handlePickImage}>
+                {newMemberPhoto ? (
+                  <Image source={{ uri: newMemberPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <IconSymbol
+                      ios_icon_name="camera"
+                      android_material_icon_name="camera-alt"
+                      size={32}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.photoPlaceholderText}>Foto uploaden</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Naam"
+                placeholderTextColor={colors.textSecondary}
+                value={newMemberName}
+                onChangeText={setNewMemberName}
+              />
+
+              <Text style={styles.inputLabel}>Kies een kleur</Text>
+              <View style={styles.colorSelector}>
+                {AVAILABLE_COLORS.map((colorOption, index) => (
+                  <React.Fragment key={index}>
+                    <TouchableOpacity
+                      style={[
+                        styles.colorOption,
+                        { backgroundColor: colorOption.value },
+                        newMemberColor === colorOption.value && styles.colorOptionActive,
+                      ]}
+                      onPress={() => setNewMemberColor(colorOption.value)}
+                    >
+                      {newMemberColor === colorOption.value && (
+                        <IconSymbol
+                          ios_icon_name="checkmark"
+                          android_material_icon_name="check"
+                          size={20}
+                          color="#FFFFFF"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowEditMemberModal(false);
+                    setEditingMember(null);
+                    setNewMemberName('');
+                    setNewMemberRole('child');
+                    setNewMemberColor(AVAILABLE_COLORS[0].value);
+                    setNewMemberPhoto(null);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleEditMember}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
                 </TouchableOpacity>
@@ -431,6 +954,108 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.08,
     shadowRadius: 8,
+  },
+  modeSwitcher: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+  },
+  modeButton: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  modeButtonActive: {
+    borderColor: colors.vibrantOrange,
+    backgroundColor: colors.vibrantOrange + '20',
+  },
+  modeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  modeButtonTextActive: {
+    color: colors.text,
+  },
+  familyMembersSection: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  familyMembersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  familyMembersTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  addMemberButton: {
+    padding: 4,
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  memberAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  memberPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+  },
+  memberAvatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  memberRole: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  memberActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editIconButton: {
+    padding: 8,
+  },
+  deleteIconButton: {
+    padding: 8,
+  },
+  memberDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 8,
   },
   settingItem: {
     flexDirection: 'row',
