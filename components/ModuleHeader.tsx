@@ -12,6 +12,7 @@ interface ModuleHeaderProps {
   onAddPress?: () => void;
   showAddButton?: boolean;
   addButtonIcon?: { ios: string; android: string };
+  backgroundColor?: string;
 }
 
 export default function ModuleHeader({
@@ -20,6 +21,7 @@ export default function ModuleHeader({
   onAddPress,
   showAddButton = false,
   addButtonIcon = { ios: 'plus', android: 'add' },
+  backgroundColor,
 }: ModuleHeaderProps) {
   const { accentColor } = useModuleTheme();
   const { currentUser } = useFamily();
@@ -28,7 +30,7 @@ export default function ModuleHeader({
   const shouldShowAddButton = showAddButton && currentUser?.role === 'parent' && onAddPress;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -60,8 +62,6 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 16,
     backgroundColor: colors.softCream,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.beige,
   },
   textContainer: {
     flex: 1,
