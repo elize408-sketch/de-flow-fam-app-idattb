@@ -501,7 +501,7 @@ export default function AgendaScreen() {
       <ModuleHeader
         title={t('agenda.title')}
         subtitle={t('agenda.subtitle')}
-        backgroundColor={colors.card}
+        backgroundColor="#FFFFFF"
       />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
