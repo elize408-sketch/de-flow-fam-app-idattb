@@ -137,25 +137,6 @@ export default function WelcomeScreen() {
             {t('welcome.alreadyHaveAccount')}
           </Text>
         </TouchableOpacity>
-
-        {/* Design Mode Button */}
-        <TouchableOpacity
-          style={styles.designModeButton}
-          onPress={async () => {
-            await handleContinue();
-            router.push('/(auth)/add-family-members');
-          }}
-        >
-          <IconSymbol
-            ios_icon_name="paintbrush.fill"
-            android_material_icon_name="palette"
-            size={20}
-            color={colors.warmOrange}
-          />
-          <Text style={styles.designModeButtonText}>
-            🎨 Design Mode: Gezinsleden toevoegen
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* Language Dropdown Modal */}
@@ -344,25 +325,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
     textDecorationLine: 'underline',
-  },
-  designModeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    backgroundColor: colors.warmOrange + '15',
-    borderWidth: 2,
-    borderColor: colors.warmOrange,
-    borderStyle: 'dashed',
-  },
-  designModeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.warmOrange,
-    fontFamily: 'Poppins_600SemiBold',
   },
   // Modal styles
   modalOverlay: {
