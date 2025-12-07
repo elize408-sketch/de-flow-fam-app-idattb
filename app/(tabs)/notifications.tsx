@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
+import { useTranslation } from 'react-i18next';
 
 interface Notification {
   id: string;
@@ -22,36 +23,37 @@ interface Notification {
 }
 
 export default function NotificationsScreen() {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
-      title: 'Nieuwe taak toegewezen',
-      message: 'Je hebt een nieuwe taak: Kamer opruimen',
-      time: '10 minuten geleden',
+      title: t('notifications.newTaskAssigned'),
+      message: t('notifications.newTaskMessage'),
+      time: t('notifications.minutesAgo', { count: 10 }),
       read: false,
       type: 'task',
     },
     {
       id: '2',
-      title: 'Herinnering',
-      message: 'Vergeet niet je huiswerk te maken',
-      time: '1 uur geleden',
+      title: t('notifications.reminder'),
+      message: t('notifications.reminderMessage'),
+      time: t('notifications.hoursAgo', { count: 1 }),
       read: false,
       type: 'reminder',
     },
     {
       id: '3',
-      title: 'Beloning verdiend!',
-      message: 'Je hebt 10 muntjes verdiend',
-      time: '2 uur geleden',
+      title: t('notifications.rewardEarned'),
+      message: t('notifications.rewardMessage', { count: 10 }),
+      time: t('notifications.hoursAgo', { count: 2 }),
       read: true,
       type: 'reward',
     },
     {
       id: '4',
-      title: 'Familie update',
-      message: 'Mama heeft de agenda bijgewerkt',
-      time: 'Gisteren',
+      title: t('notifications.familyUpdate'),
+      message: t('notifications.familyUpdateMessage'),
+      time: t('common.yesterday'),
       read: true,
       type: 'family',
     },
@@ -102,7 +104,7 @@ export default function NotificationsScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Notificaties</Text>
+          <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
           {unreadCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -124,7 +126,7 @@ export default function NotificationsScreen() {
                 size={64}
                 color={colors.text + '40'}
               />
-              <Text style={styles.emptyText}>Geen notificaties</Text>
+              <Text style={styles.emptyText}>{t('notifications.noNotifications')}</Text>
             </View>
           ) : (
             notifications.map((notification, index) => {

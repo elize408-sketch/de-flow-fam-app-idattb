@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   View,
@@ -13,10 +13,12 @@ import {
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { useFamily } from '@/contexts/FamilyContext';
+import { useTranslation } from 'react-i18next';
 
 export default function ChildScreen() {
   const router = useRouter();
   const { familyMembers } = useFamily();
+  const { t } = useTranslation();
 
   const children = familyMembers.filter(m => m.role === 'child');
 
@@ -29,7 +31,7 @@ export default function ChildScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Kinderen</Text>
+          <Text style={styles.headerTitle}>{t('children.title')}</Text>
         </View>
 
         {/* Children List */}
@@ -40,9 +42,9 @@ export default function ChildScreen() {
         >
           {children.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Geen kinderen toegevoegd</Text>
+              <Text style={styles.emptyText}>{t('children.noChildren')}</Text>
               <Text style={styles.emptySubtext}>
-                Voeg kinderen toe via het profiel scherm
+                {t('children.addChildrenHint')}
               </Text>
             </View>
           ) : (
