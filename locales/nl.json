@@ -71,7 +71,25 @@
     "dataRefreshed": "Je gegevens zijn opnieuw geladen",
     "refreshError": "Er ging iets mis bij het vernieuwen van je gegevens",
     "logoutConfirm": "Weet je zeker dat je wilt uitloggen?",
-    "logoutError": "Er ging iets mis bij het uitloggen"
+    "logoutError": "Er ging iets mis bij het uitloggen",
+    "designMode": "Design Modus",
+    "designModeSubtitle": "Schakel tussen ouder en kind modus voor design doeleinden",
+    "designModeMessage": "Je bekijkt nu de app in {{mode}} modus (alleen voor design doeleinden)",
+    "parentMode": "Ouder Modus",
+    "childMode": "Kind Modus",
+    "shareInvitationCode": "Uitnodigingscode delen",
+    "familyMembers": "Gezinsleden",
+    "addFamilyMember": "Gezinslid toevoegen",
+    "editFamilyMember": "Gezinslid bewerken",
+    "deleteMemberConfirm": "Wil je {{name}} verwijderen uit het gezin?",
+    "chooseColor": "Kies een kleur",
+    "parentInviteNote": "Opmerking: Ouders kunnen alleen worden toegevoegd via de uitnodigingscode.",
+    "noFamily": "Geen gezin gevonden",
+    "couldNotAddMember": "Kon gezinslid niet toevoegen",
+    "errorAddingMember": "Er ging iets mis bij het toevoegen van het gezinslid",
+    "couldNotUpdateMember": "Kon gezinslid niet bijwerken",
+    "errorUpdatingMember": "Er ging iets mis bij het bijwerken van het gezinslid",
+    "couldNotDeleteMember": "Kon gezinslid niet verwijderen"
   },
   "auth": {
     "login": {

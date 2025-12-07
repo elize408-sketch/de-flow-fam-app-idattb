@@ -104,9 +104,9 @@ export default function SettingsScreen() {
   const handleModeSwitch = (mode: 'parent' | 'child') => {
     setDesignMode(mode);
     Alert.alert(
-      'Modus gewijzigd',
-      `Je bekijkt nu de app in ${mode === 'parent' ? 'ouder' : 'kind'} modus (alleen voor design doeleinden)`,
-      [{ text: 'OK' }]
+      t('settings.designMode'),
+      t('settings.designModeMessage', { mode: mode === 'parent' ? t('settings.parent') : t('settings.child') }),
+      [{ text: t('common.ok') }]
     );
   };
 
@@ -114,7 +114,7 @@ export default function SettingsScreen() {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (permissionResult.granted === false) {
-      Alert.alert('Toestemming vereist', 'Je moet toegang geven tot je foto&apos;s');
+      Alert.alert(t('profile.permissionRequired'), t('profile.photoPermissionMessage'));
       return;
     }
 
@@ -132,12 +132,12 @@ export default function SettingsScreen() {
 
   const handleAddMember = async () => {
     if (!newMemberName.trim()) {
-      Alert.alert('Fout', 'Vul een naam in');
+      Alert.alert(t('common.error'), t('profile.fillName'));
       return;
     }
 
     if (!currentFamily) {
-      Alert.alert('Fout', 'Geen gezin gevonden');
+      Alert.alert(t('common.error'), t('settings.noFamily'));
       return;
     }
 
@@ -158,7 +158,7 @@ export default function SettingsScreen() {
 
       if (error) {
         console.error('Error adding family member:', error);
-        Alert.alert('Fout', 'Kon gezinslid niet toevoegen');
+        Alert.alert(t('common.error'), t('settings.couldNotAddMember'));
         return;
       }
 
@@ -177,10 +177,10 @@ export default function SettingsScreen() {
       setNewMemberColor(AVAILABLE_COLORS[0].value);
       setNewMemberPhoto(null);
       setShowAddMemberModal(false);
-      Alert.alert('Gelukt!', `${newMemberName} is toegevoegd aan het gezin`);
+      Alert.alert(t('common.success'), t('profile.memberAdded', { name: newMemberName }));
     } catch (error: any) {
       console.error('Error adding member:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het toevoegen van het gezinslid');
+      Alert.alert(t('common.error'), t('settings.errorAddingMember'));
     }
   };
 
@@ -195,12 +195,12 @@ export default function SettingsScreen() {
 
   const handleEditMember = async () => {
     if (!newMemberName.trim()) {
-      Alert.alert('Fout', 'Vul een naam in');
+      Alert.alert(t('common.error'), t('profile.fillName'));
       return;
     }
 
     if (!currentFamily) {
-      Alert.alert('Fout', 'Geen gezin gevonden');
+      Alert.alert(t('common.error'), t('settings.noFamily'));
       return;
     }
 
@@ -217,7 +217,7 @@ export default function SettingsScreen() {
 
       if (error) {
         console.error('Error updating family member:', error);
-        Alert.alert('Fout', 'Kon gezinslid niet bijwerken');
+        Alert.alert(t('common.error'), t('settings.couldNotUpdateMember'));
         return;
       }
 
@@ -233,32 +233,32 @@ export default function SettingsScreen() {
       setNewMemberColor(AVAILABLE_COLORS[0].value);
       setNewMemberPhoto(null);
       setShowEditMemberModal(false);
-      Alert.alert('Gelukt!', 'Gezinslid bijgewerkt');
+      Alert.alert(t('common.success'), t('profile.memberUpdated'));
     } catch (error: any) {
       console.error('Error updating member:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het bijwerken van het gezinslid');
+      Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
     }
   };
 
   const handleDeleteMember = (memberId: string, memberName: string) => {
     Alert.alert(
-      'Weet je het zeker?',
-      `Wil je ${memberName} verwijderen uit het gezin?`,
+      t('profile.areYouSure'),
+      t('settings.deleteMemberConfirm', { name: memberName }),
       [
         { 
-          text: 'Annuleren', 
+          text: t('common.cancel'), 
           style: 'cancel' 
         },
         {
-          text: 'Verwijderen',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteFamilyMember(memberId);
-              Alert.alert('Gelukt!', `${memberName} is verwijderd uit het gezin`);
+              Alert.alert(t('common.success'), t('profile.memberDeleted', { name: memberName }));
             } catch (error) {
               console.error('Error deleting member:', error);
-              Alert.alert('Fout', 'Kon gezinslid niet verwijderen');
+              Alert.alert(t('common.error'), t('settings.couldNotDeleteMember'));
             }
           },
         },
@@ -300,9 +300,9 @@ export default function SettingsScreen() {
 
           {/* Mode Switcher (Design Mode) */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Design Modus</Text>
+            <Text style={styles.sectionTitle}>{t('settings.designMode')}</Text>
             <Text style={styles.sectionSubtitle}>
-              Schakel tussen ouder en kind modus voor design doeleinden
+              {t('settings.designModeSubtitle')}
             </Text>
             <View style={styles.card}>
               <View style={styles.modeSwitcher}>
@@ -325,7 +325,7 @@ export default function SettingsScreen() {
                       designMode === 'parent' && styles.modeButtonTextActive,
                     ]}
                   >
-                    Ouder Modus
+                    {t('settings.parentMode')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -347,7 +347,7 @@ export default function SettingsScreen() {
                       designMode === 'child' && styles.modeButtonTextActive,
                     ]}
                   >
-                    Kind Modus
+                    {t('settings.childMode')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -356,7 +356,7 @@ export default function SettingsScreen() {
 
           {/* Family Settings */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Gezin</Text>
+            <Text style={styles.sectionTitle}>{t('settings.family')}</Text>
             <View style={styles.card}>
               {/* Invitation Code */}
               <TouchableOpacity
@@ -371,9 +371,9 @@ export default function SettingsScreen() {
                     color={colors.vibrantOrange}
                   />
                   <View style={styles.settingTextContainer}>
-                    <Text style={styles.settingText}>Uitnodigingscode delen</Text>
+                    <Text style={styles.settingText}>{t('settings.shareInvitationCode')}</Text>
                     {familyCode && (
-                      <Text style={styles.settingSubtext}>Code: {familyCode}</Text>
+                      <Text style={styles.settingSubtext}>{t('settings.code')}: {familyCode}</Text>
                     )}
                   </View>
                 </View>
@@ -390,7 +390,7 @@ export default function SettingsScreen() {
               {/* Family Members Management */}
               <View style={styles.familyMembersSection}>
                 <View style={styles.familyMembersHeader}>
-                  <Text style={styles.familyMembersTitle}>Gezinsleden</Text>
+                  <Text style={styles.familyMembersTitle}>{t('settings.familyMembers')}</Text>
                   <TouchableOpacity
                     style={styles.addMemberButton}
                     onPress={() => setShowAddMemberModal(true)}
@@ -417,7 +417,7 @@ export default function SettingsScreen() {
                       <View style={styles.memberInfo}>
                         <Text style={styles.memberName}>{member.name}</Text>
                         <Text style={styles.memberRole}>
-                          {member.role === 'parent' ? 'Ouder' : 'Kind'}
+                          {member.role === 'parent' ? t('settings.parent') : t('settings.child')}
                         </Text>
                       </View>
                       <View style={styles.memberActions}>
@@ -569,7 +569,7 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Gezinslid toevoegen</Text>
+              <Text style={styles.modalTitle}>{t('settings.addFamilyMember')}</Text>
 
               <TouchableOpacity style={styles.photoPickerButton} onPress={handlePickImage}>
                 {newMemberPhoto ? (
@@ -590,28 +590,28 @@ export default function SettingsScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Naam"
+                placeholder={t('common.name')}
                 placeholderTextColor={colors.textSecondary}
                 value={newMemberName}
                 onChangeText={setNewMemberName}
               />
 
-              <Text style={styles.inputLabel}>Rol</Text>
+              <Text style={styles.inputLabel}>{t('settings.role')}</Text>
               <View style={styles.roleSelector}>
                 <TouchableOpacity
                   style={[styles.roleButton, newMemberRole === 'child' && styles.roleButtonActive]}
                   onPress={() => setNewMemberRole('child')}
                 >
                   <Text style={[styles.roleButtonText, newMemberRole === 'child' && styles.roleButtonTextActive]}>
-                    Kind
+                    {t('settings.child')}
                   </Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.roleHint}>
-                Opmerking: Ouders kunnen alleen worden toegevoegd via de uitnodigingscode.
+                {t('settings.parentInviteNote')}
               </Text>
 
-              <Text style={styles.inputLabel}>Kies een kleur</Text>
+              <Text style={styles.inputLabel}>{t('settings.chooseColor')}</Text>
               <View style={styles.colorSelector}>
                 {AVAILABLE_COLORS.map((colorOption, index) => (
                   <React.Fragment key={index}>
@@ -649,13 +649,13 @@ export default function SettingsScreen() {
                     setNewMemberPhoto(null);
                   }}
                 >
-                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleAddMember}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.add')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -673,7 +673,7 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Gezinslid bewerken</Text>
+              <Text style={styles.modalTitle}>{t('settings.editFamilyMember')}</Text>
 
               <TouchableOpacity style={styles.photoPickerButton} onPress={handlePickImage}>
                 {newMemberPhoto ? (
@@ -694,13 +694,13 @@ export default function SettingsScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Naam"
+                placeholder={t('common.name')}
                 placeholderTextColor={colors.textSecondary}
                 value={newMemberName}
                 onChangeText={setNewMemberName}
               />
 
-              <Text style={styles.inputLabel}>Kies een kleur</Text>
+              <Text style={styles.inputLabel}>{t('settings.chooseColor')}</Text>
               <View style={styles.colorSelector}>
                 {AVAILABLE_COLORS.map((colorOption, index) => (
                   <React.Fragment key={index}>
@@ -739,13 +739,13 @@ export default function SettingsScreen() {
                     setNewMemberPhoto(null);
                   }}
                 >
-                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleEditMember}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Opslaan</Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -71,7 +71,25 @@
     "dataRefreshed": "Vos données ont été actualisées",
     "refreshError": "Une erreur s'est produite lors de l'actualisation de vos données",
     "logoutConfirm": "Êtes-vous sûr de vouloir vous déconnecter?",
-    "logoutError": "Une erreur s'est produite lors de la déconnexion"
+    "logoutError": "Une erreur s'est produite lors de la déconnexion",
+    "designMode": "Mode Design",
+    "designModeSubtitle": "Basculer entre le mode parent et enfant à des fins de conception",
+    "designModeMessage": "Vous visualisez maintenant l'application en mode {{mode}} (à des fins de conception uniquement)",
+    "parentMode": "Mode Parent",
+    "childMode": "Mode Enfant",
+    "shareInvitationCode": "Partager le code d'invitation",
+    "familyMembers": "Membres de la famille",
+    "addFamilyMember": "Ajouter un membre de la famille",
+    "editFamilyMember": "Modifier le membre de la famille",
+    "deleteMemberConfirm": "Voulez-vous retirer {{name}} de la famille?",
+    "chooseColor": "Choisissez une couleur",
+    "parentInviteNote": "Remarque: Les parents ne peuvent être ajoutés que via le code d'invitation.",
+    "noFamily": "Aucune famille trouvée",
+    "couldNotAddMember": "Impossible d'ajouter le membre de la famille",
+    "errorAddingMember": "Une erreur s'est produite lors de l'ajout du membre de la famille",
+    "couldNotUpdateMember": "Impossible de mettre à jour le membre de la famille",
+    "errorUpdatingMember": "Une erreur s'est produite lors de la mise à jour du membre de la famille",
+    "couldNotDeleteMember": "Impossible de supprimer le membre de la famille"
   },
   "auth": {
     "login": {

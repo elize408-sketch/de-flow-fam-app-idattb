@@ -71,7 +71,25 @@
     "dataRefreshed": "Your data has been refreshed",
     "refreshError": "Something went wrong while refreshing your data",
     "logoutConfirm": "Are you sure you want to logout?",
-    "logoutError": "Something went wrong while logging out"
+    "logoutError": "Something went wrong while logging out",
+    "designMode": "Design Mode",
+    "designModeSubtitle": "Switch between parent and child mode for design purposes",
+    "designModeMessage": "You are now viewing the app in {{mode}} mode (for design purposes only)",
+    "parentMode": "Parent Mode",
+    "childMode": "Child Mode",
+    "shareInvitationCode": "Share invitation code",
+    "familyMembers": "Family members",
+    "addFamilyMember": "Add family member",
+    "editFamilyMember": "Edit family member",
+    "deleteMemberConfirm": "Do you want to remove {{name}} from the family?",
+    "chooseColor": "Choose a color",
+    "parentInviteNote": "Note: Parents can only be added via the invitation code.",
+    "noFamily": "No family found",
+    "couldNotAddMember": "Could not add family member",
+    "errorAddingMember": "Something went wrong while adding the family member",
+    "couldNotUpdateMember": "Could not update family member",
+    "errorUpdatingMember": "Something went wrong while updating the family member",
+    "couldNotDeleteMember": "Could not delete family member"
   },
   "auth": {
     "login": {

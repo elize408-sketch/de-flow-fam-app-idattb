@@ -71,7 +71,25 @@
     "dataRefreshed": "Ihre Daten wurden aktualisiert",
     "refreshError": "Beim Aktualisieren Ihrer Daten ist ein Fehler aufgetreten",
     "logoutConfirm": "Sind Sie sicher, dass Sie sich abmelden möchten?",
-    "logoutError": "Beim Abmelden ist ein Fehler aufgetreten"
+    "logoutError": "Beim Abmelden ist ein Fehler aufgetreten",
+    "designMode": "Design-Modus",
+    "designModeSubtitle": "Zwischen Eltern- und Kindmodus für Designzwecke wechseln",
+    "designModeMessage": "Sie sehen die App jetzt im {{mode}}-Modus (nur für Designzwecke)",
+    "parentMode": "Elternmodus",
+    "childMode": "Kindmodus",
+    "shareInvitationCode": "Einladungscode teilen",
+    "familyMembers": "Familienmitglieder",
+    "addFamilyMember": "Familienmitglied hinzufügen",
+    "editFamilyMember": "Familienmitglied bearbeiten",
+    "deleteMemberConfirm": "Möchten Sie {{name}} aus der Familie entfernen?",
+    "chooseColor": "Wählen Sie eine Farbe",
+    "parentInviteNote": "Hinweis: Eltern können nur über den Einladungscode hinzugefügt werden.",
+    "noFamily": "Keine Familie gefunden",
+    "couldNotAddMember": "Familienmitglied konnte nicht hinzugefügt werden",
+    "errorAddingMember": "Beim Hinzufügen des Familienmitglieds ist ein Fehler aufgetreten",
+    "couldNotUpdateMember": "Familienmitglied konnte nicht aktualisiert werden",
+    "errorUpdatingMember": "Beim Aktualisieren des Familienmitglieds ist ein Fehler aufgetreten",
+    "couldNotDeleteMember": "Familienmitglied konnte nicht gelöscht werden"
   },
   "auth": {
     "login": {
