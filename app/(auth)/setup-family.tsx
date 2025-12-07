@@ -24,6 +24,15 @@ export default function SetupFamilyScreen() {
         return;
       }
 
+      // Generate fallback name if not provided
+      const userName = name || 
+        user.user_metadata?.full_name || 
+        user.user_metadata?.name || 
+        user.email?.split('@')[0] || 
+        'Ouder';
+
+      console.log('Setting up family with name:', userName);
+
       // Create family
       const familyResult = await createFamily();
       
@@ -37,7 +46,7 @@ export default function SetupFamilyScreen() {
       const memberResult = await addFamilyMember(
         familyResult.family.id,
         user.id,
-        name,
+        userName,
         'parent',
         colors.accent
       );

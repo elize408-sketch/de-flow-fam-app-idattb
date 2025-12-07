@@ -31,10 +31,19 @@ export default function CompleteJoinScreen() {
         return;
       }
 
+      // Generate fallback name if not provided
+      const userName = name || 
+        user.user_metadata?.full_name || 
+        user.user_metadata?.name || 
+        user.email?.split('@')[0] || 
+        'Ouder';
+
+      console.log('Completing join with name:', userName);
+
       const memberResult = await addFamilyMember(
         familyId,
         user.id,
-        name,
+        userName,
         'parent',
         colors.accent
       );

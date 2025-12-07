@@ -66,7 +66,18 @@ export default function JoinFamilyScreen() {
         return;
       }
 
-      await addToFamilyAndNavigate(result.user.id);
+      // Generate fallback name for Apple users
+      const user = result.user;
+      const fallbackName = 
+        name || 
+        user.user_metadata?.full_name || 
+        user.user_metadata?.name || 
+        user.email?.split('@')[0] || 
+        'Ouder';
+
+      console.log('Apple user joining family with name:', fallbackName);
+
+      await addToFamilyAndNavigate(user.id, fallbackName);
     } catch (error: any) {
       console.error('Apple sign in error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Apple');
@@ -85,7 +96,18 @@ export default function JoinFamilyScreen() {
         return;
       }
 
-      await addToFamilyAndNavigate(result.user.id);
+      // Generate fallback name for Google users
+      const user = result.user;
+      const fallbackName = 
+        name || 
+        user.user_metadata?.full_name || 
+        user.user_metadata?.name || 
+        user.email?.split('@')[0] || 
+        'Ouder';
+
+      console.log('Google user joining family with name:', fallbackName);
+
+      await addToFamilyAndNavigate(user.id, fallbackName);
     } catch (error: any) {
       console.error('Google sign in error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Google');
@@ -134,7 +156,7 @@ export default function JoinFamilyScreen() {
                   
                   if (!error && data.session) {
                     console.log('Direct sign-in successful');
-                    await addToFamilyAndNavigate(data.user.id);
+                    await addToFamilyAndNavigate(data.user.id, name);
                   } else {
                     console.error('Direct sign-in failed:', error);
                     Alert.alert(
@@ -169,7 +191,7 @@ export default function JoinFamilyScreen() {
       // User is authenticated (auto-confirm is enabled in Supabase)
       if (result.user) {
         console.log('User authenticated, joining family...');
-        await addToFamilyAndNavigate(result.user.id);
+        await addToFamilyAndNavigate(result.user.id, name);
       }
     } catch (error: any) {
       console.error('Email sign up error:', error);
@@ -198,7 +220,7 @@ export default function JoinFamilyScreen() {
         return;
       }
 
-      await addToFamilyAndNavigate(result.user.id);
+      await addToFamilyAndNavigate(result.user.id, name);
     } catch (error: any) {
       console.error('Email sign in error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
@@ -206,7 +228,7 @@ export default function JoinFamilyScreen() {
     }
   };
 
-  const addToFamilyAndNavigate = async (userId: string) => {
+  const addToFamilyAndNavigate = async (userId: string, userName: string) => {
     if (!familyId) {
       Alert.alert(t('common.error'), 'Geen gezin geselecteerd');
       setLoading(false);
@@ -214,11 +236,13 @@ export default function JoinFamilyScreen() {
     }
 
     try {
+      console.log('Adding user to family with name:', userName);
+
       // Add user as parent (always parent role - second parent joining)
       const memberResult = await addFamilyMember(
         familyId,
         userId,
-        name,
+        userName,
         'parent',
         colors.accent
       );

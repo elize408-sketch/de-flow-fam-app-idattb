@@ -34,8 +34,23 @@ export default function CreateFamilyScreen() {
         return;
       }
 
+      // Generate fallback name for Apple users
+      const user = result.user;
+      const fallbackName = 
+        user.user_metadata?.full_name ?? 
+        user.user_metadata?.name ?? 
+        user.email?.split('@')[0] ?? 
+        'Ouder';
+
+      console.log('Apple user name:', {
+        full_name: user.user_metadata?.full_name,
+        name: user.user_metadata?.name,
+        email: user.email,
+        fallback: fallbackName
+      });
+
       // Create family and add user as parent (always parent role)
-      await createFamilyAndNavigate(result.user.id, result.user.user_metadata?.full_name || 'Ouder');
+      await createFamilyAndNavigate(user.id, fallbackName);
     } catch (error: any) {
       console.error('Apple sign in error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Apple');
@@ -54,8 +69,23 @@ export default function CreateFamilyScreen() {
         return;
       }
 
+      // Generate fallback name for Google users
+      const user = result.user;
+      const fallbackName = 
+        user.user_metadata?.full_name ?? 
+        user.user_metadata?.name ?? 
+        user.email?.split('@')[0] ?? 
+        'Ouder';
+
+      console.log('Google user name:', {
+        full_name: user.user_metadata?.full_name,
+        name: user.user_metadata?.name,
+        email: user.email,
+        fallback: fallbackName
+      });
+
       // Create family and add user as parent (always parent role)
-      await createFamilyAndNavigate(result.user.id, result.user.user_metadata?.name || 'Ouder');
+      await createFamilyAndNavigate(user.id, fallbackName);
     } catch (error: any) {
       console.error('Google sign in error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Google');
@@ -128,7 +158,7 @@ export default function CreateFamilyScreen() {
 
   const createFamilyAndNavigate = async (userId: string, userName: string) => {
     try {
-      console.log('Creating family for user:', userId);
+      console.log('Creating family for user:', userId, 'with name:', userName);
       
       // Create family
       const familyResult = await createFamily();
