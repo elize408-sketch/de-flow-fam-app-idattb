@@ -101,13 +101,42 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleModeSwitch = (mode: 'parent' | 'child') => {
+  const handleModeSwitch = async (mode: 'parent' | 'child') => {
     setDesignMode(mode);
-    Alert.alert(
-      t('settings.designMode'),
-      t('settings.designModeMessage', { mode: mode === 'parent' ? t('settings.parent') : t('settings.child') }),
-      [{ text: t('common.ok') }]
-    );
+    
+    // Actually update the current user's role
+    if (currentUser) {
+      try {
+        // Update in Supabase if we have a family
+        if (currentFamily) {
+          const { error } = await supabase
+            .from('family_members')
+            .update({ role: mode })
+            .eq('id', currentUser.id)
+            .eq('family_id', currentFamily.id);
+
+          if (error) {
+            console.error('Error updating role in DB:', error);
+            Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
+            return;
+          }
+        }
+
+        // Update local state
+        const updatedUser = { ...currentUser, role: mode };
+        setCurrentUser(updatedUser);
+        updateFamilyMember(currentUser.id, { role: mode });
+
+        Alert.alert(
+          t('common.success'),
+          t('settings.designModeMessage', { mode: mode === 'parent' ? t('settings.parent') : t('settings.child') }),
+          [{ text: t('common.ok') }]
+        );
+      } catch (error) {
+        console.error('Error switching role:', error);
+        Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
+      }
+    }
   };
 
   const handlePickImage = async () => {

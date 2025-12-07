@@ -770,6 +770,27 @@
     "points": "Punti",
     "repeat": "Ripeti"
   },
+  "children": {
+    "title": "Bambini",
+    "subtitle": "Gestisci i tuoi bambini",
+    "noChildren": "Nessun bambino aggiunto",
+    "addChildrenHint": "Aggiungi bambini tramite la schermata delle impostazioni"
+  },
+  "notifications": {
+    "title": "Notifiche",
+    "subtitle": "Le tue notifiche",
+    "noNotifications": "Nessuna notifica",
+    "newTaskAssigned": "Nuova attività assegnata",
+    "newTaskMessage": "Hai una nuova attività",
+    "reminder": "Promemoria",
+    "reminderMessage": "Non dimenticare la tua attività",
+    "rewardEarned": "Ricompensa guadagnata!",
+    "rewardMessage": "Hai guadagnato {{count}} monete",
+    "familyUpdate": "Aggiornamento famiglia",
+    "familyUpdateMessage": "L'agenda è stata aggiornata",
+    "minutesAgo": "{{count}} minuti fa",
+    "hoursAgo": "{{count}} ore fa"
+  },
   "language": {
     "title": "Lingua",
     "subtitle": "Scegli la tua lingua",

@@ -708,6 +708,27 @@
     "for": "Voor: {{name}}",
     "errorCreatingPhotobook": "Er ging iets mis bij het maken van het fotoboek. Probeer het later opnieuw."
   },
+  "children": {
+    "title": "Kinderen",
+    "subtitle": "Beheer je kinderen",
+    "noChildren": "Nog geen kinderen toegevoegd",
+    "addChildrenHint": "Voeg kinderen toe via het instellingenscherm"
+  },
+  "notifications": {
+    "title": "Notificaties",
+    "subtitle": "Jouw notificaties",
+    "noNotifications": "Geen notificaties",
+    "newTaskAssigned": "Nieuwe taak toegewezen",
+    "newTaskMessage": "Je hebt een nieuwe taak",
+    "reminder": "Herinnering",
+    "reminderMessage": "Vergeet je taak niet",
+    "rewardEarned": "Beloning verdiend!",
+    "rewardMessage": "Je hebt {{count}} muntjes verdiend",
+    "familyUpdate": "Gezinsupdate",
+    "familyUpdateMessage": "De agenda is bijgewerkt",
+    "minutesAgo": "{{count}} minuten geleden",
+    "hoursAgo": "{{count}} uur geleden"
+  },
   "language": {
     "title": "Taal",
     "subtitle": "Kies je taal",

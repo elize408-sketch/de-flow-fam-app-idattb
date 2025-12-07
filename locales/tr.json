@@ -166,6 +166,27 @@
       "profile": "Profil"
     }
   },
+  "children": {
+    "title": "Çocuklar",
+    "subtitle": "Çocuklarınızı yönetin",
+    "noChildren": "Henüz çocuk eklenmedi",
+    "addChildrenHint": "Ayarlar ekranından çocuk ekleyin"
+  },
+  "notifications": {
+    "title": "Bildirimler",
+    "subtitle": "Bildirimleriniz",
+    "noNotifications": "Bildirim yok",
+    "newTaskAssigned": "Yeni görev atandı",
+    "newTaskMessage": "Yeni bir göreviniz var",
+    "reminder": "Hatırlatma",
+    "reminderMessage": "Görevinizi unutmayın",
+    "rewardEarned": "Ödül kazanıldı!",
+    "rewardMessage": "{{count}} jeton kazandınız",
+    "familyUpdate": "Aile güncellemesi",
+    "familyUpdateMessage": "Ajanda güncellendi",
+    "minutesAgo": "{{count}} dakika önce",
+    "hoursAgo": "{{count}} saat önce"
+  },
   "language": {
     "title": "Dil",
     "subtitle": "Dilinizi seçin",

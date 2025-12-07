@@ -708,6 +708,27 @@
     "for": "For: {{name}}",
     "errorCreatingPhotobook": "Something went wrong while creating the photobook. Please try again later."
   },
+  "children": {
+    "title": "Children",
+    "subtitle": "Manage your children",
+    "noChildren": "No children added yet",
+    "addChildrenHint": "Add children via the settings screen"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Your notifications",
+    "noNotifications": "No notifications",
+    "newTaskAssigned": "New task assigned",
+    "newTaskMessage": "You have a new task",
+    "reminder": "Reminder",
+    "reminderMessage": "Don't forget your task",
+    "rewardEarned": "Reward earned!",
+    "rewardMessage": "You earned {{count}} coins",
+    "familyUpdate": "Family update",
+    "familyUpdateMessage": "The agenda has been updated",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago"
+  },
   "language": {
     "title": "Language",
     "subtitle": "Choose your language",

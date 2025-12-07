@@ -24,40 +24,47 @@ interface Notification {
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      title: t('notifications.newTaskAssigned'),
-      message: t('notifications.newTaskMessage'),
-      time: t('notifications.minutesAgo', { count: 10 }),
-      read: false,
-      type: 'task',
-    },
-    {
-      id: '2',
-      title: t('notifications.reminder'),
-      message: t('notifications.reminderMessage'),
-      time: t('notifications.hoursAgo', { count: 1 }),
-      read: false,
-      type: 'reminder',
-    },
-    {
-      id: '3',
-      title: t('notifications.rewardEarned'),
-      message: t('notifications.rewardMessage', { count: 10 }),
-      time: t('notifications.hoursAgo', { count: 2 }),
-      read: true,
-      type: 'reward',
-    },
-    {
-      id: '4',
-      title: t('notifications.familyUpdate'),
-      message: t('notifications.familyUpdateMessage'),
-      time: t('common.yesterday'),
-      read: true,
-      type: 'family',
-    },
-  ]);
+  
+  // Initialize with empty array and populate after component mounts
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Populate notifications after component mounts when translations are ready
+  useEffect(() => {
+    setNotifications([
+      {
+        id: '1',
+        title: t('notifications.newTaskAssigned'),
+        message: t('notifications.newTaskMessage'),
+        time: t('notifications.minutesAgo', { count: 10 }),
+        read: false,
+        type: 'task',
+      },
+      {
+        id: '2',
+        title: t('notifications.reminder'),
+        message: t('notifications.reminderMessage'),
+        time: t('notifications.hoursAgo', { count: 1 }),
+        read: false,
+        type: 'reminder',
+      },
+      {
+        id: '3',
+        title: t('notifications.rewardEarned'),
+        message: t('notifications.rewardMessage', { count: 10 }),
+        time: t('notifications.hoursAgo', { count: 2 }),
+        read: true,
+        type: 'reward',
+      },
+      {
+        id: '4',
+        title: t('notifications.familyUpdate'),
+        message: t('notifications.familyUpdateMessage'),
+        time: t('common.yesterday'),
+        read: true,
+        type: 'family',
+      },
+    ]);
+  }, [t]);
 
   const getIconForType = (type: Notification['type']) => {
     switch (type) {

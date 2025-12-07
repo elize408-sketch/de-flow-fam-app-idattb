@@ -166,6 +166,27 @@
       "profile": "Perfil"
     }
   },
+  "children": {
+    "title": "Crianças",
+    "subtitle": "Gerencie suas crianças",
+    "noChildren": "Nenhuma criança adicionada",
+    "addChildrenHint": "Adicione crianças através da tela de configurações"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "subtitle": "Suas notificações",
+    "noNotifications": "Sem notificações",
+    "newTaskAssigned": "Nova tarefa atribuída",
+    "newTaskMessage": "Você tem uma nova tarefa",
+    "reminder": "Lembrete",
+    "reminderMessage": "Não esqueça sua tarefa",
+    "rewardEarned": "Recompensa ganha!",
+    "rewardMessage": "Você ganhou {{count}} moedas",
+    "familyUpdate": "Atualização familiar",
+    "familyUpdateMessage": "A agenda foi atualizada",
+    "minutesAgo": "{{count}} minutos atrás",
+    "hoursAgo": "{{count}} horas atrás"
+  },
   "language": {
     "title": "Idioma",
     "subtitle": "Escolha seu idioma",
