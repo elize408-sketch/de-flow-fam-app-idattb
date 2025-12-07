@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -62,6 +62,14 @@ export default function SettingsScreen() {
   const [newMemberPhoto, setNewMemberPhoto] = useState<string | null>(null);
   const [designMode, setDesignMode] = useState<'parent' | 'child'>(currentUser?.role || 'child');
 
+  // Update design mode when current user changes
+  useEffect(() => {
+    if (currentUser) {
+      setDesignMode(currentUser.role);
+      console.log('Current user role updated:', currentUser.role);
+    }
+  }, [currentUser]);
+
   const handleLogout = async () => {
     Alert.alert(
       t('common.logout'),
@@ -102,40 +110,54 @@ export default function SettingsScreen() {
   };
 
   const handleModeSwitch = async (mode: 'parent' | 'child') => {
-    setDesignMode(mode);
+    console.log('Switching mode to:', mode);
     
-    // Actually update the current user's role
-    if (currentUser) {
-      try {
-        // Update in Supabase if we have a family
-        if (currentFamily) {
-          const { error } = await supabase
-            .from('family_members')
-            .update({ role: mode })
-            .eq('id', currentUser.id)
-            .eq('family_id', currentFamily.id);
+    if (!currentUser) {
+      Alert.alert(t('common.error'), t('settings.noUser'));
+      return;
+    }
 
-          if (error) {
-            console.error('Error updating role in DB:', error);
-            Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
-            return;
-          }
-        }
+    if (!currentFamily) {
+      Alert.alert(t('common.error'), t('settings.noFamily'));
+      return;
+    }
 
-        // Update local state
-        const updatedUser = { ...currentUser, role: mode };
-        setCurrentUser(updatedUser);
-        updateFamilyMember(currentUser.id, { role: mode });
+    try {
+      // Update in Supabase
+      console.log('Updating role in Supabase for user:', currentUser.id);
+      const { error } = await supabase
+        .from('family_members')
+        .update({ role: mode })
+        .eq('id', currentUser.id)
+        .eq('family_id', currentFamily.id);
 
-        Alert.alert(
-          t('common.success'),
-          t('settings.designModeMessage', { mode: mode === 'parent' ? t('settings.parent') : t('settings.child') }),
-          [{ text: t('common.ok') }]
-        );
-      } catch (error) {
-        console.error('Error switching role:', error);
+      if (error) {
+        console.error('Error updating role in DB:', error);
         Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
+        return;
       }
+
+      console.log('Role updated in Supabase successfully');
+
+      // Update local state immediately
+      const updatedUser = { ...currentUser, role: mode };
+      setCurrentUser(updatedUser);
+      updateFamilyMember(currentUser.id, { role: mode });
+      setDesignMode(mode);
+
+      console.log('Local state updated, new role:', mode);
+
+      // Reload user data to ensure consistency
+      await reloadCurrentUser();
+
+      Alert.alert(
+        t('common.success'),
+        t('settings.designModeMessage', { mode: mode === 'parent' ? t('settings.parent') : t('settings.child') }),
+        [{ text: t('common.ok') }]
+      );
+    } catch (error) {
+      console.error('Error switching role:', error);
+      Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
     }
   };
 
@@ -234,13 +256,22 @@ export default function SettingsScreen() {
     }
 
     try {
+      // Update role if it's the current user
+      const isCurrentUser = editingMember.id === currentUser?.id;
+      const updateData: any = {
+        name: newMemberName.trim(),
+        color: newMemberColor,
+        photo_uri: newMemberPhoto,
+      };
+
+      // Only allow role update for current user
+      if (isCurrentUser) {
+        updateData.role = newMemberRole;
+      }
+
       const { error } = await supabase
         .from('family_members')
-        .update({
-          name: newMemberName.trim(),
-          color: newMemberColor,
-          photo_uri: newMemberPhoto,
-        })
+        .update(updateData)
         .eq('id', editingMember.id)
         .eq('family_id', currentFamily.id);
 
@@ -250,11 +281,25 @@ export default function SettingsScreen() {
         return;
       }
 
-      updateFamilyMember(editingMember.id, {
+      const updates: any = {
         name: newMemberName.trim(),
         color: newMemberColor,
         photoUri: newMemberPhoto || undefined,
-      });
+      };
+
+      if (isCurrentUser) {
+        updates.role = newMemberRole;
+      }
+
+      updateFamilyMember(editingMember.id, updates);
+
+      // If updating current user, update the current user state
+      if (isCurrentUser) {
+        const updatedUser = { ...currentUser, ...updates };
+        setCurrentUser(updatedUser);
+        setDesignMode(newMemberRole);
+        await reloadCurrentUser();
+      }
 
       setEditingMember(null);
       setNewMemberName('');
@@ -728,6 +773,30 @@ export default function SettingsScreen() {
                 value={newMemberName}
                 onChangeText={setNewMemberName}
               />
+
+              {editingMember?.id === currentUser?.id && (
+                <>
+                  <Text style={styles.inputLabel}>{t('settings.role')}</Text>
+                  <View style={styles.roleSelector}>
+                    <TouchableOpacity
+                      style={[styles.roleButton, newMemberRole === 'parent' && styles.roleButtonActive]}
+                      onPress={() => setNewMemberRole('parent')}
+                    >
+                      <Text style={[styles.roleButtonText, newMemberRole === 'parent' && styles.roleButtonTextActive]}>
+                        {t('settings.parent')}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.roleButton, newMemberRole === 'child' && styles.roleButtonActive]}
+                      onPress={() => setNewMemberRole('child')}
+                    >
+                      <Text style={[styles.roleButtonText, newMemberRole === 'child' && styles.roleButtonTextActive]}>
+                        {t('settings.child')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
 
               <Text style={styles.inputLabel}>{t('settings.chooseColor')}</Text>
               <View style={styles.colorSelector}>

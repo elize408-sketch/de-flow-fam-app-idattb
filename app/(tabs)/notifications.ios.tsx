@@ -22,48 +22,49 @@ interface Notification {
 }
 
 export default function NotificationsScreen() {
-  const { t } = useTranslation();
-  
-  // Initialize with empty array and populate after component mounts
+  const { t, ready } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // Populate notifications after component mounts when translations are ready
+  // Wait for translations to be ready before populating notifications
   useEffect(() => {
-    setNotifications([
-      {
-        id: '1',
-        title: t('notifications.newTaskAssigned'),
-        message: t('notifications.newTaskMessage'),
-        time: t('notifications.minutesAgo', { count: 10 }),
-        read: false,
-        type: 'task',
-      },
-      {
-        id: '2',
-        title: t('notifications.reminder'),
-        message: t('notifications.reminderMessage'),
-        time: t('notifications.hoursAgo', { count: 1 }),
-        read: false,
-        type: 'reminder',
-      },
-      {
-        id: '3',
-        title: t('notifications.rewardEarned'),
-        message: t('notifications.rewardMessage', { count: 10 }),
-        time: t('notifications.hoursAgo', { count: 2 }),
-        read: true,
-        type: 'reward',
-      },
-      {
-        id: '4',
-        title: t('notifications.familyUpdate'),
-        message: t('notifications.familyUpdateMessage'),
-        time: t('common.yesterday'),
-        read: true,
-        type: 'family',
-      },
-    ]);
-  }, [t]);
+    if (ready) {
+      console.log('Translations ready, populating notifications');
+      setNotifications([
+        {
+          id: '1',
+          title: t('notifications.newTaskAssigned'),
+          message: t('notifications.newTaskMessage'),
+          time: t('notifications.minutesAgo', { count: 10 }),
+          read: false,
+          type: 'task',
+        },
+        {
+          id: '2',
+          title: t('notifications.reminder'),
+          message: t('notifications.reminderMessage'),
+          time: t('notifications.hoursAgo', { count: 1 }),
+          read: false,
+          type: 'reminder',
+        },
+        {
+          id: '3',
+          title: t('notifications.rewardEarned'),
+          message: t('notifications.rewardMessage', { count: 10 }),
+          time: t('notifications.hoursAgo', { count: 2 }),
+          read: true,
+          type: 'reward',
+        },
+        {
+          id: '4',
+          title: t('notifications.familyUpdate'),
+          message: t('notifications.familyUpdateMessage'),
+          time: t('common.yesterday'),
+          read: true,
+          type: 'family',
+        },
+      ]);
+    }
+  }, [ready, t]);
 
   const getIconForType = (type: Notification['type']) => {
     switch (type) {
@@ -104,6 +105,22 @@ export default function NotificationsScreen() {
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Show loading state while translations are loading
+  if (!ready) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>...</Text>
+          </View>
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>{t('common.loading')}</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -222,6 +239,16 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 120,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_400Regular',
   },
   emptyState: {
     flex: 1,
