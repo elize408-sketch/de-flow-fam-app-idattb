@@ -6,9 +6,12 @@ import * as Crypto from 'expo-crypto';
 import { Alert, Platform } from 'react-native';
 
 // Configure Google Sign-In
+// IMPORTANT: Replace these with your actual client IDs from Google Cloud Console
 GoogleSignin.configure({
-  webClientId: 'YOUR_WEB_CLIENT_ID', // Replace with your actual web client ID from Google Cloud Console
-  iosClientId: 'YOUR_IOS_CLIENT_ID', // Replace with your actual iOS client ID
+  webClientId: '143b077c-c9bc-49ad-8f27-0180e47a6e1a.apps.googleusercontent.com', // Web client ID from Google Cloud Console
+  iosClientId: '143b077c-c9bc-49ad-8f27-0180e47a6e1a.apps.googleusercontent.com', // iOS client ID from Google Cloud Console
+  offlineAccess: true,
+  forceCodeForRefreshToken: true,
 });
 
 export interface AuthResult {
@@ -212,11 +215,18 @@ export async function signInWithApple(): Promise<AuthResult> {
       return { success: false, error: 'Apple Sign-In is alleen beschikbaar op iOS' };
     }
 
+    console.log('Starting Apple Sign-In...');
     const credential = await AppleAuthentication.signInAsync({
       requestedScopes: [
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
+    });
+
+    console.log('Apple credential received:', {
+      hasIdentityToken: !!credential.identityToken,
+      hasEmail: !!credential.email,
+      hasFullName: !!credential.fullName,
     });
 
     if (!credential.identityToken) {
@@ -229,8 +239,15 @@ export async function signInWithApple(): Promise<AuthResult> {
     });
 
     if (error) {
+      console.error('Supabase Apple sign-in error:', error);
       return { success: false, error: error.message };
     }
+
+    console.log('Apple sign-in successful:', {
+      hasUser: !!data.user,
+      hasSession: !!data.session,
+      userId: data.user?.id,
+    });
 
     return { success: true, user: data.user, session: data.session };
   } catch (error: any) {
@@ -245,28 +262,57 @@ export async function signInWithApple(): Promise<AuthResult> {
 // Sign in with Google
 export async function signInWithGoogle(): Promise<AuthResult> {
   try {
-    await GoogleSignin.hasPlayServices();
+    console.log('Starting Google Sign-In...');
+    
+    // Check if Play Services are available (Android only)
+    if (Platform.OS === 'android') {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    }
+    
+    console.log('Signing in with Google...');
     const userInfo = await GoogleSignin.signIn();
+    
+    console.log('Google sign-in response:', {
+      hasData: !!userInfo.data,
+      hasIdToken: !!userInfo.data?.idToken,
+      hasUser: !!userInfo.data?.user,
+    });
 
     if (!userInfo.data?.idToken) {
+      console.error('No ID token in Google response');
       return { success: false, error: 'Geen ID token ontvangen van Google' };
     }
 
+    console.log('Authenticating with Supabase...');
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider: 'google',
       token: userInfo.data.idToken,
     });
 
     if (error) {
+      console.error('Supabase Google sign-in error:', error);
       return { success: false, error: error.message };
     }
+
+    console.log('Google sign-in successful:', {
+      hasUser: !!data.user,
+      hasSession: !!data.session,
+      userId: data.user?.id,
+    });
 
     return { success: true, user: data.user, session: data.session };
   } catch (error: any) {
     console.error('Google sign in error:', error);
+    
+    // Handle specific Google Sign-In errors
     if (error.code === 'SIGN_IN_CANCELLED') {
       return { success: false, error: 'Inloggen geannuleerd' };
+    } else if (error.code === 'IN_PROGRESS') {
+      return { success: false, error: 'Er is al een inlogpoging bezig' };
+    } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
+      return { success: false, error: 'Google Play Services niet beschikbaar' };
     }
+    
     return { success: false, error: error.message || 'Er ging iets mis bij het inloggen met Google' };
   }
 }
@@ -274,6 +320,13 @@ export async function signInWithGoogle(): Promise<AuthResult> {
 // Sign out
 export async function signOut(): Promise<void> {
   try {
+    // Sign out from Google if signed in
+    const isGoogleSignedIn = await GoogleSignin.isSignedIn();
+    if (isGoogleSignedIn) {
+      await GoogleSignin.signOut();
+    }
+    
+    // Sign out from Supabase
     await supabase.auth.signOut();
   } catch (error) {
     console.error('Sign out error:', error);

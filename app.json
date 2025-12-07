@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Flow Fam",
@@ -20,7 +21,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDisplayName": "Flow Fam",
         "CFBundleName": "FlowFam"
-      }
+      },
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "nl.flowfam.gezinsapp",
@@ -29,7 +31,8 @@
         "foregroundImage": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
         "backgroundColor": "#F9F6F1"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/images/6f631a75-cdea-4028-adf7-a7ba1b956b8b.png",
@@ -39,6 +42,12 @@
       "expo-font",
       "expo-router",
       "expo-web-browser",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.143b077c-c9bc-49ad-8f27-0180e47a6e1a"
+        }
+      ],
       [
         "expo-build-properties",
         {
@@ -76,5 +85,5 @@
       "appVersionSource": "local"
     }
   },
-  "scheme": "Flow Fam"
+  "scheme": "flowfam"
 }

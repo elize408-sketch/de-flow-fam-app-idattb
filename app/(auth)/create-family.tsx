@@ -26,13 +26,17 @@ export default function CreateFamilyScreen() {
 
     setLoading(true);
     try {
+      console.log('=== Apple Sign-In Flow ===');
       const result = await signInWithApple();
       
       if (!result.success) {
+        console.error('Apple sign-in failed:', result.error);
         Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
+
+      console.log('Apple sign-in successful, user:', result.user?.id);
 
       // Generate fallback name for Apple users
       const user = result.user;
@@ -42,7 +46,7 @@ export default function CreateFamilyScreen() {
         user.email?.split('@')[0] ?? 
         'Ouder';
 
-      console.log('Apple user name:', {
+      console.log('Apple user name fallback:', {
         full_name: user.user_metadata?.full_name,
         name: user.user_metadata?.name,
         email: user.email,
@@ -61,13 +65,17 @@ export default function CreateFamilyScreen() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
+      console.log('=== Google Sign-In Flow ===');
       const result = await signInWithGoogle();
       
       if (!result.success) {
+        console.error('Google sign-in failed:', result.error);
         Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
+
+      console.log('Google sign-in successful, user:', result.user?.id);
 
       // Generate fallback name for Google users
       const user = result.user;
@@ -77,7 +85,7 @@ export default function CreateFamilyScreen() {
         user.email?.split('@')[0] ?? 
         'Ouder';
 
-      console.log('Google user name:', {
+      console.log('Google user name fallback:', {
         full_name: user.user_metadata?.full_name,
         name: user.user_metadata?.name,
         email: user.email,
@@ -158,21 +166,34 @@ export default function CreateFamilyScreen() {
 
   const createFamilyAndNavigate = async (userId: string, userName: string) => {
     try {
-      console.log('Creating family for user:', userId, 'with name:', userName);
+      console.log('=== Creating Family ===');
+      console.log('User ID:', userId);
+      console.log('User Name:', userName);
       
       // Create family
+      console.log('Step 1: Creating family...');
       const familyResult = await createFamily();
       
       if (!familyResult.success || !familyResult.family) {
         console.error('Failed to create family:', familyResult.error);
-        Alert.alert(t('common.error'), familyResult.error || 'Kon geen gezin aanmaken');
-        setLoading(false);
+        Alert.alert(
+          t('common.error'), 
+          familyResult.error || 'Kon geen gezin aanmaken',
+          [
+            {
+              text: t('common.ok'),
+              onPress: () => setLoading(false)
+            }
+          ]
+        );
         return;
       }
 
-      console.log('Family created:', familyResult.family.id);
+      console.log('✅ Family created successfully:', familyResult.family.id);
+      console.log('Family code:', familyResult.family.family_code);
 
       // Add user as parent (always parent role - first parent)
+      console.log('Step 2: Adding user as family member...');
       const memberResult = await addFamilyMember(
         familyResult.family.id,
         userId,
@@ -183,12 +204,21 @@ export default function CreateFamilyScreen() {
 
       if (!memberResult.success) {
         console.error('Failed to add family member:', memberResult.error);
-        Alert.alert(t('common.error'), memberResult.error || 'Kon je niet toevoegen aan het gezin');
-        setLoading(false);
+        Alert.alert(
+          t('common.error'), 
+          memberResult.error || 'Kon je niet toevoegen aan het gezin',
+          [
+            {
+              text: t('common.ok'),
+              onPress: () => setLoading(false)
+            }
+          ]
+        );
         return;
       }
 
-      console.log('Family member added successfully');
+      console.log('✅ Family member added successfully');
+      console.log('Member ID:', memberResult.member?.id);
       
       // Show family code and navigate
       Alert.alert(
@@ -209,8 +239,16 @@ export default function CreateFamilyScreen() {
       );
     } catch (error: any) {
       console.error('Create family error:', error);
-      Alert.alert(t('common.error'), 'Er ging iets mis bij het aanmaken van het gezin');
-      setLoading(false);
+      Alert.alert(
+        t('common.error'), 
+        'Er ging iets mis bij het aanmaken van het gezin: ' + (error.message || error),
+        [
+          {
+            text: t('common.ok'),
+            onPress: () => setLoading(false)
+          }
+        ]
+      );
     }
   };
 

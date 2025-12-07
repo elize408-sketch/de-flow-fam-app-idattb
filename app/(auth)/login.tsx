@@ -60,14 +60,17 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
+      console.log('=== Apple Sign-In (Login) ===');
       const result = await signInWithApple();
       
       if (!result.success) {
+        console.error('Apple sign-in failed:', result.error);
         Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
 
+      console.log('Apple sign-in successful, user:', result.user?.id);
       await handleLoginSuccess(result.user.id);
     } catch (error: any) {
       console.error('Apple sign in error:', error);
@@ -79,14 +82,17 @@ export default function LoginScreen() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
+      console.log('=== Google Sign-In (Login) ===');
       const result = await signInWithGoogle();
       
       if (!result.success) {
+        console.error('Google sign-in failed:', result.error);
         Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
         return;
       }
 
+      console.log('Google sign-in successful, user:', result.user?.id);
       await handleLoginSuccess(result.user.id);
     } catch (error: any) {
       console.error('Google sign in error:', error);
