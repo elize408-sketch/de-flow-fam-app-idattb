@@ -122,7 +122,32 @@ export default function CreateFamilyScreen() {
       
       if (!result.success) {
         console.error('Signup failed:', result.error);
-        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het aanmelden');
+        
+        // Check if it's an email provider error
+        if (result.emailProviderError) {
+          Alert.alert(
+            'E-mail configuratie probleem',
+            result.error + '\n\n💡 Tijdelijke oplossing:\n\nTijdens de TestFlight test kunnen we e-mailverificatie overslaan. Neem contact op met support@flowfam.nl om je account handmatig te activeren.',
+            [
+              {
+                text: 'Contact opnemen',
+                onPress: () => {
+                  Alert.alert(
+                    'Contact Support',
+                    'Stuur een e-mail naar support@flowfam.nl met:\n\n• Je naam: ' + name + '\n• Je e-mailadres: ' + email + '\n\nWe activeren je account zo snel mogelijk!'
+                  );
+                },
+              },
+              {
+                text: 'Sluiten',
+                style: 'cancel',
+              },
+            ]
+          );
+        } else {
+          Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het aanmelden');
+        }
+        
         setLoading(false);
         return;
       }
@@ -139,8 +164,7 @@ export default function CreateFamilyScreen() {
         console.log('Email verification required, navigating to verify-email screen...');
         setLoading(false);
         
-        // Navigate directly to verification screen without showing alert
-        // This makes the flow smoother and less confusing
+        // Navigate directly to verification screen
         router.push({
           pathname: '/(auth)/verify-email',
           params: { email, name, flow: 'create' },

@@ -117,7 +117,30 @@ export default function LoginScreen() {
       const result = await signInWithEmail(email, password);
       
       if (!result.success) {
-        Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
+        // Check if email verification is required
+        if (result.requiresVerification) {
+          Alert.alert(
+            'E-mail niet bevestigd',
+            'Je e-mailadres is nog niet bevestigd. Controleer je inbox voor de bevestigingsmail.\n\nAls je de e-mail niet hebt ontvangen, neem dan contact op met support@flowfam.nl.',
+            [
+              {
+                text: 'Contact opnemen',
+                onPress: () => {
+                  Alert.alert(
+                    'Contact Support',
+                    'Stuur een e-mail naar support@flowfam.nl met je e-mailadres (' + email + ') en we helpen je verder!'
+                  );
+                },
+              },
+              {
+                text: 'Sluiten',
+                style: 'cancel',
+              },
+            ]
+          );
+        } else {
+          Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
+        }
         setLoading(false);
         return;
       }

@@ -21,6 +21,7 @@ export interface AuthResult {
   error?: string;
   requiresVerification?: boolean;
   isRepeatedSignup?: boolean;
+  emailProviderError?: boolean;
 }
 
 // Sign up with email and password
@@ -40,6 +41,7 @@ export async function signUpWithEmail(
         emailRedirectTo: 'https://natively.dev/email-confirmed',
         data: {
           name,
+          full_name: name,
         },
       },
     });
@@ -47,11 +49,23 @@ export async function signUpWithEmail(
     if (error) {
       console.error('Signup error:', error);
       
-      // Check if it's an email sending error (SendGrid issue)
-      if (error.message.includes('Error sending') || error.message.includes('mail')) {
+      // Check if it's an email sending error (SendGrid/SMTP issue)
+      if (error.message.includes('Error sending') || 
+          error.message.includes('mail') || 
+          error.message.includes('535') ||
+          error.message.includes('Authentication failed')) {
         return { 
           success: false, 
+          emailProviderError: true,
           error: 'Er is een probleem met het versturen van de bevestigingsmail. Dit komt waarschijnlijk door een configuratieprobleem met de e-mailprovider. Neem contact op met support@flowfam.nl voor hulp.' 
+        };
+      }
+      
+      // Check for user already exists
+      if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+        return { 
+          success: false, 
+          error: 'Dit e-mailadres is al geregistreerd. Probeer in te loggen of gebruik de "Wachtwoord vergeten" optie.' 
         };
       }
       
@@ -64,35 +78,17 @@ export async function signUpWithEmail(
       userId: data.user?.id,
       userEmail: data.user?.email,
       emailConfirmedAt: data.user?.email_confirmed_at,
+      identitiesCount: data.user?.identities?.length || 0,
     });
 
     // Check if user already exists (repeated signup)
     if (data.user && !data.session && data.user.identities && data.user.identities.length === 0) {
       console.log('⚠️ Repeated signup detected - user already exists');
       
-      // Try to resend the confirmation email
-      console.log('Attempting to resend confirmation email...');
-      const resendResult = await resendVerificationEmail(email);
-      
-      if (resendResult.success) {
-        return { 
-          success: true, 
-          user: data.user, 
-          session: null,
-          requiresVerification: true,
-          isRepeatedSignup: true
-        };
-      } else {
-        // Resend failed, but still allow user to proceed to verification screen
-        console.warn('Resend failed:', resendResult.error);
-        return { 
-          success: true, 
-          user: data.user, 
-          session: null,
-          requiresVerification: true,
-          isRepeatedSignup: true
-        };
-      }
+      return { 
+        success: false,
+        error: 'Dit e-mailadres is al geregistreerd. Probeer in te loggen of gebruik de "Wachtwoord vergeten" optie.'
+      };
     }
 
     // Check if user needs email verification
@@ -110,7 +106,7 @@ export async function signUpWithEmail(
 
     // User has session - they're logged in (auto-confirm is enabled)
     if (data.session) {
-      console.log('✅ User has session - fully authenticated');
+      console.log('✅ User has session - fully authenticated (email confirmation disabled)');
       return { success: true, user: data.user, session: data.session, requiresVerification: false };
     }
 
@@ -120,7 +116,7 @@ export async function signUpWithEmail(
     console.error('Sign up error:', error);
     
     // Check if it's a network error
-    if (error.message && error.message.includes('500')) {
+    if (error.message && (error.message.includes('500') || error.message.includes('Network'))) {
       return { 
         success: false, 
         error: 'Er is een probleem met de server. Probeer het later opnieuw of neem contact op met support@flowfam.nl.' 
@@ -132,7 +128,7 @@ export async function signUpWithEmail(
 }
 
 // Resend verification email
-export async function resendVerificationEmail(email: string): Promise<{ success: boolean; error?: string }> {
+export async function resendVerificationEmail(email: string): Promise<{ success: boolean; error?: string; emailProviderError?: boolean }> {
   try {
     console.log('Resending verification email to:', email);
     
@@ -147,10 +143,14 @@ export async function resendVerificationEmail(email: string): Promise<{ success:
     if (error) {
       console.error('Resend error:', error);
       
-      // Check if it's a SendGrid error
-      if (error.message.includes('Error sending') || error.message.includes('mail') || error.message.includes('535')) {
+      // Check if it's a SendGrid/SMTP error
+      if (error.message.includes('Error sending') || 
+          error.message.includes('mail') || 
+          error.message.includes('535') ||
+          error.message.includes('Authentication failed')) {
         return { 
-          success: false, 
+          success: false,
+          emailProviderError: true,
           error: 'Er is een probleem met de e-mailprovider. Neem contact op met support@flowfam.nl.' 
         };
       }
@@ -184,11 +184,19 @@ export async function signInWithEmail(
       console.error('Sign-in error:', error);
       
       // Check if error is due to unconfirmed email
-      if (error.message.includes('Email not confirmed')) {
+      if (error.message.includes('Email not confirmed') || error.message.includes('not confirmed')) {
         return { 
           success: false, 
           error: 'Je e-mailadres is nog niet bevestigd. Controleer je inbox voor de bevestigingsmail.',
           requiresVerification: true
+        };
+      }
+      
+      // Check for invalid credentials
+      if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid')) {
+        return { 
+          success: false, 
+          error: 'Onjuist e-mailadres of wachtwoord. Controleer je gegevens en probeer het opnieuw.' 
         };
       }
       
@@ -199,6 +207,7 @@ export async function signInWithEmail(
       hasUser: !!data.user,
       hasSession: !!data.session,
       userId: data.user?.id,
+      emailConfirmed: data.user?.email_confirmed_at,
     });
 
     return { success: true, user: data.user, session: data.session };
