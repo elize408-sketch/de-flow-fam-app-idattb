@@ -85,6 +85,7 @@
     "chooseColor": "Kies een kleur",
     "parentInviteNote": "Opmerking: Ouders kunnen alleen worden toegevoegd via de uitnodigingscode.",
     "noFamily": "Geen gezin gevonden",
+    "noUser": "Geen gebruiker gevonden",
     "couldNotAddMember": "Kon gezinslid niet toevoegen",
     "errorAddingMember": "Er ging iets mis bij het toevoegen van het gezinslid",
     "couldNotUpdateMember": "Kon gezinslid niet bijwerken",

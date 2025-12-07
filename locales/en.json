@@ -85,6 +85,7 @@
     "chooseColor": "Choose a color",
     "parentInviteNote": "Note: Parents can only be added via the invitation code.",
     "noFamily": "No family found",
+    "noUser": "No user found",
     "couldNotAddMember": "Could not add family member",
     "errorAddingMember": "Something went wrong while adding the family member",
     "couldNotUpdateMember": "Could not update family member",
