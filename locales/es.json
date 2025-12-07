@@ -134,6 +134,38 @@
       "creatingFamily": "Creando tu familia..."
     }
   },
+  "home": {
+    "title": "Flow Fam",
+    "tagline": "Paz, visión general y amor",
+    "greeting": "¡Hola, {{name}}! 👋",
+    "coins": "Tienes {{count}} monedas 🪙",
+    "welcomeMessage": "¡Bienvenido de nuevo! Te deseo un gran día y éxito con tus tareas y citas 🧡",
+    "whoAreYou": "¿Quién eres?",
+    "welcomeToFlowFam": "¡Bienvenido a Flow Fam!",
+    "parent": "👨‍👩‍👧‍👦 Padre/Madre",
+    "child": "👶 Hijo/Hija",
+    "tasksToday": "✅ Tareas hoy",
+    "agendaToday": "📅 Agenda hoy",
+    "noTasksToday": "¡No hay tareas para hoy!",
+    "noAppointmentsToday": "¡No hay citas hoy!",
+    "appointmentCount": "Tienes {{count}} cita{{plural}} hoy",
+    "goToAgenda": "Ir a la agenda",
+    "yourTasks": "🎯 Tus tareas",
+    "noTasksEnjoy": "¡No hay tareas! ¡Disfruta tu día!",
+    "executeToday": "Ejecutar hoy",
+    "menu": {
+      "agenda": "Agenda",
+      "tasks": "Tareas",
+      "shopping": "Compras",
+      "finances": "Finanzas",
+      "photobook": "Álbum de fotos",
+      "meals": "Comidas",
+      "notes": "Notas",
+      "documents": "Documentos",
+      "shop": "Tienda",
+      "profile": "Perfil"
+    }
+  },
   "language": {
     "title": "Idioma",
     "subtitle": "Elige tu idioma",

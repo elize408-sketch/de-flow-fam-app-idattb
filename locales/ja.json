@@ -134,6 +134,38 @@
       "creatingFamily": "家族を作成しています..."
     }
   },
+  "home": {
+    "title": "Flow Fam",
+    "tagline": "平和、概要、愛",
+    "greeting": "こんにちは、{{name}}さん！👋",
+    "coins": "{{count}}コインあります 🪙",
+    "welcomeMessage": "おかえりなさい！素晴らしい一日と、タスクと予定の成功をお祈りします 🧡",
+    "whoAreYou": "あなたは誰ですか？",
+    "welcomeToFlowFam": "Flow Famへようこそ！",
+    "parent": "👨‍👩‍👧‍👦 親",
+    "child": "👶 子供",
+    "tasksToday": "✅ 今日のタスク",
+    "agendaToday": "📅 今日の予定",
+    "noTasksToday": "今日のタスクはありません！",
+    "noAppointmentsToday": "今日の予定はありません！",
+    "appointmentCount": "今日は{{count}}件の予定{{plural}}があります",
+    "goToAgenda": "予定表へ",
+    "yourTasks": "🎯 あなたのタスク",
+    "noTasksEnjoy": "タスクはありません！一日を楽しんでください！",
+    "executeToday": "今日実行",
+    "menu": {
+      "agenda": "予定表",
+      "tasks": "タスク",
+      "shopping": "買い物",
+      "finances": "財務",
+      "photobook": "フォトブック",
+      "meals": "食事",
+      "notes": "メモ",
+      "documents": "ドキュメント",
+      "shop": "ショップ",
+      "profile": "プロフィール"
+    }
+  },
   "language": {
     "title": "言語",
     "subtitle": "言語を選択",

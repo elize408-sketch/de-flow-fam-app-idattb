@@ -134,6 +134,38 @@
       "creatingFamily": "正在创建您的家庭..."
     }
   },
+  "home": {
+    "title": "Flow Fam",
+    "tagline": "平静、概览和爱",
+    "greeting": "你好，{{name}}！👋",
+    "coins": "你有 {{count}} 个硬币 🪙",
+    "welcomeMessage": "欢迎回来！祝你今天愉快，任务和约会顺利 🧡",
+    "whoAreYou": "你是谁？",
+    "welcomeToFlowFam": "欢迎来到 Flow Fam！",
+    "parent": "👨‍👩‍👧‍👦 家长",
+    "child": "👶 孩子",
+    "tasksToday": "✅ 今天的任务",
+    "agendaToday": "📅 今天的日程",
+    "noTasksToday": "今天没有任务！",
+    "noAppointmentsToday": "今天没有约会！",
+    "appointmentCount": "你今天有 {{count}} 个约会{{plural}}",
+    "goToAgenda": "前往日程",
+    "yourTasks": "🎯 你的任务",
+    "noTasksEnjoy": "没有任务！享受你的一天！",
+    "executeToday": "今天执行",
+    "menu": {
+      "agenda": "日程",
+      "tasks": "任务",
+      "shopping": "购物",
+      "finances": "财务",
+      "photobook": "相册",
+      "meals": "餐食",
+      "notes": "笔记",
+      "documents": "文档",
+      "shop": "商店",
+      "profile": "个人资料"
+    }
+  },
   "language": {
     "title": "语言",
     "subtitle": "选择您的语言",

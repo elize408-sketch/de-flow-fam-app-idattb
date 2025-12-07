@@ -134,6 +134,38 @@
       "creatingFamily": "Aileniz oluşturuluyor..."
     }
   },
+  "home": {
+    "title": "Flow Fam",
+    "tagline": "Huzur, genel bakış ve sevgi",
+    "greeting": "Merhaba, {{name}}! 👋",
+    "coins": "{{count}} jetonunuz var 🪙",
+    "welcomeMessage": "Tekrar hoş geldiniz! Size harika bir gün ve görevleriniz ve randevularınızla başarılar diliyorum 🧡",
+    "whoAreYou": "Kimsiniz?",
+    "welcomeToFlowFam": "Flow Fam'e Hoş Geldiniz!",
+    "parent": "👨‍👩‍👧‍👦 Ebeveyn",
+    "child": "👶 Çocuk",
+    "tasksToday": "✅ Bugünkü görevler",
+    "agendaToday": "📅 Bugünkü ajanda",
+    "noTasksToday": "Bugün için görev yok!",
+    "noAppointmentsToday": "Bugün randevu yok!",
+    "appointmentCount": "Bugün {{count}} randevunuz{{plural}} var",
+    "goToAgenda": "Ajandaya git",
+    "yourTasks": "🎯 Görevleriniz",
+    "noTasksEnjoy": "Görev yok! Gününüzün tadını çıkarın!",
+    "executeToday": "Bugün yürüt",
+    "menu": {
+      "agenda": "Ajanda",
+      "tasks": "Görevler",
+      "shopping": "Alışveriş",
+      "finances": "Finans",
+      "photobook": "Fotoğraf albümü",
+      "meals": "Yemekler",
+      "notes": "Notlar",
+      "documents": "Belgeler",
+      "shop": "Mağaza",
+      "profile": "Profil"
+    }
+  },
   "language": {
     "title": "Dil",
     "subtitle": "Dilinizi seçin",

@@ -134,6 +134,38 @@
       "creatingFamily": "Ihre Familie wird erstellt..."
     }
   },
+  "home": {
+    "title": "Flow Fam",
+    "tagline": "Ruhe, Überblick und Liebe",
+    "greeting": "Hallo, {{name}}! 👋",
+    "coins": "Sie haben {{count}} Münzen 🪙",
+    "welcomeMessage": "Willkommen zurück! Ich wünsche Ihnen einen großartigen Tag und Erfolg bei Ihren Aufgaben und Terminen 🧡",
+    "whoAreYou": "Wer sind Sie?",
+    "welcomeToFlowFam": "Willkommen bei Flow Fam!",
+    "parent": "👨‍👩‍👧‍👦 Elternteil",
+    "child": "👶 Kind",
+    "tasksToday": "✅ Aufgaben heute",
+    "agendaToday": "📅 Agenda heute",
+    "noTasksToday": "Keine Aufgaben für heute!",
+    "noAppointmentsToday": "Keine Termine heute!",
+    "appointmentCount": "Sie haben {{count}} Termin{{plural}} heute",
+    "goToAgenda": "Zur Agenda gehen",
+    "yourTasks": "🎯 Ihre Aufgaben",
+    "noTasksEnjoy": "Keine Aufgaben! Genießen Sie Ihren Tag!",
+    "executeToday": "Heute ausführen",
+    "menu": {
+      "agenda": "Agenda",
+      "tasks": "Aufgaben",
+      "shopping": "Einkaufen",
+      "finances": "Finanzen",
+      "photobook": "Fotobuch",
+      "meals": "Mahlzeiten",
+      "notes": "Notizen",
+      "documents": "Dokumente",
+      "shop": "Shop",
+      "profile": "Profil"
+    }
+  },
   "language": {
     "title": "Sprache",
     "subtitle": "Wählen Sie Ihre Sprache",
