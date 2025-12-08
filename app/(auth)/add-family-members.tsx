@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/utils/supabase';
 import { getCurrentUser } from '@/utils/auth';
 import { useFamily } from '@/contexts/FamilyContext';
+import { createFamily } from '@/utils/familyService';
 
 interface FamilyMember {
   id: string;
@@ -98,16 +99,10 @@ export default function AddFamilyMembersScreen() {
       return;
     }
 
-    if (!currentFamily) {
-      Alert.alert(t('common.error'), 'Geen gezin gevonden. Probeer opnieuw in te loggen.');
-      return;
-    }
-
     setSaving(true);
 
     try {
-      console.log('Saving family members to Supabase...');
-      console.log('Current family:', currentFamily.id);
+      console.log('=== ONBOARDING: Saving family members ===');
       console.log('Members to save:', members);
 
       // Get current authenticated user
@@ -120,12 +115,32 @@ export default function AddFamilyMembersScreen() {
 
       console.log('Current auth user:', authUser.id);
 
+      // Check if we have a family, if not create one
+      let familyId = currentFamily?.id;
+      
+      if (!familyId) {
+        console.log('No family found, creating new family...');
+        const { success, family, error } = await createFamily();
+        
+        if (!success || !family) {
+          console.error('Failed to create family:', error);
+          Alert.alert(t('common.error'), `Kon geen gezin aanmaken: ${error}`);
+          setSaving(false);
+          return;
+        }
+        
+        familyId = family.id;
+        console.log('Created new family:', familyId);
+      } else {
+        console.log('Using existing family:', familyId);
+      }
+
       // Check if current user already has a family_member record
       const { data: existingMember, error: checkError } = await supabase
         .from('family_members')
         .select('*')
         .eq('user_id', authUser.id)
-        .eq('family_id', currentFamily.id)
+        .eq('family_id', familyId)
         .maybeSingle();
 
       if (checkError) {
@@ -134,7 +149,7 @@ export default function AddFamilyMembersScreen() {
 
       console.log('Existing member:', existingMember);
 
-      // Find if current user is in the members list
+      // Find if current user is in the members list (first parent)
       const currentUserMember = members.find(m => m.role === 'parent');
       
       if (existingMember && currentUserMember) {
@@ -167,7 +182,7 @@ export default function AddFamilyMembersScreen() {
           const { error: insertError } = await supabase
             .from('family_members')
             .insert([{
-              family_id: currentFamily.id,
+              family_id: familyId,
               user_id: null, // Other members don't have a user_id yet
               name: member.name,
               role: member.role,
@@ -188,7 +203,7 @@ export default function AddFamilyMembersScreen() {
       } else {
         // No existing member, insert all members
         const membersToInsert = members.map((member, index) => ({
-          family_id: currentFamily.id,
+          family_id: familyId,
           user_id: index === 0 && member.role === 'parent' ? authUser.id : null, // First parent gets the user_id
           name: member.name,
           role: member.role,
@@ -196,6 +211,8 @@ export default function AddFamilyMembersScreen() {
           photo_uri: member.photoUri,
           coins: 0,
         }));
+
+        console.log('Inserting all members:', membersToInsert.length);
 
         const { error: insertError } = await supabase
           .from('family_members')
@@ -211,10 +228,12 @@ export default function AddFamilyMembersScreen() {
         console.log('Inserted all members successfully');
       }
 
-      // Reload current user to get updated role
+      // Reload current user to get updated role and family
+      console.log('Reloading current user...');
       await reloadCurrentUser();
 
       console.log('Family members saved successfully');
+      console.log('Navigating to home...');
       
       // Navigate to the homepage
       router.replace('/(tabs)/(home)');
