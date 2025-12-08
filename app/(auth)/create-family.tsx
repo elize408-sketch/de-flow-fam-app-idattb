@@ -244,7 +244,7 @@ export default function CreateFamilyScreen() {
       console.log('✅ Family member added successfully');
       console.log('Member ID:', memberResult.member?.id);
       
-      // Show family code and navigate
+      // Show family code and navigate to add family members screen
       Alert.alert(
         t('auth.createFamily.familyCreated'),
         t('auth.createFamily.familyCodeMessage', { code: familyResult.family.family_code }),
@@ -252,11 +252,11 @@ export default function CreateFamilyScreen() {
           {
             text: t('common.ok'),
             onPress: () => {
-              // Navigate to home screen
-              console.log('Navigating to home...');
+              // Navigate to add family members screen
+              console.log('Navigating to add-family-members screen...');
               setLoading(false);
-              // Use replace to prevent going back to auth screens
-              router.replace('/(tabs)/(home)');
+              // Use reset to prevent going back to auth screens
+              router.replace('/(auth)/add-family-members');
             },
           },
         ]

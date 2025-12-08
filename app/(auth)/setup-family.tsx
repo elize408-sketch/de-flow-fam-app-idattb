@@ -59,7 +59,7 @@ export default function SetupFamilyScreen() {
 
       setLoading(false);
       
-      // Show family code
+      // Show family code and navigate to add family members screen
       Alert.alert(
         t('auth.createFamily.familyCreated'),
         t('auth.createFamily.familyCodeMessage', { code: familyResult.family.family_code }),
@@ -67,7 +67,9 @@ export default function SetupFamilyScreen() {
           {
             text: t('common.ok'),
             onPress: () => {
-              router.replace('/(tabs)/(home)');
+              // Navigate to add family members screen instead of home
+              console.log('Navigating to add-family-members screen...');
+              router.replace('/(auth)/add-family-members');
             },
           },
         ]
