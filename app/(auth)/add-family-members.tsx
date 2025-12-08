@@ -6,6 +6,9 @@ import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/utils/supabase';
+import { getCurrentUser } from '@/utils/auth';
+import { useFamily } from '@/contexts/FamilyContext';
 
 interface FamilyMember {
   id: string;
@@ -31,11 +34,13 @@ const AVAILABLE_COLORS = [
 export default function AddFamilyMembersScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { currentFamily, reloadCurrentUser } = useFamily();
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [currentName, setCurrentName] = useState('');
   const [currentRole, setCurrentRole] = useState<'parent' | 'child'>('parent');
   const [currentColor, setCurrentColor] = useState(AVAILABLE_COLORS[0]);
   const [currentPhoto, setCurrentPhoto] = useState<string | undefined>();
+  const [saving, setSaving] = useState(false);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -49,7 +54,7 @@ export default function AddFamilyMembersScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -87,17 +92,138 @@ export default function AddFamilyMembersScreen() {
     setMembers(members.filter(m => m.id !== id));
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (members.length === 0) {
       Alert.alert(t('common.error'), 'Voeg minimaal één gezinslid toe');
       return;
     }
 
-    // Log the family members for debugging
-    console.log('Family members added:', members);
-    
-    // Navigate to the homepage
-    router.replace('/(tabs)/(home)');
+    if (!currentFamily) {
+      Alert.alert(t('common.error'), 'Geen gezin gevonden. Probeer opnieuw in te loggen.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      console.log('Saving family members to Supabase...');
+      console.log('Current family:', currentFamily.id);
+      console.log('Members to save:', members);
+
+      // Get current authenticated user
+      const authUser = await getCurrentUser();
+      if (!authUser) {
+        Alert.alert(t('common.error'), 'Geen gebruiker gevonden. Probeer opnieuw in te loggen.');
+        setSaving(false);
+        return;
+      }
+
+      console.log('Current auth user:', authUser.id);
+
+      // Check if current user already has a family_member record
+      const { data: existingMember, error: checkError } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .eq('family_id', currentFamily.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing member:', checkError);
+      }
+
+      console.log('Existing member:', existingMember);
+
+      // Find if current user is in the members list
+      const currentUserMember = members.find(m => m.role === 'parent');
+      
+      if (existingMember && currentUserMember) {
+        // Update existing member with the role and details from the form
+        console.log('Updating existing member with role:', currentUserMember.role);
+        const { error: updateError } = await supabase
+          .from('family_members')
+          .update({
+            name: currentUserMember.name,
+            role: currentUserMember.role,
+            color: currentUserMember.color,
+            photo_uri: currentUserMember.photoUri,
+          })
+          .eq('id', existingMember.id);
+
+        if (updateError) {
+          console.error('Error updating current user member:', updateError);
+          Alert.alert(t('common.error'), `Kon je profiel niet bijwerken: ${updateError.message}`);
+          setSaving(false);
+          return;
+        }
+
+        console.log('Updated current user member successfully');
+
+        // Remove current user from members list to avoid duplicate
+        const otherMembers = members.filter(m => m.id !== currentUserMember.id);
+        
+        // Save other members (children and additional parents without user_id)
+        for (const member of otherMembers) {
+          const { error: insertError } = await supabase
+            .from('family_members')
+            .insert([{
+              family_id: currentFamily.id,
+              user_id: null, // Other members don't have a user_id yet
+              name: member.name,
+              role: member.role,
+              color: member.color,
+              photo_uri: member.photoUri,
+              coins: 0,
+            }]);
+
+          if (insertError) {
+            console.error('Error inserting member:', insertError);
+            Alert.alert(t('common.error'), `Kon ${member.name} niet toevoegen: ${insertError.message}`);
+            setSaving(false);
+            return;
+          }
+
+          console.log('Inserted member:', member.name);
+        }
+      } else {
+        // No existing member, insert all members
+        const membersToInsert = members.map((member, index) => ({
+          family_id: currentFamily.id,
+          user_id: index === 0 && member.role === 'parent' ? authUser.id : null, // First parent gets the user_id
+          name: member.name,
+          role: member.role,
+          color: member.color,
+          photo_uri: member.photoUri,
+          coins: 0,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('family_members')
+          .insert(membersToInsert);
+
+        if (insertError) {
+          console.error('Error inserting members:', insertError);
+          Alert.alert(t('common.error'), `Kon gezinsleden niet toevoegen: ${insertError.message}`);
+          setSaving(false);
+          return;
+        }
+
+        console.log('Inserted all members successfully');
+      }
+
+      // Reload current user to get updated role
+      await reloadCurrentUser();
+
+      console.log('Family members saved successfully');
+      
+      // Navigate to the homepage
+      router.replace('/(tabs)/(home)');
+    } catch (error: any) {
+      console.error('Error saving family members:', error);
+      Alert.alert(t('common.error'), `Er ging iets mis: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -303,16 +429,21 @@ export default function AddFamilyMembersScreen() {
         {/* Continue Button */}
         {members.length > 0 && (
           <TouchableOpacity
-            style={styles.continueButton}
+            style={[styles.continueButton, saving && styles.continueButtonDisabled]}
             onPress={handleContinue}
+            disabled={saving}
           >
-            <Text style={styles.continueButtonText}>Doorgaan</Text>
-            <IconSymbol
-              ios_icon_name="arrow.right"
-              android_material_icon_name="arrow-forward"
-              size={20}
-              color={colors.card}
-            />
+            <Text style={styles.continueButtonText}>
+              {saving ? 'Opslaan...' : 'Doorgaan'}
+            </Text>
+            {!saving && (
+              <IconSymbol
+                ios_icon_name="arrow.right"
+                android_material_icon_name="arrow-forward"
+                size={20}
+                color={colors.card}
+              />
+            )}
           </TouchableOpacity>
         )}
 
@@ -558,6 +689,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 4,
+  },
+  continueButtonDisabled: {
+    opacity: 0.6,
   },
   continueButtonText: {
     fontSize: 18,

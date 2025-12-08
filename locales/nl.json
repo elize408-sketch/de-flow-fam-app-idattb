@@ -90,7 +90,10 @@
     "errorAddingMember": "Er ging iets mis bij het toevoegen van het gezinslid",
     "couldNotUpdateMember": "Kon gezinslid niet bijwerken",
     "errorUpdatingMember": "Er ging iets mis bij het bijwerken van het gezinslid",
-    "couldNotDeleteMember": "Kon gezinslid niet verwijderen"
+    "couldNotDeleteMember": "Kon gezinslid niet verwijderen",
+    "children": "Kinderen",
+    "noChildren": "Er zijn nog geen kinderen toegevoegd",
+    "addChild": "Kind toevoegen"
   },
   "auth": {
     "login": {
