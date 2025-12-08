@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 16,
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
   },
   textContainer: {
     flex: 1,

@@ -7,19 +7,15 @@ import {
   ScrollView,
   Platform,
   Image,
-  Text,
-  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { HomeMenuItem } from '@/components/HomeMenuItem';
-import { useFamily } from '@/contexts/FamilyContext';
 import { colors } from '@/styles/commonStyles';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { currentUser, reloadCurrentUser } = useFamily();
 
   const menuItems = [
     {
@@ -73,26 +69,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Info Banner */}
-        {currentUser && (
-          <View style={styles.userBanner}>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>
-                {t('home.greeting', { name: currentUser.name })}
-              </Text>
-              <Text style={styles.userRole}>
-                {currentUser.role === 'parent' ? t('home.parent') : t('home.child')}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.refreshButton}
-              onPress={reloadCurrentUser}
-            >
-              <Text style={styles.refreshButtonText}>🔄</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* Illustration Block */}
         <View style={styles.illustrationCard}>
           <Image
@@ -135,60 +111,6 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 120,
     alignItems: 'stretch',
-  },
-  userBanner: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: colors.redPink,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.darkBrown,
-        shadowOffset: {
-          width: 0,
-          height: 2,
-        },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: `0px 2px 12px ${colors.shadow}`,
-      },
-    }),
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.darkBrown,
-    fontFamily: 'Poppins_700Bold',
-    marginBottom: 4,
-  },
-  userRole: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  refreshButtonText: {
-    fontSize: 20,
   },
   illustrationCard: {
     backgroundColor: '#FFFFFF',
