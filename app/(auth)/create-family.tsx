@@ -255,7 +255,7 @@ export default function CreateFamilyScreen() {
               // Navigate to add family members screen
               console.log('Navigating to add-family-members screen...');
               setLoading(false);
-              // Use reset to prevent going back to auth screens
+              // Use replace to prevent going back to auth screens
               router.replace('/(auth)/add-family-members');
             },
           },

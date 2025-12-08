@@ -96,11 +96,11 @@ export default function Index() {
       clearTimeout(timeoutId);
       
       if (!hasFamily) {
-        console.log('❌ User has NO family - redirecting to setup-family');
-        console.log('[5/5] Navigation target: /(auth)/setup-family');
+        console.log('❌ User has NO family - redirecting to add-family-members');
+        console.log('[5/5] Navigation target: /(auth)/add-family-members');
         setDebugInfo('No family found - redirecting to setup...');
         setTimeout(() => {
-          router.replace('/(auth)/setup-family');
+          router.replace('/(auth)/add-family-members');
           setIsChecking(false);
         }, 100);
         return;

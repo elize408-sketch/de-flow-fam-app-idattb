@@ -1,12 +1,13 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { supabase } from '@/utils/supabase';
-import { resendVerificationEmail } from '@/utils/auth';
+import { resendVerificationEmail, getCurrentSession } from '@/utils/auth';
 import { useTranslation } from 'react-i18next';
+import { userHasFamily } from '@/utils/familyService';
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
@@ -17,136 +18,114 @@ export default function VerifyEmailScreen() {
   const flow = params.flow as 'create' | 'join';
   const familyId = params.familyId as string;
 
-  const [code, setCode] = useState(['', '', '', '', '', '']);
-  const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const inputRefs = useRef<(TextInput | null)[]>([]);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    // Focus first input on mount
-    setTimeout(() => {
-      inputRefs.current[0]?.focus();
-    }, 100);
-  }, []);
-
-  const handleCodeChange = (text: string, index: number) => {
-    // Only allow numbers
-    if (text && !/^\d+$/.test(text)) {
-      return;
-    }
-
-    const newCode = [...code];
-    newCode[index] = text;
-    setCode(newCode);
-
-    // Auto-focus next input
-    if (text && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    // Auto-verify when all digits are entered
-    if (text && index === 5 && newCode.every(digit => digit !== '')) {
-      handleVerify(newCode.join(''));
-    }
-  };
-
-  const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerify = async (verificationCode?: string) => {
-    const codeToVerify = verificationCode || code.join('');
-    
-    if (codeToVerify.length !== 6) {
-      Alert.alert(t('common.error'), t('auth.verifyEmail.fillCompleteCode'));
-      return;
-    }
-
-    setLoading(true);
-    try {
-      console.log('Verifying OTP code...');
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: codeToVerify,
-        type: 'signup',
-      });
-
-      if (error) {
-        console.error('Verification error:', error);
-        
-        // Provide more specific error messages
-        if (error.message.includes('expired')) {
-          Alert.alert(
-            t('common.error'), 
-            'De verificatiecode is verlopen. Vraag een nieuwe code aan.',
-            [
-              {
-                text: 'Nieuwe code aanvragen',
-                onPress: handleResendCode,
-              },
-              {
-                text: 'Annuleren',
-                style: 'cancel',
-              },
-            ]
-          );
-        } else if (error.message.includes('invalid') || error.message.includes('Token')) {
-          Alert.alert(t('common.error'), 'De ingevoerde code is onjuist. Controleer de code en probeer het opnieuw.');
-        } else {
-          Alert.alert(t('common.error'), error.message || t('auth.verifyEmail.invalidCode'));
-        }
-        
-        setLoading(false);
-        setCode(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-        return;
+    // Set up auth state listener to detect when email is confirmed
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+      
+      if (event === 'SIGNED_IN' && session) {
+        console.log('✅ User signed in after email confirmation');
+        await handleEmailConfirmed(session.user.id);
       }
+    });
 
-      if (data.session) {
-        // Email verified successfully
-        console.log('✅ Email verified successfully, redirecting...');
-        setLoading(false);
-        
-        if (flow === 'create') {
-          // Continue to create family flow - redirect to setup-family
-          router.replace({
-            pathname: '/(auth)/setup-family',
-            params: { name, verified: 'true' },
-          });
-        } else if (flow === 'join') {
-          // Continue to join family flow - redirect to complete-join
-          router.replace({
-            pathname: '/(auth)/complete-join',
-            params: { name, familyId, verified: 'true' },
-          });
-        }
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [flow, familyId, name]);
+
+  const handleEmailConfirmed = async (userId: string) => {
+    console.log('=== handleEmailConfirmed START ===');
+    console.log('User ID:', userId);
+    console.log('Flow:', flow);
+    
+    try {
+      if (flow === 'create') {
+        // User is creating a new family - redirect to setup-family
+        console.log('Redirecting to setup-family...');
+        router.replace({
+          pathname: '/(auth)/setup-family',
+          params: { name, verified: 'true' },
+        });
+      } else if (flow === 'join') {
+        // User is joining an existing family - redirect to complete-join
+        console.log('Redirecting to complete-join...');
+        router.replace({
+          pathname: '/(auth)/complete-join',
+          params: { name, familyId, verified: 'true' },
+        });
       } else {
-        console.error('Verification succeeded but no session returned');
-        Alert.alert(t('common.error'), 'Er ging iets mis bij de verificatie. Probeer het opnieuw.');
-        setLoading(false);
+        // No specific flow - check if user has family
+        console.log('No specific flow - checking family status...');
+        const hasFamily = await userHasFamily(userId);
+        
+        if (hasFamily) {
+          console.log('User has family - redirecting to home...');
+          router.replace('/(tabs)/(home)');
+        } else {
+          console.log('User has no family - redirecting to setup-family...');
+          router.replace('/(auth)/setup-family');
+        }
+      }
+    } catch (error) {
+      console.error('Error handling email confirmation:', error);
+      Alert.alert(t('common.error'), 'Er ging iets mis. Probeer opnieuw in te loggen.');
+      router.replace('/(auth)/welcome');
+    }
+    
+    console.log('=== handleEmailConfirmed END ===');
+  };
+
+  const handleCheckVerification = async () => {
+    setChecking(true);
+    try {
+      console.log('Checking if email is verified...');
+      
+      // Get current session
+      const session = await getCurrentSession();
+      
+      if (session && session.user) {
+        console.log('✅ Session found - email is verified');
+        await handleEmailConfirmed(session.user.id);
+      } else {
+        console.log('❌ No session found - email not verified yet');
+        Alert.alert(
+          'E-mail nog niet bevestigd',
+          'Je e-mail is nog niet bevestigd. Klik op de link in de e-mail die we je hebben gestuurd.\n\nControleer ook je spam-map als je de e-mail niet ziet.',
+          [
+            {
+              text: 'Nieuwe e-mail versturen',
+              onPress: handleResendEmail,
+            },
+            {
+              text: 'OK',
+              style: 'cancel',
+            },
+          ]
+        );
       }
     } catch (error: any) {
-      console.error('Verification error:', error);
+      console.error('Check verification error:', error);
       Alert.alert(t('common.error'), 'Er ging iets mis. Probeer het opnieuw.');
-      setLoading(false);
+    } finally {
+      setChecking(false);
     }
   };
 
-  const handleResendCode = async () => {
+  const handleResendEmail = async () => {
     setResending(true);
     try {
-      console.log('Resending verification code...');
+      console.log('Resending verification email...');
       const result = await resendVerificationEmail(email);
 
       if (result.success) {
         Alert.alert(
-          t('auth.verifyEmail.codeSent'), 
-          'Een nieuwe verificatiecode is verstuurd naar je e-mailadres. Controleer ook je spam-map als je de e-mail niet ziet.'
+          'E-mail verstuurd', 
+          'Een nieuwe bevestigingsmail is verstuurd naar je e-mailadres. Controleer ook je spam-map als je de e-mail niet ziet.'
         );
-        setCode(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
       } else {
         console.error('Resend failed:', result.error);
         
@@ -158,12 +137,11 @@ export default function VerifyEmailScreen() {
             [
               {
                 text: 'Probeer opnieuw',
-                onPress: handleResendCode,
+                onPress: handleResendEmail,
               },
               {
                 text: 'Contact opnemen',
                 onPress: () => {
-                  // You could open email client here
                   Alert.alert('Contact', 'Stuur een e-mail naar support@flowfam.nl');
                 },
               },
@@ -174,7 +152,7 @@ export default function VerifyEmailScreen() {
             ]
           );
         } else {
-          Alert.alert(t('common.error'), result.error || 'Kon geen nieuwe code versturen. Probeer het later opnieuw.');
+          Alert.alert(t('common.error'), result.error || 'Kon geen nieuwe e-mail versturen. Probeer het later opnieuw.');
         }
       }
     } catch (error: any) {
@@ -209,11 +187,40 @@ export default function VerifyEmailScreen() {
           />
         </View>
 
-        <Text style={styles.title}>{t('auth.verifyEmail.title')}</Text>
+        <Text style={styles.title}>Bevestig je e-mailadres</Text>
         <Text style={styles.subtitle}>
-          We hebben een 6-cijferige code verstuurd naar:{'\n'}
+          We hebben een bevestigingsmail gestuurd naar:{'\n'}
           <Text style={styles.email}>{email}</Text>
         </Text>
+
+        <View style={styles.instructionsBox}>
+          <View style={styles.instructionStep}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>1</Text>
+            </View>
+            <Text style={styles.instructionText}>
+              Open je e-mail inbox en zoek naar de bevestigingsmail van Flow Fam
+            </Text>
+          </View>
+
+          <View style={styles.instructionStep}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>2</Text>
+            </View>
+            <Text style={styles.instructionText}>
+              Klik op de bevestigingslink in de e-mail
+            </Text>
+          </View>
+
+          <View style={styles.instructionStep}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>3</Text>
+            </View>
+            <Text style={styles.instructionText}>
+              Je wordt automatisch doorgestuurd naar de app
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.infoBox}>
           <IconSymbol
@@ -223,47 +230,34 @@ export default function VerifyEmailScreen() {
             color={colors.accent}
           />
           <Text style={styles.infoText}>
-            Controleer ook je spam/ongewenste e-mail map als je de code niet ziet.
+            Controleer ook je spam/ongewenste e-mail map als je de e-mail niet ziet.
           </Text>
         </View>
 
-        <View style={styles.codeContainer}>
-          {code.map((digit, index) => (
-            <React.Fragment key={index}>
-              <TextInput
-                ref={(ref) => (inputRefs.current[index] = ref)}
-                style={[
-                  styles.codeInput,
-                  digit && styles.codeInputFilled,
-                ]}
-                value={digit}
-                onChangeText={(text) => handleCodeChange(text, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                keyboardType="number-pad"
-                maxLength={1}
-                selectTextOnFocus
-                editable={!loading}
-              />
-            </React.Fragment>
-          ))}
-        </View>
-
         <TouchableOpacity
-          style={[styles.button, styles.primaryButton, (loading || code.some(digit => !digit)) && styles.buttonDisabled]}
-          onPress={() => handleVerify()}
-          disabled={loading || code.some(digit => !digit)}
+          style={[styles.button, styles.primaryButton, checking && styles.buttonDisabled]}
+          onPress={handleCheckVerification}
+          disabled={checking}
         >
-          {loading ? (
+          {checking ? (
             <ActivityIndicator color={colors.card} />
           ) : (
-            <Text style={styles.primaryButtonText}>{t('auth.verifyEmail.verify')}</Text>
+            <React.Fragment>
+              <IconSymbol
+                ios_icon_name="checkmark.circle.fill"
+                android_material_icon_name="check-circle"
+                size={20}
+                color={colors.card}
+              />
+              <Text style={styles.primaryButtonText}>Ik heb mijn e-mail bevestigd</Text>
+            </React.Fragment>
           )}
         </TouchableOpacity>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>{t('auth.verifyEmail.noCodeReceived')}</Text>
+          <Text style={styles.footerText}>Geen e-mail ontvangen?</Text>
           <TouchableOpacity
-            onPress={handleResendCode}
+            onPress={handleResendEmail}
             disabled={resending}
             style={styles.resendButton}
           >
@@ -271,7 +265,7 @@ export default function VerifyEmailScreen() {
               <ActivityIndicator size="small" color={colors.accent} />
             ) : (
               <Text style={[styles.footerLink, resending && styles.footerLinkDisabled]}>
-                {t('auth.verifyEmail.resendCode')}
+                Verstuur opnieuw
               </Text>
             )}
           </TouchableOpacity>
@@ -279,7 +273,7 @@ export default function VerifyEmailScreen() {
 
         <View style={styles.helpContainer}>
           <Text style={styles.helpText}>
-            Problemen met het ontvangen van de code?
+            Problemen met het ontvangen van de e-mail?
           </Text>
           <TouchableOpacity
             onPress={() => {
@@ -348,7 +342,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
-    marginBottom: 20,
+    marginBottom: 30,
     fontFamily: 'Nunito_400Regular',
     textAlign: 'center',
     lineHeight: 24,
@@ -357,6 +351,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  instructionsBox: {
+    width: '100%',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    gap: 16,
+    boxShadow: `0px 2px 8px ${colors.shadow}`,
+    elevation: 2,
+  },
+  instructionStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepNumberText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  instructionText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+    lineHeight: 20,
   },
   infoBox: {
     flexDirection: 'row',
@@ -375,28 +405,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Nunito_400Regular',
     lineHeight: 18,
-  },
-  codeContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 40,
-  },
-  codeInput: {
-    width: 50,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: colors.card,
-    borderWidth: 2,
-    borderColor: colors.textSecondary + '20',
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-    fontFamily: 'Poppins_700Bold',
-  },
-  codeInputFilled: {
-    borderColor: colors.accent,
-    backgroundColor: colors.accent + '10',
   },
   button: {
     width: '100%',

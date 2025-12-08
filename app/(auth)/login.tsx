@@ -28,18 +28,15 @@ export default function LoginScreen() {
       console.log('[2/3] userHasFamily result:', hasFamily);
       
       if (!hasFamily) {
-        console.log('[3/3] User has NO family - redirecting to setup-family');
-        console.log('Navigation target: /(auth)/setup-family');
+        console.log('[3/3] User has NO family - redirecting to add-family-members');
+        console.log('Navigation target: /(auth)/add-family-members');
         
         // Clear loading state BEFORE navigation
         setLoading(false);
         
-        // Use setTimeout to ensure state is cleared before navigation
-        setTimeout(() => {
-          console.log('Executing navigation to setup-family...');
-          router.replace('/(auth)/setup-family');
-          console.log('Navigation command sent');
-        }, 100);
+        // Use replace to prevent going back to login
+        router.replace('/(auth)/add-family-members');
+        console.log('Navigation command sent');
         
         return;
       }
@@ -51,12 +48,9 @@ export default function LoginScreen() {
       // Clear loading state BEFORE navigation
       setLoading(false);
       
-      // Use setTimeout to ensure state is cleared before navigation
-      setTimeout(() => {
-        console.log('Executing navigation to home...');
-        router.replace('/(tabs)/(home)');
-        console.log('Navigation command sent');
-      }, 100);
+      // Use replace to prevent going back to login
+      router.replace('/(tabs)/(home)');
+      console.log('Navigation command sent');
       
     } catch (error) {
       console.error('=== handleLoginSuccess ERROR ===');
