@@ -71,7 +71,9 @@ export default function SettingsScreen() {
   const [newMemberRole, setNewMemberRole] = useState<'parent' | 'child'>('child');
   const [newMemberColor, setNewMemberColor] = useState(AVAILABLE_COLORS[0].value);
   const [newMemberPhoto, setNewMemberPhoto] = useState<string | null>(null);
-  const [designMode, setDesignMode] = useState<'parent' | 'child'>(currentUser?.role || 'child');
+
+  // Get children only (filter out parents)
+  const children = familyMembers.filter(member => member.role === 'child');
 
   const handlePickPhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -101,15 +103,6 @@ export default function SettingsScreen() {
 
     Alert.alert('Gelukt!', 'Profiel bijgewerkt');
     setShowEditProfileModal(false);
-  };
-
-  const handleModeSwitch = (mode: 'parent' | 'child') => {
-    setDesignMode(mode);
-    Alert.alert(
-      'Modus gewijzigd',
-      `Je bekijkt nu de app in ${mode === 'parent' ? 'ouder' : 'kind'} modus (alleen voor design doeleinden)`,
-      [{ text: 'OK' }]
-    );
   };
 
   const handlePickImage = async () => {
@@ -442,47 +435,6 @@ export default function SettingsScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Mode Switcher */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Design Modus</Text>
-            <View style={styles.sectionContent}>
-              <View style={styles.modeSwitcher}>
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    designMode === 'parent' && styles.modeButtonActive,
-                  ]}
-                  onPress={() => handleModeSwitch('parent')}
-                >
-                  <Text
-                    style={[
-                      styles.modeButtonText,
-                      designMode === 'parent' && styles.modeButtonTextActive,
-                    ]}
-                  >
-                    Ouder
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    designMode === 'child' && styles.modeButtonActive,
-                  ]}
-                  onPress={() => handleModeSwitch('child')}
-                >
-                  <Text
-                    style={[
-                      styles.modeButtonText,
-                      designMode === 'child' && styles.modeButtonTextActive,
-                    ]}
-                  >
-                    Kind
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
           {/* Family Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Gezin</Text>
@@ -514,10 +466,10 @@ export default function SettingsScreen() {
                 />
               </TouchableOpacity>
 
-              {/* Family Members */}
+              {/* Children */}
               <View style={styles.familyMembersSection}>
                 <View style={styles.familyMembersHeader}>
-                  <Text style={styles.familyMembersTitle}>Gezinsleden</Text>
+                  <Text style={styles.familyMembersTitle}>Kinderen</Text>
                   <TouchableOpacity
                     style={styles.addMemberButton}
                     onPress={() => setShowAddMemberModal(true)}
@@ -531,35 +483,37 @@ export default function SettingsScreen() {
                   </TouchableOpacity>
                 </View>
 
-                {familyMembers.map((member, index) => (
-                  <React.Fragment key={index}>
-                    <View style={styles.memberRow}>
-                      <View style={[styles.memberAvatar, { backgroundColor: member.color }]}>
-                        {member.photoUri ? (
-                          <Image source={{ uri: member.photoUri }} style={styles.memberPhoto} />
-                        ) : (
-                          <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
-                        )}
-                      </View>
-                      <View style={styles.memberInfo}>
-                        <Text style={styles.memberName}>{member.name}</Text>
-                        <Text style={styles.memberRole}>
-                          {member.role === 'parent' ? 'Ouder' : 'Kind'}
-                        </Text>
-                      </View>
-                      <View style={styles.memberActions}>
-                        <TouchableOpacity
-                          style={styles.editIconButton}
-                          onPress={() => openEditMemberModal(member)}
-                        >
-                          <IconSymbol
-                            ios_icon_name="pencil"
-                            android_material_icon_name="edit"
-                            size={20}
-                            color={colors.vibrantOrange}
-                          />
-                        </TouchableOpacity>
-                        {member.role === 'child' && (
+                {children.length === 0 ? (
+                  <Text style={styles.emptyText}>Er zijn nog geen kinderen toegevoegd.</Text>
+                ) : (
+                  children.map((member, index) => (
+                    <React.Fragment key={index}>
+                      <View style={styles.memberRow}>
+                        <View style={[styles.memberAvatar, { backgroundColor: member.color }]}>
+                          {member.photoUri ? (
+                            <Image source={{ uri: member.photoUri }} style={styles.memberPhoto} />
+                          ) : (
+                            <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
+                          )}
+                        </View>
+                        <View style={styles.memberInfo}>
+                          <Text style={styles.memberName}>{member.name}</Text>
+                          <Text style={styles.memberRole}>
+                            {member.role === 'parent' ? 'Ouder' : 'Kind'}
+                          </Text>
+                        </View>
+                        <View style={styles.memberActions}>
+                          <TouchableOpacity
+                            style={styles.editIconButton}
+                            onPress={() => openEditMemberModal(member)}
+                          >
+                            <IconSymbol
+                              ios_icon_name="pencil"
+                              android_material_icon_name="edit"
+                              size={20}
+                              color={colors.vibrantOrange}
+                            />
+                          </TouchableOpacity>
                           <TouchableOpacity
                             style={styles.deleteIconButton}
                             onPress={() => handleDeleteMember(member.id, member.name)}
@@ -571,12 +525,12 @@ export default function SettingsScreen() {
                               color="#E74C3C"
                             />
                           </TouchableOpacity>
-                        )}
+                        </View>
                       </View>
-                    </View>
-                    {index < familyMembers.length - 1 && <View style={styles.memberDivider} />}
-                  </React.Fragment>
-                ))}
+                      {index < children.length - 1 && <View style={styles.memberDivider} />}
+                    </React.Fragment>
+                  ))
+                )}
               </View>
             </View>
           </View>
@@ -735,7 +689,7 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Gezinslid toevoegen</Text>
+              <Text style={styles.modalTitle}>Kind toevoegen</Text>
 
               <TouchableOpacity style={styles.photoButton} onPress={handlePickImage}>
                 {newMemberPhoto ? (
@@ -955,33 +909,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
   },
-  modeSwitcher: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 16,
-  },
-  modeButton: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  modeButtonActive: {
-    borderColor: colors.vibrantOrange,
-    backgroundColor: colors.vibrantOrange + '20',
-  },
-  modeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  modeButtonTextActive: {
-    color: colors.text,
-  },
   familyMembersSection: {
     padding: 16,
     borderTopWidth: 1,
@@ -1001,6 +928,14 @@ const styles = StyleSheet.create({
   },
   addMemberButton: {
     padding: 4,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 20,
   },
   memberRow: {
     flexDirection: 'row',

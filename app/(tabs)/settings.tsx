@@ -60,15 +60,9 @@ export default function SettingsScreen() {
   const [newMemberRole, setNewMemberRole] = useState<'parent' | 'child'>('child');
   const [newMemberColor, setNewMemberColor] = useState(AVAILABLE_COLORS[0].value);
   const [newMemberPhoto, setNewMemberPhoto] = useState<string | null>(null);
-  const [designMode, setDesignMode] = useState<'parent' | 'child'>(currentUser?.role || 'child');
 
-  // Update design mode when current user changes
-  useEffect(() => {
-    if (currentUser) {
-      setDesignMode(currentUser.role);
-      console.log('Current user role updated:', currentUser.role);
-    }
-  }, [currentUser]);
+  // Get children only (filter out parents)
+  const children = familyMembers.filter(member => member.role === 'child');
 
   const handleLogout = async () => {
     Alert.alert(
@@ -106,58 +100,6 @@ export default function SettingsScreen() {
       Alert.alert(t('common.error'), t('settings.refreshError'));
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const handleModeSwitch = async (mode: 'parent' | 'child') => {
-    console.log('Switching mode to:', mode);
-    
-    if (!currentUser) {
-      Alert.alert(t('common.error'), t('settings.noUser'));
-      return;
-    }
-
-    if (!currentFamily) {
-      Alert.alert(t('common.error'), t('settings.noFamily'));
-      return;
-    }
-
-    try {
-      // Update in Supabase
-      console.log('Updating role in Supabase for user:', currentUser.id);
-      const { error } = await supabase
-        .from('family_members')
-        .update({ role: mode })
-        .eq('id', currentUser.id)
-        .eq('family_id', currentFamily.id);
-
-      if (error) {
-        console.error('Error updating role in DB:', error);
-        Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
-        return;
-      }
-
-      console.log('Role updated in Supabase successfully');
-
-      // Update local state immediately
-      const updatedUser = { ...currentUser, role: mode };
-      setCurrentUser(updatedUser);
-      updateFamilyMember(currentUser.id, { role: mode });
-      setDesignMode(mode);
-
-      console.log('Local state updated, new role:', mode);
-
-      // Reload user data to ensure consistency
-      await reloadCurrentUser();
-
-      Alert.alert(
-        t('common.success'),
-        t('settings.designModeMessage', { mode: mode === 'parent' ? t('settings.parent') : t('settings.child') }),
-        [{ text: t('common.ok') }]
-      );
-    } catch (error) {
-      console.error('Error switching role:', error);
-      Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
     }
   };
 
@@ -297,7 +239,6 @@ export default function SettingsScreen() {
       if (isCurrentUser) {
         const updatedUser = { ...currentUser, ...updates };
         setCurrentUser(updatedUser);
-        setDesignMode(newMemberRole);
         await reloadCurrentUser();
       }
 
@@ -372,62 +313,6 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          {/* Mode Switcher (Design Mode) */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('settings.designMode')}</Text>
-            <Text style={styles.sectionSubtitle}>
-              {t('settings.designModeSubtitle')}
-            </Text>
-            <View style={styles.card}>
-              <View style={styles.modeSwitcher}>
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    designMode === 'parent' && styles.modeButtonActive,
-                  ]}
-                  onPress={() => handleModeSwitch('parent')}
-                >
-                  <IconSymbol
-                    ios_icon_name="person.fill"
-                    android_material_icon_name="person"
-                    size={24}
-                    color={designMode === 'parent' ? colors.card : colors.text}
-                  />
-                  <Text
-                    style={[
-                      styles.modeButtonText,
-                      designMode === 'parent' && styles.modeButtonTextActive,
-                    ]}
-                  >
-                    {t('settings.parentMode')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    designMode === 'child' && styles.modeButtonActive,
-                  ]}
-                  onPress={() => handleModeSwitch('child')}
-                >
-                  <IconSymbol
-                    ios_icon_name="figure.child"
-                    android_material_icon_name="child-care"
-                    size={24}
-                    color={designMode === 'child' ? colors.card : colors.text}
-                  />
-                  <Text
-                    style={[
-                      styles.modeButtonText,
-                      designMode === 'child' && styles.modeButtonTextActive,
-                    ]}
-                  >
-                    {t('settings.childMode')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
           {/* Family Settings */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('settings.family')}</Text>
@@ -461,10 +346,10 @@ export default function SettingsScreen() {
 
               <View style={styles.divider} />
 
-              {/* Family Members Management */}
+              {/* Children Management */}
               <View style={styles.familyMembersSection}>
                 <View style={styles.familyMembersHeader}>
-                  <Text style={styles.familyMembersTitle}>{t('settings.familyMembers')}</Text>
+                  <Text style={styles.familyMembersTitle}>{t('settings.children')}</Text>
                   <TouchableOpacity
                     style={styles.addMemberButton}
                     onPress={() => setShowAddMemberModal(true)}
@@ -478,35 +363,37 @@ export default function SettingsScreen() {
                   </TouchableOpacity>
                 </View>
 
-                {familyMembers.map((member, index) => (
-                  <React.Fragment key={index}>
-                    <View style={styles.memberRow}>
-                      <View style={[styles.memberAvatar, { backgroundColor: member.color }]}>
-                        {member.photoUri ? (
-                          <Image source={{ uri: member.photoUri }} style={styles.memberPhoto} />
-                        ) : (
-                          <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
-                        )}
-                      </View>
-                      <View style={styles.memberInfo}>
-                        <Text style={styles.memberName}>{member.name}</Text>
-                        <Text style={styles.memberRole}>
-                          {member.role === 'parent' ? t('settings.parent') : t('settings.child')}
-                        </Text>
-                      </View>
-                      <View style={styles.memberActions}>
-                        <TouchableOpacity
-                          style={styles.editIconButton}
-                          onPress={() => openEditMemberModal(member)}
-                        >
-                          <IconSymbol
-                            ios_icon_name="pencil"
-                            android_material_icon_name="edit"
-                            size={20}
-                            color={colors.vibrantOrange}
-                          />
-                        </TouchableOpacity>
-                        {member.role === 'child' && (
+                {children.length === 0 ? (
+                  <Text style={styles.emptyText}>{t('settings.noChildren')}</Text>
+                ) : (
+                  children.map((member, index) => (
+                    <React.Fragment key={index}>
+                      <View style={styles.memberRow}>
+                        <View style={[styles.memberAvatar, { backgroundColor: member.color }]}>
+                          {member.photoUri ? (
+                            <Image source={{ uri: member.photoUri }} style={styles.memberPhoto} />
+                          ) : (
+                            <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
+                          )}
+                        </View>
+                        <View style={styles.memberInfo}>
+                          <Text style={styles.memberName}>{member.name}</Text>
+                          <Text style={styles.memberRole}>
+                            {member.role === 'parent' ? t('settings.parent') : t('settings.child')}
+                          </Text>
+                        </View>
+                        <View style={styles.memberActions}>
+                          <TouchableOpacity
+                            style={styles.editIconButton}
+                            onPress={() => openEditMemberModal(member)}
+                          >
+                            <IconSymbol
+                              ios_icon_name="pencil"
+                              android_material_icon_name="edit"
+                              size={20}
+                              color={colors.vibrantOrange}
+                            />
+                          </TouchableOpacity>
                           <TouchableOpacity
                             style={styles.deleteIconButton}
                             onPress={() => handleDeleteMember(member.id, member.name)}
@@ -518,12 +405,12 @@ export default function SettingsScreen() {
                               color="#E74C3C"
                             />
                           </TouchableOpacity>
-                        )}
+                        </View>
                       </View>
-                    </View>
-                    {index < familyMembers.length - 1 && <View style={styles.divider} />}
-                  </React.Fragment>
-                ))}
+                      {index < children.length - 1 && <View style={styles.divider} />}
+                    </React.Fragment>
+                  ))
+                )}
               </View>
             </View>
           </View>
@@ -616,10 +503,10 @@ export default function SettingsScreen() {
                   User Role: {currentUser?.role || 'None'}
                 </Text>
                 <Text style={styles.debugText}>
-                  Design Mode: {designMode}
+                  Family Code: {familyCode || 'None'}
                 </Text>
                 <Text style={styles.debugText}>
-                  Family Code: {familyCode || 'None'}
+                  Children Count: {children.length}
                 </Text>
               </View>
             </View>
@@ -643,7 +530,7 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{t('settings.addFamilyMember')}</Text>
+              <Text style={styles.modalTitle}>{t('settings.addChild')}</Text>
 
               <TouchableOpacity style={styles.photoPickerButton} onPress={handlePickImage}>
                 {newMemberPhoto ? (
@@ -669,21 +556,6 @@ export default function SettingsScreen() {
                 value={newMemberName}
                 onChangeText={setNewMemberName}
               />
-
-              <Text style={styles.inputLabel}>{t('settings.role')}</Text>
-              <View style={styles.roleSelector}>
-                <TouchableOpacity
-                  style={[styles.roleButton, newMemberRole === 'child' && styles.roleButtonActive]}
-                  onPress={() => setNewMemberRole('child')}
-                >
-                  <Text style={[styles.roleButtonText, newMemberRole === 'child' && styles.roleButtonTextActive]}>
-                    {t('settings.child')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.roleHint}>
-                {t('settings.parentInviteNote')}
-              </Text>
 
               <Text style={styles.inputLabel}>{t('settings.chooseColor')}</Text>
               <View style={styles.colorSelector}>
@@ -892,12 +764,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
     marginBottom: 8,
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-    marginBottom: 12,
-  },
   card: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -922,35 +788,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
   },
-  modeSwitcher: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  modeButtonActive: {
-    backgroundColor: colors.vibrantOrange,
-    borderColor: colors.vibrantOrange,
-  },
-  modeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  modeButtonTextActive: {
-    color: colors.card,
-  },
   familyMembersSection: {
     marginTop: 8,
   },
@@ -968,6 +805,14 @@ const styles = StyleSheet.create({
   },
   addMemberButton: {
     padding: 4,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 20,
   },
   memberRow: {
     flexDirection: 'row',
@@ -1139,7 +984,7 @@ const styles = StyleSheet.create({
   roleSelector: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 10,
+    marginBottom: 15,
   },
   roleButton: {
     flex: 1,
@@ -1162,13 +1007,6 @@ const styles = StyleSheet.create({
   },
   roleButtonTextActive: {
     color: colors.text,
-  },
-  roleHint: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 15,
-    fontFamily: 'Nunito_400Regular',
-    fontStyle: 'italic',
   },
   colorSelector: {
     flexDirection: 'row',

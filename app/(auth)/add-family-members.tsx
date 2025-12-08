@@ -124,9 +124,6 @@ export default function AddFamilyMembersScreen() {
           <Text style={styles.subtitle}>
             Voeg alle gezinsleden toe die de app gaan gebruiken
           </Text>
-          <View style={styles.designModeBadge}>
-            <Text style={styles.designModeText}>🎨 Design Mode</Text>
-          </View>
         </View>
 
         {/* Add Member Form */}
@@ -364,22 +361,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
-    marginBottom: 12,
-  },
-  designModeBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.warmOrange + '20',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.warmOrange,
-  },
-  designModeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.warmOrange,
-    fontFamily: 'Poppins_600SemiBold',
   },
   formSection: {
     backgroundColor: colors.card,
