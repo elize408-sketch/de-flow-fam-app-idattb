@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '@/styles/commonStyles';
@@ -8,6 +8,7 @@ import { getCurrentUser, getCurrentSession } from '@/utils/auth';
 import { userHasFamily } from '@/utils/familyService';
 
 const LANGUAGE_SELECTED_KEY = '@flow_fam_language_selected';
+const MAX_CHECK_TIME = 5000; // 5 seconds max for auth check
 
 export default function Index() {
   const router = useRouter();
@@ -19,6 +20,13 @@ export default function Index() {
   }, []);
 
   const checkAuthAndRedirect = async () => {
+    const timeoutId = setTimeout(() => {
+      console.error('Auth check timeout - redirecting to welcome');
+      setDebugInfo('Timeout - redirecting...');
+      router.replace('/(auth)/welcome');
+      setIsChecking(false);
+    }, MAX_CHECK_TIME);
+
     try {
       console.log('=== Starting authentication check ===');
       setDebugInfo('Checking language selection...');
@@ -29,6 +37,7 @@ export default function Index() {
       
       if (!languageSelected) {
         console.log('Language not selected, showing welcome screen');
+        clearTimeout(timeoutId);
         setDebugInfo('Redirecting to welcome...');
         setTimeout(() => {
           router.replace('/(auth)/welcome');
@@ -45,6 +54,7 @@ export default function Index() {
       
       if (!session) {
         console.log('No session found, redirecting to welcome');
+        clearTimeout(timeoutId);
         setDebugInfo('No session - redirecting to welcome...');
         setTimeout(() => {
           router.replace('/(auth)/welcome');
@@ -61,6 +71,7 @@ export default function Index() {
       
       if (!user) {
         console.log('No user found despite having session, redirecting to welcome');
+        clearTimeout(timeoutId);
         setDebugInfo('No user found - redirecting to welcome...');
         setTimeout(() => {
           router.replace('/(auth)/welcome');
@@ -75,6 +86,8 @@ export default function Index() {
       // Check if user has a family
       const hasFamily = await userHasFamily(user.id);
       console.log('User has family:', hasFamily);
+      
+      clearTimeout(timeoutId);
       
       if (!hasFamily) {
         console.log('User has no family, redirecting to welcome');
@@ -94,6 +107,7 @@ export default function Index() {
       }, 100);
     } catch (error) {
       console.error('Error checking auth:', error);
+      clearTimeout(timeoutId);
       setDebugInfo(`Error: ${error}`);
       setTimeout(() => {
         router.replace('/(auth)/welcome');

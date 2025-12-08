@@ -18,13 +18,16 @@ export default function LoginScreen() {
 
   const handleLoginSuccess = async (userId: string) => {
     try {
-      console.log('Login successful, checking family membership...');
+      console.log('=== Login Success Handler ===');
+      console.log('User ID:', userId);
       
       // Check if user has a family
+      console.log('Checking family membership...');
       const hasFamily = await userHasFamily(userId);
       console.log('User has family:', hasFamily);
       
       if (!hasFamily) {
+        console.log('User has no family, redirecting to welcome');
         Alert.alert(
           t('auth.login.noFamilyFound'),
           t('auth.login.noFamilyMessage'),
@@ -42,13 +45,20 @@ export default function LoginScreen() {
       }
 
       // Navigate to home
-      console.log('Navigating to home...');
+      console.log('User has family, navigating to home...');
       setLoading(false);
-      router.replace('/(tabs)/(home)');
+      
+      // Use setTimeout to ensure state is cleared before navigation
+      setTimeout(() => {
+        router.replace('/(tabs)/(home)');
+      }, 100);
     } catch (error) {
       console.error('Login success handler error:', error);
-      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
       setLoading(false);
+      Alert.alert(
+        t('common.error'), 
+        'Er ging iets mis bij het controleren van je gezin. Probeer het opnieuw.'
+      );
     }
   };
 
@@ -70,12 +80,19 @@ export default function LoginScreen() {
         return;
       }
 
-      console.log('Apple sign-in successful, user:', result.user?.id);
+      if (!result.user || !result.user.id) {
+        console.error('Apple sign-in succeeded but no user returned');
+        Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Apple sign-in successful, user:', result.user.id);
       await handleLoginSuccess(result.user.id);
     } catch (error: any) {
       console.error('Apple sign in error:', error);
-      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Apple');
       setLoading(false);
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Apple');
     }
   };
 
@@ -92,12 +109,19 @@ export default function LoginScreen() {
         return;
       }
 
-      console.log('Google sign-in successful, user:', result.user?.id);
+      if (!result.user || !result.user.id) {
+        console.error('Google sign-in succeeded but no user returned');
+        Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Google sign-in successful, user:', result.user.id);
       await handleLoginSuccess(result.user.id);
     } catch (error: any) {
       console.error('Google sign in error:', error);
-      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Google');
       setLoading(false);
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Google');
     }
   };
 
@@ -113,10 +137,15 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      console.log('Starting email sign-in...');
+      console.log('=== Email Sign-In ===');
+      console.log('Email:', email);
+      
       const result = await signInWithEmail(email, password);
+      console.log('Sign-in result:', { success: result.success, hasUser: !!result.user, hasSession: !!result.session });
       
       if (!result.success) {
+        console.error('Email sign-in failed:', result.error);
+        
         // Check if email verification is required
         if (result.requiresVerification) {
           Alert.alert(
@@ -145,12 +174,27 @@ export default function LoginScreen() {
         return;
       }
 
-      console.log('Email sign-in successful');
+      // Check if we have user and session
+      if (!result.user || !result.user.id) {
+        console.error('Sign-in succeeded but no user returned');
+        Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen. Probeer het opnieuw.');
+        setLoading(false);
+        return;
+      }
+
+      if (!result.session) {
+        console.error('Sign-in succeeded but no session returned');
+        Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen. Probeer het opnieuw.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Email sign-in successful, user:', result.user.id);
       await handleLoginSuccess(result.user.id);
     } catch (error: any) {
       console.error('Email sign in error:', error);
-      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
       setLoading(false);
+      Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen. Probeer het opnieuw.');
     }
   };
 
@@ -159,7 +203,12 @@ export default function LoginScreen() {
       <View style={styles.container}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => setStep('auth')}
+          onPress={() => {
+            if (!loading) {
+              setStep('auth');
+            }
+          }}
+          disabled={loading}
         >
           <IconSymbol
             ios_icon_name="chevron.left"
@@ -202,7 +251,7 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.button, styles.orangeButton]}
+              style={[styles.button, styles.orangeButton, loading && styles.buttonDisabled]}
               onPress={handleEmailSignIn}
               disabled={loading}
               activeOpacity={0.8}
@@ -223,7 +272,12 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.back()}
+        onPress={() => {
+          if (!loading) {
+            router.back();
+          }
+        }}
+        disabled={loading}
       >
         <IconSymbol
           ios_icon_name="chevron.left"
@@ -240,7 +294,7 @@ export default function LoginScreen() {
         <View style={styles.authButtons}>
           {Platform.OS === 'ios' && (
             <TouchableOpacity
-              style={[styles.button, styles.orangeButton]}
+              style={[styles.button, styles.orangeButton, loading && styles.buttonDisabled]}
               onPress={handleAppleSignIn}
               disabled={loading}
               activeOpacity={0.8}
@@ -262,7 +316,7 @@ export default function LoginScreen() {
           )}
 
           <TouchableOpacity
-            style={[styles.button, styles.orangeButton]}
+            style={[styles.button, styles.orangeButton, loading && styles.buttonDisabled]}
             onPress={handleGoogleSignIn}
             disabled={loading}
             activeOpacity={0.8}
@@ -283,7 +337,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.button, styles.orangeButton]}
+            style={[styles.button, styles.orangeButton, loading && styles.buttonDisabled]}
             onPress={() => setStep('email')}
             disabled={loading}
             activeOpacity={0.8}
@@ -348,6 +402,9 @@ const styles = StyleSheet.create({
   },
   orangeButton: {
     backgroundColor: colors.vibrantOrange,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   orangeButtonText: {
     fontSize: 16,

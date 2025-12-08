@@ -203,7 +203,19 @@ export async function signInWithEmail(
       return { success: false, error: error.message };
     }
 
-    console.log('Sign-in successful:', {
+    // Validate that we have both user and session
+    if (!data.user || !data.session) {
+      console.error('Sign-in succeeded but missing user or session:', {
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+      });
+      return {
+        success: false,
+        error: 'Er ging iets mis bij het inloggen. Probeer het opnieuw.',
+      };
+    }
+
+    console.log('✅ Sign-in successful:', {
       hasUser: !!data.user,
       hasSession: !!data.session,
       userId: data.user?.id,
@@ -252,7 +264,19 @@ export async function signInWithApple(): Promise<AuthResult> {
       return { success: false, error: error.message };
     }
 
-    console.log('Apple sign-in successful:', {
+    // Validate that we have both user and session
+    if (!data.user || !data.session) {
+      console.error('Apple sign-in succeeded but missing user or session:', {
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+      });
+      return {
+        success: false,
+        error: 'Er ging iets mis bij het inloggen met Apple. Probeer het opnieuw.',
+      };
+    }
+
+    console.log('✅ Apple sign-in successful:', {
       hasUser: !!data.user,
       hasSession: !!data.session,
       userId: data.user?.id,
@@ -303,7 +327,19 @@ export async function signInWithGoogle(): Promise<AuthResult> {
       return { success: false, error: error.message };
     }
 
-    console.log('Google sign-in successful:', {
+    // Validate that we have both user and session
+    if (!data.user || !data.session) {
+      console.error('Google sign-in succeeded but missing user or session:', {
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+      });
+      return {
+        success: false,
+        error: 'Er ging iets mis bij het inloggen met Google. Probeer het opnieuw.',
+      };
+    }
+
+    console.log('✅ Google sign-in successful:', {
       hasUser: !!data.user,
       hasSession: !!data.session,
       userId: data.user?.id,
