@@ -8,37 +8,40 @@ import { getCurrentUser, getCurrentSession } from '@/utils/auth';
 import { userHasFamily } from '@/utils/familyService';
 
 const LANGUAGE_SELECTED_KEY = '@flow_fam_language_selected';
-const MAX_CHECK_TIME = 5000; // 5 seconds max for auth check
+const MAX_CHECK_TIME = 10000; // 10 seconds max for auth check
 
 export default function Index() {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
-  const [debugInfo, setDebugInfo] = useState('Checking authentication...');
+  const [debugInfo, setDebugInfo] = useState('Initializing...');
 
   useEffect(() => {
     checkAuthAndRedirect();
   }, []);
 
   const checkAuthAndRedirect = async () => {
+    console.log('=== APP INDEX - AUTH CHECK START ===');
+    console.log('Timestamp:', new Date().toISOString());
+    
     const timeoutId = setTimeout(() => {
-      console.error('Auth check timeout - redirecting to welcome');
-      setDebugInfo('Timeout - redirecting...');
+      console.error('⏱️ AUTH CHECK TIMEOUT - redirecting to welcome');
+      setDebugInfo('Timeout - redirecting to welcome...');
       router.replace('/(auth)/welcome');
       setIsChecking(false);
     }, MAX_CHECK_TIME);
 
     try {
-      console.log('=== Starting authentication check ===');
+      console.log('[1/5] Checking language selection...');
       setDebugInfo('Checking language selection...');
       
       // Check if language has been selected
       const languageSelected = await AsyncStorage.getItem(LANGUAGE_SELECTED_KEY);
-      console.log('Language selected:', languageSelected);
+      console.log('[1/5] Language selected:', languageSelected);
       
       if (!languageSelected) {
-        console.log('Language not selected, showing welcome screen');
+        console.log('❌ Language not selected - showing welcome screen');
         clearTimeout(timeoutId);
-        setDebugInfo('Redirecting to welcome...');
+        setDebugInfo('No language selected - redirecting to welcome...');
         setTimeout(() => {
           router.replace('/(auth)/welcome');
           setIsChecking(false);
@@ -46,14 +49,15 @@ export default function Index() {
         return;
       }
       
+      console.log('[2/5] Checking user session...');
       setDebugInfo('Checking user session...');
       
       // Check if user has a session
       const session = await getCurrentSession();
-      console.log('Session exists:', !!session);
+      console.log('[2/5] Session exists:', !!session);
       
       if (!session) {
-        console.log('No session found, redirecting to welcome');
+        console.log('❌ No session found - redirecting to welcome');
         clearTimeout(timeoutId);
         setDebugInfo('No session - redirecting to welcome...');
         setTimeout(() => {
@@ -63,14 +67,15 @@ export default function Index() {
         return;
       }
 
+      console.log('[3/5] Getting user details...');
       setDebugInfo('Getting user details...');
       
       // Get user details
       const user = await getCurrentUser();
-      console.log('User found:', !!user, user?.id);
+      console.log('[3/5] User found:', !!user, 'User ID:', user?.id);
       
       if (!user) {
-        console.log('No user found despite having session, redirecting to welcome');
+        console.log('❌ No user found despite having session - redirecting to welcome');
         clearTimeout(timeoutId);
         setDebugInfo('No user found - redirecting to welcome...');
         setTimeout(() => {
@@ -80,39 +85,51 @@ export default function Index() {
         return;
       }
 
-      console.log('User authenticated:', user.id);
+      console.log('✅ User authenticated:', user.id);
+      console.log('[4/5] Checking family membership...');
       setDebugInfo('Checking family membership...');
 
       // Check if user has a family
       const hasFamily = await userHasFamily(user.id);
-      console.log('User has family:', hasFamily);
+      console.log('[4/5] User has family:', hasFamily);
       
       clearTimeout(timeoutId);
       
       if (!hasFamily) {
-        console.log('User has no family, redirecting to welcome');
-        setDebugInfo('No family found - redirecting to welcome...');
+        console.log('❌ User has NO family - redirecting to setup-family');
+        console.log('[5/5] Navigation target: /(auth)/setup-family');
+        setDebugInfo('No family found - redirecting to setup...');
         setTimeout(() => {
-          router.replace('/(auth)/welcome');
+          router.replace('/(auth)/setup-family');
           setIsChecking(false);
         }, 100);
         return;
       }
 
-      console.log('User has family, redirecting to home');
-      setDebugInfo('Redirecting to home...');
+      console.log('✅ User HAS family - redirecting to home');
+      console.log('[5/5] Navigation target: /(tabs)/(home)');
+      setDebugInfo('Family found - redirecting to home...');
       setTimeout(() => {
         router.replace('/(tabs)/(home)');
         setIsChecking(false);
       }, 100);
+      
     } catch (error) {
-      console.error('Error checking auth:', error);
+      console.error('=== APP INDEX - AUTH CHECK ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
       clearTimeout(timeoutId);
       setDebugInfo(`Error: ${error}`);
+      
+      // On error, redirect to welcome after showing error briefly
       setTimeout(() => {
+        console.log('Redirecting to welcome after error...');
         router.replace('/(auth)/welcome');
         setIsChecking(false);
       }, 1000);
+    } finally {
+      console.log('=== APP INDEX - AUTH CHECK END ===');
     }
   };
 
@@ -124,6 +141,9 @@ export default function Index() {
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.accent} />
       <Text style={styles.debugText}>{debugInfo}</Text>
+      <Text style={styles.debugSubtext}>
+        If this takes too long, the app will redirect automatically
+      </Text>
     </View>
   );
 }
@@ -135,12 +155,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
     gap: 16,
+    paddingHorizontal: 20,
   },
   debugText: {
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
     textAlign: 'center',
-    paddingHorizontal: 20,
+  },
+  debugSubtext: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });

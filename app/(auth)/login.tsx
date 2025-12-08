@@ -17,48 +17,62 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLoginSuccess = async (userId: string) => {
+    console.log('=== handleLoginSuccess START ===');
+    console.log('User ID:', userId);
+    console.log('Timestamp:', new Date().toISOString());
+    
     try {
-      console.log('=== Login Success Handler ===');
-      console.log('User ID:', userId);
-      
       // Check if user has a family
-      console.log('Checking family membership...');
+      console.log('[1/3] Checking if user has family...');
       const hasFamily = await userHasFamily(userId);
-      console.log('User has family:', hasFamily);
+      console.log('[2/3] userHasFamily result:', hasFamily);
       
       if (!hasFamily) {
-        console.log('User has no family, redirecting to welcome');
-        Alert.alert(
-          t('auth.login.noFamilyFound'),
-          t('auth.login.noFamilyMessage'),
-          [
-            {
-              text: t('common.ok'),
-              onPress: () => {
-                setLoading(false);
-                router.replace('/(auth)/welcome');
-              },
-            },
-          ]
-        );
+        console.log('[3/3] User has NO family - redirecting to setup-family');
+        console.log('Navigation target: /(auth)/setup-family');
+        
+        // Clear loading state BEFORE navigation
+        setLoading(false);
+        
+        // Use setTimeout to ensure state is cleared before navigation
+        setTimeout(() => {
+          console.log('Executing navigation to setup-family...');
+          router.replace('/(auth)/setup-family');
+          console.log('Navigation command sent');
+        }, 100);
+        
         return;
       }
 
-      // Navigate to home
-      console.log('User has family, navigating to home...');
+      // User has family - navigate to home
+      console.log('[3/3] User HAS family - redirecting to home');
+      console.log('Navigation target: /(tabs)/(home)');
+      
+      // Clear loading state BEFORE navigation
       setLoading(false);
       
       // Use setTimeout to ensure state is cleared before navigation
       setTimeout(() => {
+        console.log('Executing navigation to home...');
         router.replace('/(tabs)/(home)');
+        console.log('Navigation command sent');
       }, 100);
+      
     } catch (error) {
-      console.error('Login success handler error:', error);
+      console.error('=== handleLoginSuccess ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      // Always clear loading state on error
       setLoading(false);
+      
       Alert.alert(
         t('common.error'), 
         'Er ging iets mis bij het controleren van je gezin. Probeer het opnieuw.'
       );
+    } finally {
+      console.log('=== handleLoginSuccess END ===');
+      console.log('Loading state should be false now');
     }
   };
 
@@ -68,59 +82,79 @@ export default function LoginScreen() {
       return;
     }
 
+    console.log('=== Apple Sign-In START ===');
     setLoading(true);
+    console.log('Loading state set to TRUE');
+    
     try {
-      console.log('=== Apple Sign-In (Login) ===');
+      console.log('[1/4] Calling signInWithApple...');
       const result = await signInWithApple();
+      console.log('[2/4] Apple sign-in result:', { success: result.success, hasUser: !!result.user, hasError: !!result.error });
       
       if (!result.success) {
-        console.error('Apple sign-in failed:', result.error);
+        console.error('[3/4] Apple sign-in FAILED:', result.error);
         Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
+        console.log('Loading state set to FALSE (error)');
         return;
       }
 
       if (!result.user || !result.user.id) {
-        console.error('Apple sign-in succeeded but no user returned');
+        console.error('[3/4] Apple sign-in succeeded but NO USER returned');
         Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
         setLoading(false);
+        console.log('Loading state set to FALSE (no user)');
         return;
       }
 
-      console.log('Apple sign-in successful, user:', result.user.id);
+      console.log('[3/4] Apple sign-in successful, user ID:', result.user.id);
+      console.log('[4/4] Calling handleLoginSuccess...');
       await handleLoginSuccess(result.user.id);
+      
     } catch (error: any) {
-      console.error('Apple sign in error:', error);
+      console.error('=== Apple Sign-In ERROR ===');
+      console.error('Error:', error);
       setLoading(false);
+      console.log('Loading state set to FALSE (exception)');
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Apple');
     }
   };
 
   const handleGoogleSignIn = async () => {
+    console.log('=== Google Sign-In START ===');
     setLoading(true);
+    console.log('Loading state set to TRUE');
+    
     try {
-      console.log('=== Google Sign-In (Login) ===');
+      console.log('[1/4] Calling signInWithGoogle...');
       const result = await signInWithGoogle();
+      console.log('[2/4] Google sign-in result:', { success: result.success, hasUser: !!result.user, hasError: !!result.error });
       
       if (!result.success) {
-        console.error('Google sign-in failed:', result.error);
+        console.error('[3/4] Google sign-in FAILED:', result.error);
         Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         setLoading(false);
+        console.log('Loading state set to FALSE (error)');
         return;
       }
 
       if (!result.user || !result.user.id) {
-        console.error('Google sign-in succeeded but no user returned');
+        console.error('[3/4] Google sign-in succeeded but NO USER returned');
         Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen');
         setLoading(false);
+        console.log('Loading state set to FALSE (no user)');
         return;
       }
 
-      console.log('Google sign-in successful, user:', result.user.id);
+      console.log('[3/4] Google sign-in successful, user ID:', result.user.id);
+      console.log('[4/4] Calling handleLoginSuccess...');
       await handleLoginSuccess(result.user.id);
+      
     } catch (error: any) {
-      console.error('Google sign in error:', error);
+      console.error('=== Google Sign-In ERROR ===');
+      console.error('Error:', error);
       setLoading(false);
+      console.log('Loading state set to FALSE (exception)');
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen met Google');
     }
   };
@@ -135,19 +169,28 @@ export default function LoginScreen() {
       return;
     }
 
+    console.log('=== Email Sign-In START ===');
+    console.log('Email:', email);
     setLoading(true);
+    console.log('Loading state set to TRUE');
+    
     try {
-      console.log('=== Email Sign-In ===');
-      console.log('Email:', email);
-      
+      console.log('[1/5] Calling signInWithEmail...');
       const result = await signInWithEmail(email, password);
-      console.log('Sign-in result:', { success: result.success, hasUser: !!result.user, hasSession: !!result.session });
+      console.log('[2/5] Email sign-in result:', { 
+        success: result.success, 
+        hasUser: !!result.user, 
+        hasSession: !!result.session,
+        hasError: !!result.error,
+        requiresVerification: result.requiresVerification 
+      });
       
       if (!result.success) {
-        console.error('Email sign-in failed:', result.error);
+        console.error('[3/5] Email sign-in FAILED:', result.error);
         
         // Check if email verification is required
         if (result.requiresVerification) {
+          console.log('[3/5] Email verification required');
           Alert.alert(
             'E-mail niet bevestigd',
             'Je e-mailadres is nog niet bevestigd. Controleer je inbox voor de bevestigingsmail.\n\nAls je de e-mail niet hebt ontvangen, neem dan contact op met support@flowfam.nl.',
@@ -170,30 +213,39 @@ export default function LoginScreen() {
         } else {
           Alert.alert(t('common.error'), result.error || 'Er ging iets mis bij het inloggen');
         }
+        
         setLoading(false);
+        console.log('Loading state set to FALSE (error)');
         return;
       }
 
       // Check if we have user and session
       if (!result.user || !result.user.id) {
-        console.error('Sign-in succeeded but no user returned');
+        console.error('[3/5] Sign-in succeeded but NO USER returned');
         Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen. Probeer het opnieuw.');
         setLoading(false);
+        console.log('Loading state set to FALSE (no user)');
         return;
       }
 
       if (!result.session) {
-        console.error('Sign-in succeeded but no session returned');
+        console.error('[4/5] Sign-in succeeded but NO SESSION returned');
         Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen. Probeer het opnieuw.');
         setLoading(false);
+        console.log('Loading state set to FALSE (no session)');
         return;
       }
 
-      console.log('Email sign-in successful, user:', result.user.id);
+      console.log('[3/5] Email sign-in successful, user ID:', result.user.id);
+      console.log('[4/5] Session exists:', !!result.session);
+      console.log('[5/5] Calling handleLoginSuccess...');
       await handleLoginSuccess(result.user.id);
+      
     } catch (error: any) {
-      console.error('Email sign in error:', error);
+      console.error('=== Email Sign-In ERROR ===');
+      console.error('Error:', error);
       setLoading(false);
+      console.log('Loading state set to FALSE (exception)');
       Alert.alert(t('common.error'), 'Er ging iets mis bij het inloggen. Probeer het opnieuw.');
     }
   };
@@ -205,7 +257,10 @@ export default function LoginScreen() {
           style={styles.backButton}
           onPress={() => {
             if (!loading) {
+              console.log('Back button pressed - returning to auth selection');
               setStep('auth');
+            } else {
+              console.log('Back button pressed but loading is true - ignoring');
             }
           }}
           disabled={loading}
@@ -274,7 +329,10 @@ export default function LoginScreen() {
         style={styles.backButton}
         onPress={() => {
           if (!loading) {
+            console.log('Back button pressed - going back');
             router.back();
+          } else {
+            console.log('Back button pressed but loading is true - ignoring');
           }
         }}
         disabled={loading}
@@ -338,7 +396,10 @@ export default function LoginScreen() {
 
           <TouchableOpacity
             style={[styles.button, styles.orangeButton, loading && styles.buttonDisabled]}
-            onPress={() => setStep('email')}
+            onPress={() => {
+              console.log('Email login button pressed');
+              setStep('email');
+            }}
             disabled={loading}
             activeOpacity={0.8}
           >

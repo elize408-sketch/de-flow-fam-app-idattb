@@ -24,20 +24,22 @@ export interface FamilyMemberDB {
 // Create a new family with a unique code
 export async function createFamily(): Promise<{ success: boolean; family?: Family; error?: string }> {
   try {
-    console.log('Creating new family...');
+    console.log('=== createFamily START ===');
+    console.log('Generating family code...');
     
     // Generate family code using the database function
     const { data: codeData, error: codeError } = await supabase.rpc('generate_family_code');
     
     if (codeError) {
-      console.error('Error generating family code:', codeError);
+      console.error('❌ Error generating family code:', codeError);
       return { success: false, error: 'Kon geen gezinscode genereren' };
     }
 
     const familyCode = codeData as string;
-    console.log('Generated family code:', familyCode);
+    console.log('✅ Generated family code:', familyCode);
 
     // Create the family
+    console.log('Creating family in database...');
     const { data, error } = await supabase
       .from('families')
       .insert([{ family_code: familyCode }])
@@ -45,14 +47,16 @@ export async function createFamily(): Promise<{ success: boolean; family?: Famil
       .single();
 
     if (error) {
-      console.error('Error creating family:', error);
+      console.error('❌ Error creating family:', error);
       return { success: false, error: 'Kon geen gezin aanmaken' };
     }
 
     console.log('✅ Family created successfully:', data.id);
+    console.log('=== createFamily END ===');
     return { success: true, family: data };
   } catch (error: any) {
-    console.error('Create family error:', error);
+    console.error('=== createFamily ERROR ===');
+    console.error('Error:', error);
     return { success: false, error: error.message || 'Er ging iets mis bij het aanmaken van het gezin' };
   }
 }
@@ -60,7 +64,8 @@ export async function createFamily(): Promise<{ success: boolean; family?: Famil
 // Join an existing family using a family code
 export async function joinFamily(familyCode: string): Promise<{ success: boolean; family?: Family; error?: string }> {
   try {
-    console.log('Joining family with code:', familyCode);
+    console.log('=== joinFamily START ===');
+    console.log('Family code:', familyCode);
     
     const { data, error } = await supabase
       .from('families')
@@ -69,14 +74,16 @@ export async function joinFamily(familyCode: string): Promise<{ success: boolean
       .single();
 
     if (error || !data) {
-      console.error('Error finding family:', error);
+      console.error('❌ Error finding family:', error);
       return { success: false, error: 'Oeps, deze code klopt niet.' };
     }
 
     console.log('✅ Family found:', data.id);
+    console.log('=== joinFamily END ===');
     return { success: true, family: data };
   } catch (error: any) {
-    console.error('Join family error:', error);
+    console.error('=== joinFamily ERROR ===');
+    console.error('Error:', error);
     return { success: false, error: 'Oeps, deze code klopt niet.' };
   }
 }
@@ -91,7 +98,11 @@ export async function addFamilyMember(
   photoUri?: string
 ): Promise<{ success: boolean; member?: FamilyMemberDB; error?: string }> {
   try {
-    console.log('Adding family member:', { familyId, userId, name, role });
+    console.log('=== addFamilyMember START ===');
+    console.log('Family ID:', familyId);
+    console.log('User ID:', userId);
+    console.log('Name:', name);
+    console.log('Role:', role);
     
     const { data, error } = await supabase
       .from('family_members')
@@ -108,14 +119,16 @@ export async function addFamilyMember(
       .single();
 
     if (error) {
-      console.error('Error adding family member:', error);
+      console.error('❌ Error adding family member:', error);
       return { success: false, error: 'Kon gezinslid niet toevoegen' };
     }
 
     console.log('✅ Family member added successfully:', data.id);
+    console.log('=== addFamilyMember END ===');
     return { success: true, member: data };
   } catch (error: any) {
-    console.error('Add family member error:', error);
+    console.error('=== addFamilyMember ERROR ===');
+    console.error('Error:', error);
     return { success: false, error: error.message || 'Er ging iets mis bij het toevoegen van het gezinslid' };
   }
 }
@@ -123,7 +136,8 @@ export async function addFamilyMember(
 // Get family members for a user
 export async function getFamilyMembers(userId: string): Promise<{ success: boolean; members?: FamilyMemberDB[]; error?: string }> {
   try {
-    console.log('Getting family members for user:', userId);
+    console.log('=== getFamilyMembers START ===');
+    console.log('User ID:', userId);
     
     // First get the user's family_id
     const { data: userMember, error: userError } = await supabase
@@ -133,7 +147,7 @@ export async function getFamilyMembers(userId: string): Promise<{ success: boole
       .single();
 
     if (userError || !userMember) {
-      console.error('Error getting user family:', userError);
+      console.error('❌ Error getting user family:', userError);
       return { success: false, error: 'Kon gezin niet vinden' };
     }
 
@@ -146,14 +160,16 @@ export async function getFamilyMembers(userId: string): Promise<{ success: boole
       .eq('family_id', userMember.family_id);
 
     if (error) {
-      console.error('Error getting family members:', error);
+      console.error('❌ Error getting family members:', error);
       return { success: false, error: 'Kon gezinsleden niet ophalen' };
     }
 
     console.log('✅ Found family members:', data?.length || 0);
+    console.log('=== getFamilyMembers END ===');
     return { success: true, members: data || [] };
   } catch (error: any) {
-    console.error('Get family members error:', error);
+    console.error('=== getFamilyMembers ERROR ===');
+    console.error('Error:', error);
     return { success: false, error: error.message || 'Er ging iets mis bij het ophalen van gezinsleden' };
   }
 }
@@ -161,7 +177,8 @@ export async function getFamilyMembers(userId: string): Promise<{ success: boole
 // Get family by user ID
 export async function getFamilyByUserId(userId: string): Promise<{ success: boolean; family?: Family; error?: string }> {
   try {
-    console.log('Getting family for user:', userId);
+    console.log('=== getFamilyByUserId START ===');
+    console.log('User ID:', userId);
     
     // First get the user's family_id
     const { data: userMember, error: userError } = await supabase
@@ -171,7 +188,7 @@ export async function getFamilyByUserId(userId: string): Promise<{ success: bool
       .single();
 
     if (userError || !userMember) {
-      console.log('User is not part of any family');
+      console.log('❌ User is not part of any family');
       return { success: false, error: 'Geen gezin gevonden' };
     }
 
@@ -185,14 +202,16 @@ export async function getFamilyByUserId(userId: string): Promise<{ success: bool
       .single();
 
     if (error || !data) {
-      console.error('Error getting family:', error);
+      console.error('❌ Error getting family:', error);
       return { success: false, error: 'Kon gezin niet ophalen' };
     }
 
     console.log('✅ Family found:', data.id);
+    console.log('=== getFamilyByUserId END ===');
     return { success: true, family: data };
   } catch (error: any) {
-    console.error('Get family error:', error);
+    console.error('=== getFamilyByUserId ERROR ===');
+    console.error('Error:', error);
     return { success: false, error: error.message || 'Er ging iets mis bij het ophalen van het gezin' };
   }
 }
@@ -200,24 +219,37 @@ export async function getFamilyByUserId(userId: string): Promise<{ success: bool
 // Check if user has a family
 export async function userHasFamily(userId: string): Promise<boolean> {
   try {
-    console.log('Checking if user has family:', userId);
+    console.log('=== userHasFamily START ===');
+    console.log('User ID:', userId);
+    console.log('Timestamp:', new Date().toISOString());
     
+    console.log('[1/3] Querying family_members table...');
     const { data, error } = await supabase
       .from('family_members')
       .select('id')
       .eq('user_id', userId)
       .maybeSingle();
 
+    console.log('[2/3] Query completed');
+    console.log('Data:', data);
+    console.log('Error:', error);
+
     if (error) {
-      console.error('Error checking user family:', error);
+      console.error('❌ Error checking user family:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      console.log('=== userHasFamily END (error) ===');
       return false;
     }
 
     const hasFamily = data !== null;
-    console.log('User has family:', hasFamily);
+    console.log('[3/3] Result:', hasFamily ? '✅ HAS FAMILY' : '❌ NO FAMILY');
+    console.log('=== userHasFamily END ===');
     return hasFamily;
   } catch (error) {
-    console.error('Check user family error:', error);
+    console.error('=== userHasFamily EXCEPTION ===');
+    console.error('Error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.log('=== userHasFamily END (exception) ===');
     return false;
   }
 }
