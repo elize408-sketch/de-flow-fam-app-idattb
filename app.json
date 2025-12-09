@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Flow Fam",
@@ -20,8 +21,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDisplayName": "Flow Fam",
         "CFBundleName": "FlowFam"
-      },
-      "googleServicesFile": "./GoogleService-Info.plist"
+      }
     },
     "android": {
       "package": "nl.flowfam.gezinsapp",
@@ -30,8 +30,7 @@
         "foregroundImage": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
         "backgroundColor": "#F9F6F1"
       },
-      "edgeToEdgeEnabled": true,
-      "googleServicesFile": "./google-services.json"
+      "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
