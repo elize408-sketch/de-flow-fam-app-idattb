@@ -3,7 +3,7 @@
   "expo": {
     "name": "Flow Fam",
     "slug": "Flow Fam",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
     "userInterfaceStyle": "automatic",
