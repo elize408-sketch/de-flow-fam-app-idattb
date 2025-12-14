@@ -1,6 +1,15 @@
-
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Platform, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Image,
+  Platform,
+  Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
@@ -36,6 +45,7 @@ export default function AddFamilyMembersScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { currentFamily, reloadCurrentUser } = useFamily();
+
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [currentName, setCurrentName] = useState('');
   const [currentRole, setCurrentRole] = useState<'parent' | 'child'>('parent');
@@ -45,12 +55,9 @@ export default function AddFamilyMembersScreen() {
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (status !== 'granted') {
-      Alert.alert(
-        t('common.error'),
-        'We hebben toestemming nodig om toegang te krijgen tot je foto\'s'
-      );
+      Alert.alert(t('common.error'), "We hebben toestemming nodig om toegang te krijgen tot je foto's");
       return;
     }
 
@@ -81,7 +88,7 @@ export default function AddFamilyMembersScreen() {
     };
 
     setMembers([...members, newMember]);
-    
+
     // Reset form
     setCurrentName('');
     setCurrentRole('parent');
@@ -96,6 +103,13 @@ export default function AddFamilyMembersScreen() {
   const handleContinue = async () => {
     if (members.length === 0) {
       Alert.alert(t('common.error'), 'Voeg minimaal één gezinslid toe');
+      return;
+    }
+
+    // ✅ Ensure at least one parent exists
+    const firstParentIndex = members.findIndex(m => m.role === 'parent');
+    if (firstParentIndex === -1) {
+      Alert.alert(t('common.error'), 'Voeg minimaal één ouder toe.');
       return;
     }
 
@@ -117,25 +131,25 @@ export default function AddFamilyMembersScreen() {
 
       // Check if we have a family, if not create one
       let familyId = currentFamily?.id;
-      
+
       if (!familyId) {
         console.log('No family found, creating new family...');
         const { success, family, error } = await createFamily();
-        
+
         if (!success || !family) {
           console.error('Failed to create family:', error);
           Alert.alert(t('common.error'), `Kon geen gezin aanmaken: ${error}`);
           setSaving(false);
           return;
         }
-        
+
         familyId = family.id;
         console.log('Created new family:', familyId);
       } else {
         console.log('Using existing family:', familyId);
       }
 
-      // Check if current user already has a family_member record
+      // Check if current user already has a family_member record for this family
       const { data: existingMember, error: checkError } = await supabase
         .from('family_members')
         .select('*')
@@ -149,11 +163,11 @@ export default function AddFamilyMembersScreen() {
 
       console.log('Existing member:', existingMember);
 
-      // Find if current user is in the members list (first parent)
-      const currentUserMember = members.find(m => m.role === 'parent');
-      
+      // Find the first parent in the UI list (we will attach authUser.id to THIS member)
+      const currentUserMember = members[firstParentIndex];
+
       if (existingMember && currentUserMember) {
-        // Update existing member with the role and details from the form
+        // ✅ Update existing member with the role and details from the form
         console.log('Updating existing member with role:', currentUserMember.role);
         const { error: updateError } = await supabase
           .from('family_members')
@@ -174,22 +188,23 @@ export default function AddFamilyMembersScreen() {
 
         console.log('Updated current user member successfully');
 
-        // Remove current user from members list to avoid duplicate
-        const otherMembers = members.filter(m => m.id !== currentUserMember.id);
-        
         // Save other members (children and additional parents without user_id)
+        const otherMembers = members.filter(m => m.id !== currentUserMember.id);
+
         for (const member of otherMembers) {
           const { error: insertError } = await supabase
             .from('family_members')
-            .insert([{
-              family_id: familyId,
-              user_id: null, // Other members don't have a user_id yet
-              name: member.name,
-              role: member.role,
-              color: member.color,
-              photo_uri: member.photoUri,
-              coins: 0,
-            }]);
+            .insert([
+              {
+                family_id: familyId,
+                user_id: null, // Other members don't have a user_id yet
+                name: member.name,
+                role: member.role,
+                color: member.color,
+                photo_uri: member.photoUri,
+                coins: 0,
+              },
+            ]);
 
           if (insertError) {
             console.error('Error inserting member:', insertError);
@@ -201,10 +216,11 @@ export default function AddFamilyMembersScreen() {
           console.log('Inserted member:', member.name);
         }
       } else {
-        // No existing member, insert all members
+        // ✅ No existing member, insert ALL members
+        // ✅ IMPORTANT: Attach authUser.id to the FIRST parent (not index 0)
         const membersToInsert = members.map((member, index) => ({
           family_id: familyId,
-          user_id: index === 0 && member.role === 'parent' ? authUser.id : null, // First parent gets the user_id
+          user_id: index === firstParentIndex ? authUser.id : null,
           name: member.name,
           role: member.role,
           color: member.color,
@@ -213,10 +229,9 @@ export default function AddFamilyMembersScreen() {
         }));
 
         console.log('Inserting all members:', membersToInsert.length);
+        console.log('Auth user attached to:', membersToInsert[firstParentIndex]);
 
-        const { error: insertError } = await supabase
-          .from('family_members')
-          .insert(membersToInsert);
+        const { error: insertError } = await supabase.from('family_members').insert(membersToInsert);
 
         if (insertError) {
           console.error('Error inserting members:', insertError);
@@ -226,6 +241,17 @@ export default function AddFamilyMembersScreen() {
         }
 
         console.log('Inserted all members successfully');
+
+        // ✅ Debug check: verify my row exists after insert
+        const { data: me, error: meErr } = await supabase
+          .from('family_members')
+          .select('id,family_id,user_id,role,name')
+          .eq('user_id', authUser.id)
+          .eq('family_id', familyId)
+          .maybeSingle();
+
+        console.log('✅ After insert, my family_members row:', me);
+        if (meErr) console.log('⚠️ After insert check error:', meErr);
       }
 
       // Reload current user to get updated role and family
@@ -234,8 +260,7 @@ export default function AddFamilyMembersScreen() {
 
       console.log('Family members saved successfully');
       console.log('Navigating to home...');
-      
-      // Navigate to the homepage
+
       router.replace('/(tabs)/(home)');
     } catch (error: any) {
       console.error('Error saving family members:', error);
@@ -247,10 +272,7 @@ export default function AddFamilyMembersScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <IconSymbol
           ios_icon_name="chevron.left"
           android_material_icon_name="arrow-back"
@@ -259,28 +281,21 @@ export default function AddFamilyMembersScreen() {
         />
       </TouchableOpacity>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <Text style={styles.title}>Gezinsleden toevoegen</Text>
-          <Text style={styles.subtitle}>
-            Voeg alle gezinsleden toe die de app gaan gebruiken
-          </Text>
+          <Text style={styles.subtitle}>Voeg alle gezinsleden toe die de app gaan gebruiken</Text>
         </View>
 
-        {/* Add Member Form */}
         <View style={styles.formSection}>
           <Text style={styles.sectionTitle}>Nieuw gezinslid</Text>
 
-          {/* Photo Picker */}
           <View style={styles.photoSection}>
-            <TouchableOpacity
-              style={styles.photoButton}
-              onPress={pickImage}
-            >
+            <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
               {currentPhoto ? (
                 <Image source={{ uri: currentPhoto }} style={styles.photoPreview} />
               ) : (
@@ -297,7 +312,6 @@ export default function AddFamilyMembersScreen() {
             <Text style={styles.photoLabel}>Foto toevoegen</Text>
           </View>
 
-          {/* Name Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Naam</Text>
             <TextInput
@@ -310,15 +324,11 @@ export default function AddFamilyMembersScreen() {
             />
           </View>
 
-          {/* Role Selection */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Rol</Text>
             <View style={styles.roleButtons}>
               <TouchableOpacity
-                style={[
-                  styles.roleButton,
-                  currentRole === 'parent' && styles.roleButtonActive,
-                ]}
+                style={[styles.roleButton, currentRole === 'parent' && styles.roleButtonActive]}
                 onPress={() => setCurrentRole('parent')}
               >
                 <IconSymbol
@@ -338,10 +348,7 @@ export default function AddFamilyMembersScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  styles.roleButton,
-                  currentRole === 'child' && styles.roleButtonActive,
-                ]}
+                style={[styles.roleButton, currentRole === 'child' && styles.roleButtonActive]}
                 onPress={() => setCurrentRole('child')}
               >
                 <IconSymbol
@@ -351,10 +358,7 @@ export default function AddFamilyMembersScreen() {
                   color={currentRole === 'child' ? colors.card : colors.text}
                 />
                 <Text
-                  style={[
-                    styles.roleButtonText,
-                    currentRole === 'child' && styles.roleButtonTextActive,
-                  ]}
+                  style={[styles.roleButtonText, currentRole === 'child' && styles.roleButtonTextActive]}
                 >
                   Kind
                 </Text>
@@ -362,7 +366,6 @@ export default function AddFamilyMembersScreen() {
             </View>
           </View>
 
-          {/* Color Selection */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Kleur</Text>
             <View style={styles.colorGrid}>
@@ -389,11 +392,7 @@ export default function AddFamilyMembersScreen() {
             </View>
           </View>
 
-          {/* Add Button */}
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={addMember}
-          >
+          <TouchableOpacity style={styles.addButton} onPress={addMember}>
             <IconSymbol
               ios_icon_name="plus.circle.fill"
               android_material_icon_name="add-circle"
@@ -404,12 +403,10 @@ export default function AddFamilyMembersScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Members List */}
         {members.length > 0 && (
           <View style={styles.membersSection}>
-            <Text style={styles.sectionTitle}>
-              Gezinsleden ({members.length})
-            </Text>
+            <Text style={styles.sectionTitle}>Gezinsleden ({members.length})</Text>
+
             {members.map((member, index) => (
               <View key={index} style={styles.memberCard}>
                 <View style={styles.memberInfo}>
@@ -417,22 +414,17 @@ export default function AddFamilyMembersScreen() {
                     <Image source={{ uri: member.photoUri }} style={styles.memberPhoto} />
                   ) : (
                     <View style={[styles.memberPhotoPlaceholder, { backgroundColor: member.color }]}>
-                      <Text style={styles.memberInitial}>
-                        {member.name.charAt(0).toUpperCase()}
-                      </Text>
+                      <Text style={styles.memberInitial}>{member.name.charAt(0).toUpperCase()}</Text>
                     </View>
                   )}
+
                   <View style={styles.memberDetails}>
                     <Text style={styles.memberName}>{member.name}</Text>
-                    <Text style={styles.memberRole}>
-                      {member.role === 'parent' ? 'Ouder' : 'Kind'}
-                    </Text>
+                    <Text style={styles.memberRole}>{member.role === 'parent' ? 'Ouder' : 'Kind'}</Text>
                   </View>
                 </View>
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => removeMember(member.id)}
-                >
+
+                <TouchableOpacity style={styles.removeButton} onPress={() => removeMember(member.id)}>
                   <IconSymbol
                     ios_icon_name="trash.fill"
                     android_material_icon_name="delete"
@@ -445,16 +437,13 @@ export default function AddFamilyMembersScreen() {
           </View>
         )}
 
-        {/* Continue Button */}
         {members.length > 0 && (
           <TouchableOpacity
             style={[styles.continueButton, saving && styles.continueButtonDisabled]}
             onPress={handleContinue}
             disabled={saving}
           >
-            <Text style={styles.continueButtonText}>
-              {saving ? 'Opslaan...' : 'Doorgaan'}
-            </Text>
+            <Text style={styles.continueButtonText}>{saving ? 'Opslaan...' : 'Doorgaan'}</Text>
             {!saving && (
               <IconSymbol
                 ios_icon_name="arrow.right"
@@ -466,7 +455,6 @@ export default function AddFamilyMembersScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Bottom spacing */}
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -474,10 +462,7 @@ export default function AddFamilyMembersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   backButton: {
     position: 'absolute',
     top: Platform.OS === 'android' ? 48 : 60,
@@ -489,17 +474,13 @@ const styles = StyleSheet.create({
     boxShadow: `0px 2px 8px ${colors.shadow}`,
     elevation: 2,
   },
-  scrollView: {
-    flex: 1,
-  },
+  scrollView: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 88 : 100,
     paddingBottom: 40,
   },
-  header: {
-    marginBottom: 30,
-  },
+  header: { marginBottom: 30 },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -507,11 +488,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: 'Poppins_700Bold',
   },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
+  subtitle: { fontSize: 16, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
   formSection: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -527,13 +504,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontFamily: 'Poppins_700Bold',
   },
-  photoSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  photoButton: {
-    marginBottom: 8,
-  },
+  photoSection: { alignItems: 'center', marginBottom: 20 },
+  photoButton: { marginBottom: 8 },
   photoPlaceholder: {
     width: 100,
     height: 100,
@@ -551,14 +523,8 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: colors.warmOrange,
   },
-  photoLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
+  photoLabel: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+  inputContainer: { marginBottom: 20 },
   label: {
     fontSize: 14,
     fontWeight: '600',
@@ -577,10 +543,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.textSecondary + '20',
   },
-  roleButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
+  roleButtons: { flexDirection: 'row', gap: 12 },
   roleButton: {
     flex: 1,
     flexDirection: 'row',
@@ -593,24 +556,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.textSecondary + '20',
   },
-  roleButtonActive: {
-    backgroundColor: colors.warmOrange,
-    borderColor: colors.warmOrange,
-  },
+  roleButtonActive: { backgroundColor: colors.warmOrange, borderColor: colors.warmOrange },
   roleButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
-  roleButtonTextActive: {
-    color: colors.card,
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
+  roleButtonTextActive: { color: colors.card },
+  colorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   colorOption: {
     width: 50,
     height: 50,
@@ -620,10 +574,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  colorOptionActive: {
-    borderColor: colors.darkBrown,
-    borderWidth: 3,
-  },
+  colorOptionActive: { borderColor: colors.darkBrown, borderWidth: 3 },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -641,9 +592,7 @@ const styles = StyleSheet.create({
     color: colors.card,
     fontFamily: 'Poppins_600SemiBold',
   },
-  membersSection: {
-    marginBottom: 20,
-  },
+  membersSection: { marginBottom: 20 },
   memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -655,17 +604,8 @@ const styles = StyleSheet.create({
     boxShadow: `0px 2px 8px ${colors.shadow}`,
     elevation: 2,
   },
-  memberInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  memberPhoto: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
+  memberInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  memberPhoto: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
   memberPhotoPlaceholder: {
     width: 50,
     height: 50,
@@ -674,15 +614,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  memberInitial: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  memberDetails: {
-    flex: 1,
-  },
+  memberInitial: { fontSize: 20, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
+  memberDetails: { flex: 1 },
   memberName: {
     fontSize: 16,
     fontWeight: '600',
@@ -690,14 +623,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
     marginBottom: 2,
   },
-  memberRole: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  removeButton: {
-    padding: 8,
-  },
+  memberRole: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+  removeButton: { padding: 8 },
   continueButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -709,9 +636,7 @@ const styles = StyleSheet.create({
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 4,
   },
-  continueButtonDisabled: {
-    opacity: 0.6,
-  },
+  continueButtonDisabled: { opacity: 0.6 },
   continueButtonText: {
     fontSize: 18,
     fontWeight: '700',
