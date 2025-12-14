@@ -1,0 +1,84 @@
+{
+  "expo": {
+    "name": "Flow Fam",
+    "slug": "flow-fam",
+    "version": "1.0.6",
+    "orientation": "portrait",
+    "icon": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F9F6F1"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "nl.flowfam.gezinsapp",
+      "deploymentTarget": "16.0",
+      "buildNumber": "1",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "Flow Fam",
+        "CFBundleName": "FlowFam"
+      }
+    },
+    "android": {
+      "package": "nl.flowfam.gezinsapp",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
+        "backgroundColor": "#F9F6F1"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-router",
+      "expo-web-browser",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.143b077c-c9bc-49ad-8f27-0180e47a6e1a"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0",
+            "useFrameworks": "static",
+            "flipper": false
+          },
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 23
+          }
+        }
+      ]
+    ],
+    "scheme": "flowfam",
+    "experiments": {
+      "typedRoutes": true,
+      "newArchEnabled": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "143b077c-c9bc-49ad-8f27-0180e47a6e1a"
+      },
+      "SUPABASE_URL": "https://iykrwfgfdpnlfmdexrpr.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5a3J3ZmdmZHBubGZtZGV4cnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNTA4ODIsImV4cCI6MjA3OTYyNjg4Mn0.e2KS_hzDwXb-oGPQW7tC6g70Wo5CDMVb61gGVqPiYTI"
+    },
+    "sdkVersion": "54.0.0",
+    "platforms": ["ios", "android", "web"],
+    "cli": {
+      "appVersionSource": "local"
+    }
+  }
+}
