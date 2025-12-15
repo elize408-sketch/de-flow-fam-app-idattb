@@ -1,4 +1,22 @@
+import React from "react";
+import { Stack } from "expo-router";
 
+// ... je andere imports
+
+export default function HomeScreen() {
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: false,
+          headerShadowVisible: false,
+        }}
+      />
+
+      {/* jouw bestaande UI hieronder */}
+    </>
+  );
+}
 import React from 'react';
 import {
   StyleSheet,
