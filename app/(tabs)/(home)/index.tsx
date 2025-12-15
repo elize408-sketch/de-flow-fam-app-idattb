@@ -61,6 +61,12 @@ export default function HomeScreen() {
       route: '/(tabs)/contactbook',
     },
     {
+      title: 'Roosters',
+      color: '#3498DB',
+      icon: 'time-outline',
+      route: '/(tabs)/roosters',
+    },
+    {
       title: t('home.menu.shop'),
       color: colors.redPink,
       icon: 'shopping-outline',

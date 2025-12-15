@@ -1,84 +1,29 @@
 
-export interface SchoolSchedule {
+export interface Schedule {
   id: string;
-  familyId: string;
-  childId: string;
-  subject: string;
-  dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-  startTime: string;
-  endTime: string;
-  location?: string;
-  icon: string;
-  color: string;
-  isRecurring: boolean;
-  eventType: 'regular' | 'special' | 'trip' | 'holiday' | 'early_dismissal' | 'parent_evening' | 'class_photo' | 'study_day';
-  notes?: string;
-  notificationEnabled: boolean;
-  notificationTime?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface WorkSchedule {
-  id: string;
-  familyId: string;
-  parentId: string;
-  dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-  startTime: string;
-  endTime: string;
-  shiftLabel: 'morning' | 'afternoon' | 'evening' | 'night' | 'custom';
-  customLabel?: string;
-  isRecurring: boolean;
-  color: string;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface TaskBoardItem {
-  id: string;
-  familyId: string;
-  childId: string;
+  family_id: string;
+  member_id: string;
   title: string;
-  description?: string;
-  icon: string;
-  points: number;
-  status: 'todo' | 'in_progress' | 'done';
-  repeatType: 'none' | 'daily' | 'weekly';
-  orderIndex: number;
-  completedAt?: Date;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
+  type: 'school' | 'work' | 'sport' | 'other';
+  start_date: string;
+  end_date: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface RewardGoal {
+export interface ScheduleItem {
   id: string;
-  familyId: string;
-  childId: string;
-  title: string;
-  description?: string;
-  icon: string;
-  pointsRequired: number;
-  isActive: boolean;
-  isCompleted: boolean;
-  completedAt?: Date;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
+  schedule_id: string;
+  day_of_week: number; // 1-7 (Monday-Sunday)
+  start_time: string;
+  end_time: string;
+  location: string | null;
+  note: string | null;
+  color: string | null;
+  created_at: string;
 }
 
-export interface PointsTransaction {
-  id: string;
-  familyId: string;
-  childId: string;
-  points: number;
-  transactionType: 'earned' | 'spent' | 'bonus' | 'penalty' | 'reward_redeemed' | 'task_completed';
-  description: string;
-  relatedTaskId?: string;
-  relatedRewardId?: string;
-  createdBy: string;
-  createdAt: Date;
+export interface ScheduleWithItems extends Schedule {
+  items: ScheduleItem[];
 }
-
-export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
