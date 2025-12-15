@@ -55,6 +55,12 @@ export default function HomeScreen() {
       route: '/(tabs)/meals',
     },
     {
+      title: 'Contactboek',
+      color: '#9B59B6',
+      icon: 'book-outline',
+      route: '/(tabs)/contactbook',
+    },
+    {
       title: t('home.menu.shop'),
       color: colors.redPink,
       icon: 'shopping-outline',

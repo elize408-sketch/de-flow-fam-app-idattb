@@ -48,6 +48,12 @@ const menuItems = [
     route: '/(tabs)/meals',
   },
   {
+    title: 'Contactboek',
+    color: '#9B59B6',
+    icon: 'book-outline',
+    route: '/(tabs)/contactbook',
+  },
+  {
     title: 'Shop',
     color: '#AB47BC',
     icon: 'shopping-outline',

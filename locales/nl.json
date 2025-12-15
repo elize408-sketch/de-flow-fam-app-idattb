@@ -185,7 +185,8 @@
       "notes": "Notities",
       "documents": "Documenten",
       "shop": "Shop",
-      "profile": "Profiel"
+      "profile": "Profiel",
+      "contactbook": "Contactboek"
     }
   },
   "profile": {
@@ -743,6 +744,35 @@
     "familyUpdateMessage": "De agenda is bijgewerkt",
     "minutesAgo": "{{count}} minuten geleden",
     "hoursAgo": "{{count}} uur geleden"
+  },
+  "contactbook": {
+    "title": "Contactboek",
+    "subtitle": "Belangrijke contacten",
+    "addContact": "Contact toevoegen",
+    "noContacts": "Nog geen contacten",
+    "noContactsSubtext": "Voeg het eerste contact toe!",
+    "newContact": "Nieuw contact",
+    "editContact": "Contact bewerken",
+    "name": "Naam",
+    "category": "Categorie",
+    "phone": "Telefoonnummer",
+    "email": "E-mail",
+    "note": "Notitie",
+    "categories": {
+      "huisarts": "🏥 Huisarts",
+      "school": "🏫 School",
+      "oppas": "👶 Oppas",
+      "familie": "👨‍👩‍👧‍👦 Familie",
+      "werk": "💼 Werk",
+      "overig": "📌 Overig"
+    },
+    "contactAdded": "Contact toegevoegd",
+    "contactUpdated": "Contact bijgewerkt",
+    "contactDeleted": "Contact verwijderd",
+    "deleteContactConfirm": "Weet je zeker dat je \"{{name}}\" wilt verwijderen?",
+    "fillName": "Vul een naam in",
+    "noFamily": "Geen gezin gevonden",
+    "noUser": "Geen gebruiker gevonden"
   },
   "language": {
     "title": "Taal",
