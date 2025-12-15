@@ -129,32 +129,65 @@ export default function SettingsScreen() {
       return;
     }
 
-    if (!currentFamily) {
-      Alert.alert(t('common.error'), t('settings.noFamily'));
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
+      // Step 1: Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('Add child - User ID:', user?.id);
+      
+      if (userError || !user) {
+        console.error('Add child - User error:', userError);
+        Alert.alert(t('common.error'), 'Could not get user.');
+        return;
+      }
+
+      // Step 2: Fetch family_id from database
+      const { data: membership, error: membershipError } = await supabase
         .from('family_members')
-        .insert([{
-          family_id: currentFamily.id,
-          user_id: null,
-          name: newMemberName.trim(),
-          role: newMemberRole,
-          color: newMemberColor,
-          photo_uri: newMemberPhoto,
-          coins: 0,
-        }])
+        .select('family_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      console.log('Add child - Membership:', membership);
+      console.log('Add child - Membership error:', membershipError);
+
+      // Step 3: Check if family_id exists
+      if (membershipError || !membership?.family_id) {
+        console.error('Add child - No family found for user:', user.id);
+        Alert.alert(t('common.error'), t('settings.noFamily'));
+        return;
+      }
+
+      const family_id = membership.family_id;
+      console.log('Add child - Family ID:', family_id);
+
+      // Step 4: Insert child
+      const insertPayload = {
+        family_id,
+        user_id: null,
+        name: newMemberName.trim(),
+        role: 'child',
+        color: newMemberColor,
+        photo_uri: newMemberPhoto,
+        coins: 0,
+      };
+      console.log('Add child - Insert payload:', insertPayload);
+
+      const { data, error: insertError } = await supabase
+        .from('family_members')
+        .insert([insertPayload])
         .select()
         .single();
 
-      if (error) {
-        console.error('Error adding family member:', error);
+      if (insertError) {
+        console.error('Add child - Insert error:', insertError.message);
         Alert.alert(t('common.error'), t('settings.couldNotAddMember'));
         return;
       }
 
+      console.log('Add child - Insert success:', data);
+
+      // Step 5: Update local state
       addFamilyMember({
         id: data.id,
         userId: data.user_id,
@@ -165,14 +198,19 @@ export default function SettingsScreen() {
         coins: data.coins || 0,
       });
 
+      // Reload family context
+      await reloadCurrentUser();
+
+      // Close modal and reset form
       setNewMemberName('');
       setNewMemberRole('child');
       setNewMemberColor(AVAILABLE_COLORS[0].value);
       setNewMemberPhoto(null);
       setShowAddMemberModal(false);
+      
       Alert.alert(t('common.success'), t('profile.memberAdded', { name: newMemberName }));
     } catch (error: any) {
-      console.error('Error adding member:', error);
+      console.error('Add child - Error:', error);
       Alert.alert(t('common.error'), t('settings.errorAddingMember'));
     }
   };
