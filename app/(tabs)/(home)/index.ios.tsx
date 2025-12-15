@@ -1,74 +1,81 @@
-import React from 'react';
-import { StyleSheet, View, SafeAreaView, ScrollView, Image } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { HomeMenuItem } from '@/components/HomeMenuItem';
 
-const menuItems = [
-  {
-    title: 'Agenda',
-    color: '#3A8DFF',
-    icon: 'calendar-month-outline',
-    route: '/agenda',
-  },
-  {
-    title: 'Taken',
-    color: '#4CAF50',
-    icon: 'check-circle-outline',
-    route: '/tasks',
-  },
-  {
-    title: 'Boodschappen',
-    color: '#FFB74D',
-    icon: 'cart-outline',
-    route: '/shopping',
-  },
-  {
-    title: 'Financiën',
-    color: '#7ED957',
-    icon: 'currency-eur',
-    route: '/finances',
-  },
-  {
-    title: 'Fotoboek',
-    color: '#FF8A65',
-    icon: 'camera-outline',
-    route: '/memories',
-  },
-  {
-    title: 'Maaltijden',
-    color: '#78C3FF',
-    icon: 'food-outline',
-    route: '/meals',
-  },
-  // ⚠️ Alleen laten staan als je écht een screen hebt: app/(tabs)/contactbook.tsx
-  // Anders doet deze knop niets omdat de route niet bestaat.
-  // {
-  //   title: 'Contactboek',
-  //   color: '#9B59B6',
-  //   icon: 'book-outline',
-  //   route: '/contactbook',
-  // },
-  {
-    title: 'Shop',
-    color: '#AB47BC',
-    icon: 'shopping-outline',
-    route: '/shop',
-  },
-];
+import React from 'react';
+import {
+  StyleSheet,
+  View,
+  SafeAreaView,
+  ScrollView,
+  Platform,
+  Image,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { HomeMenuItem } from '@/components/HomeMenuItem';
+import { colors } from '@/styles/commonStyles';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const menuItems = [
+    {
+      title: t('home.menu.agenda'),
+      color: '#4A90E2',
+      icon: 'calendar-month-outline',
+      route: '/agenda',
+    },
+    {
+      title: t('home.menu.tasks'),
+      color: '#7ED321',
+      icon: 'check-circle-outline',
+      route: '/tasks',
+    },
+    {
+      title: t('home.menu.shopping'),
+      color: colors.warmOrange,
+      icon: 'cart-outline',
+      route: '/shopping',
+    },
+    {
+      title: t('home.menu.finances'),
+      color: '#34C759',
+      icon: 'currency-eur',
+      route: '/finances',
+    },
+    {
+      title: t('home.menu.photobook'),
+      color: colors.redPink,
+      icon: 'camera-outline',
+      route: '/memories',
+    },
+    {
+      title: t('home.menu.meals'),
+      color: colors.warmOrange,
+      icon: 'food-outline',
+      route: '/meals',
+    },
+    {
+      title: 'Contactboek',
+      color: '#9B59B6',
+      icon: 'book-outline',
+      route: '/contactbook',
+    },
+    {
+      title: 'Roosters',
+      color: '#3498DB',
+      icon: 'time-outline',
+      route: '/(tabs)/roosters',
+    },
+    {
+      title: t('home.menu.shop'),
+      color: colors.redPink,
+      icon: 'shopping-outline',
+      route: '/shop',
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Dit haalt "Home" + streep weg */}
-      <Stack.Screen
-        options={{
-          headerShown: false,
-          headerShadowVisible: false,
-        }}
-      />
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.container}
@@ -86,13 +93,14 @@ export default function HomeScreen() {
         {/* Menu Items */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
-            <HomeMenuItem
-              key={index}
-              title={item.title}
-              color={item.color}
-              icon={item.icon}
-              onPress={() => router.push(item.route as any)}
-            />
+            <React.Fragment key={index}>
+              <HomeMenuItem
+                title={item.title}
+                color={item.color}
+                icon={item.icon}
+                onPress={() => router.push(item.route as any)}
+              />
+            </React.Fragment>
           ))}
         </View>
       </ScrollView>
@@ -112,7 +120,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 120,
     alignItems: 'stretch',
   },
@@ -122,13 +130,23 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.darkBrown,
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: `0px 2px 12px rgba(76, 59, 52, 0.08)`,
+      },
+    }),
   },
   familyImage: {
     width: 260,
