@@ -1,13 +1,14 @@
+
 {
   "expo": {
     "name": "Flow Fam",
     "slug": "Flow Fam",
     "version": "1.0.6",
     "orientation": "portrait",
-    "icon": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
+    "icon": "./assets/images/1ce873c4-b13b-46ab-93fd-639f41ad63cb.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
+      "image": "./assets/images/1ce873c4-b13b-46ab-93fd-639f41ad63cb.png",
       "resizeMode": "contain",
       "backgroundColor": "#F9F6F1"
     },
@@ -27,13 +28,13 @@
       "package": "nl.flowfam.gezinsapp",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
+        "foregroundImage": "./assets/images/1ce873c4-b13b-46ab-93fd-639f41ad63cb.png",
         "backgroundColor": "#F9F6F1"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/images/2a050481-20ba-4c09-ad33-1bfc7220789d.png",
+      "favicon": "./assets/images/1ce873c4-b13b-46ab-93fd-639f41ad63cb.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -76,7 +77,11 @@
       "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5a3J3ZmdmZHBubGZtZGV4cnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNTA4ODIsImV4cCI6MjA3OTYyNjg4Mn0.e2KS_hzDwXb-oGPQW7tC6g70Wo5CDMVb61gGVqPiYTI"
     },
     "sdkVersion": "54.0.0",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "cli": {
       "appVersionSource": "local"
     }
