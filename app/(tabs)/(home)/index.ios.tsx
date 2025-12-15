@@ -1,31 +1,6 @@
-import React from "react";
-import { Stack } from "expo-router";
-
-// ... je andere imports
-
-export default function HomeScreen() {
-  return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-          headerShadowVisible: false,
-        }}
-      />
-
-      {/* jouw bestaande UI hieronder */}
-    </>
-  );
-}
 import React from 'react';
-import {
-  StyleSheet,
-  View,
-  SafeAreaView,
-  ScrollView,
-  Image,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import { StyleSheet, View, SafeAreaView, ScrollView, Image } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { HomeMenuItem } from '@/components/HomeMenuItem';
 
 const menuItems = [
@@ -33,49 +8,51 @@ const menuItems = [
     title: 'Agenda',
     color: '#3A8DFF',
     icon: 'calendar-month-outline',
-    route: '/(tabs)/agenda',
+    route: '/agenda',
   },
   {
     title: 'Taken',
     color: '#4CAF50',
     icon: 'check-circle-outline',
-    route: '/(tabs)/tasks',
+    route: '/tasks',
   },
   {
     title: 'Boodschappen',
     color: '#FFB74D',
     icon: 'cart-outline',
-    route: '/(tabs)/shopping',
+    route: '/shopping',
   },
   {
     title: 'Financiën',
     color: '#7ED957',
     icon: 'currency-eur',
-    route: '/(tabs)/finances',
+    route: '/finances',
   },
   {
     title: 'Fotoboek',
     color: '#FF8A65',
     icon: 'camera-outline',
-    route: '/(tabs)/memories',
+    route: '/memories',
   },
   {
     title: 'Maaltijden',
     color: '#78C3FF',
     icon: 'food-outline',
-    route: '/(tabs)/meals',
+    route: '/meals',
   },
-  {
-    title: 'Contactboek',
-    color: '#9B59B6',
-    icon: 'book-outline',
-    route: '/(tabs)/contactbook',
-  },
+  // ⚠️ Alleen laten staan als je écht een screen hebt: app/(tabs)/contactbook.tsx
+  // Anders doet deze knop niets omdat de route niet bestaat.
+  // {
+  //   title: 'Contactboek',
+  //   color: '#9B59B6',
+  //   icon: 'book-outline',
+  //   route: '/contactbook',
+  // },
   {
     title: 'Shop',
     color: '#AB47BC',
     icon: 'shopping-outline',
-    route: '/(tabs)/shop',
+    route: '/shop',
   },
 ];
 
@@ -84,6 +61,14 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Dit haalt "Home" + streep weg */}
+      <Stack.Screen
+        options={{
+          headerShown: false,
+          headerShadowVisible: false,
+        }}
+      />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.container}
@@ -101,14 +86,13 @@ export default function HomeScreen() {
         {/* Menu Items */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
-            <React.Fragment key={index}>
-              <HomeMenuItem
-                title={item.title}
-                color={item.color}
-                icon={item.icon}
-                onPress={() => router.push(item.route as any)}
-              />
-            </React.Fragment>
+            <HomeMenuItem
+              key={index}
+              title={item.title}
+              color={item.color}
+              icon={item.icon}
+              onPress={() => router.push(item.route as any)}
+            />
           ))}
         </View>
       </ScrollView>

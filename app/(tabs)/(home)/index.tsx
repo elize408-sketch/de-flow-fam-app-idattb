@@ -28,37 +28,37 @@ export default function HomeScreen() {
       title: t('home.menu.tasks'),
       color: '#7ED321',
       icon: 'check-circle-outline',
-      route: '/(tabs)/tasks',
+      route: '/tasks',
     },
     {
       title: t('home.menu.shopping'),
       color: colors.warmOrange,
       icon: 'cart-outline',
-      route: '/(tabs)/shopping',
+      route: '/shopping',
     },
     {
       title: t('home.menu.finances'),
       color: '#34C759',
       icon: 'currency-eur',
-      route: '/(tabs)/finances',
+      route: '/finances',
     },
     {
       title: t('home.menu.photobook'),
       color: colors.redPink,
       icon: 'camera-outline',
-      route: '/(tabs)/memories',
+      route: '/memories',
     },
     {
       title: t('home.menu.meals'),
       color: colors.warmOrange,
       icon: 'food-outline',
-      route: '/(tabs)/meals',
+      route: '/meals',
     },
     {
       title: 'Contactboek',
       color: '#9B59B6',
       icon: 'book-outline',
-      route: '/(tabs)/contactbook',
+      route: '/contactbook',
     },
     {
       title: 'Roosters',
@@ -70,7 +70,7 @@ export default function HomeScreen() {
       title: t('home.menu.shop'),
       color: colors.redPink,
       icon: 'shopping-outline',
-      route: '/(tabs)/shop',
+      route: '/shop',
     },
   ];
 
