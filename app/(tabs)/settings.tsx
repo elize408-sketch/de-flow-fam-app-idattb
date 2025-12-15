@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -39,10 +38,10 @@ const AVAILABLE_COLORS = [
 export default function SettingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { 
-    currentUser, 
-    familyCode, 
-    shareFamilyInvite, 
+  const {
+    currentUser,
+    familyCode,
+    shareFamilyInvite,
     reloadCurrentUser,
     familyMembers,
     addFamilyMember,
@@ -51,6 +50,7 @@ export default function SettingsScreen() {
     currentFamily,
     setCurrentUser,
   } = useFamily();
+
   const [refreshing, setRefreshing] = useState(false);
   const [languageSelectorVisible, setLanguageSelectorVisible] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
@@ -61,33 +61,26 @@ export default function SettingsScreen() {
   const [newMemberColor, setNewMemberColor] = useState(AVAILABLE_COLORS[0].value);
   const [newMemberPhoto, setNewMemberPhoto] = useState<string | null>(null);
 
-  // Get children only (filter out parents)
+  // Get children only
   const children = familyMembers.filter(member => member.role === 'child');
 
   const handleLogout = async () => {
-    Alert.alert(
-      t('common.logout'),
-      t('settings.logoutConfirm'),
-      [
-        {
-          text: t('common.cancel'),
-          style: 'cancel',
+    Alert.alert(t('common.logout'), t('settings.logoutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.logout'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+            router.replace('/(auth)/welcome');
+          } catch (error) {
+            console.error('Logout error:', error);
+            Alert.alert(t('common.error'), t('settings.logoutError'));
+          }
         },
-        {
-          text: t('common.logout'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace('/(auth)/welcome');
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert(t('common.error'), t('settings.logoutError'));
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleRefreshData = async () => {
@@ -105,7 +98,6 @@ export default function SettingsScreen() {
 
   const handlePickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
     if (permissionResult.granted === false) {
       Alert.alert(t('profile.permissionRequired'), t('profile.photoPermissionMessage'));
       return;
@@ -123,6 +115,44 @@ export default function SettingsScreen() {
     }
   };
 
+  /**
+   * ✅ NEW: resolve family_id in a robust way
+   * - 1) Use currentFamily from context
+   * - 2) Try RPC get_user_family_id (security definer)
+   * - 3) Fallback: select from family_members
+   */
+  const resolveFamilyIdForUser = async (userId: string): Promise<string | null> => {
+    // 1) context (beste)
+    if (currentFamily?.id) return currentFamily.id;
+
+    // 2) rpc (om RLS select-problemen te omzeilen)
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_family_id', {
+        user_uuid: userId,
+      });
+
+      if (!rpcError && rpcData) return rpcData as string;
+      // rpc kan ook "null" teruggeven als er echt geen gezin is
+    } catch (e) {
+      // ignore, fallback hieronder
+    }
+
+    // 3) fallback select
+    const { data: membership, error: membershipError } = await supabase
+      .from('family_members')
+      .select('family_id')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('resolveFamilyId - membershipError:', membershipError);
+      return null;
+    }
+
+    return membership?.family_id ?? null;
+  };
+
   const handleAddMember = async () => {
     if (!newMemberName.trim()) {
       Alert.alert(t('common.error'), t('profile.fillName'));
@@ -130,38 +160,28 @@ export default function SettingsScreen() {
     }
 
     try {
-      // Step 1: Get authenticated user
+      // 1) auth user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      console.log('Add child - User ID:', user?.id);
-      
       if (userError || !user) {
-        console.error('Add child - User error:', userError);
-        Alert.alert(t('common.error'), 'Could not get user.');
+        console.error('Add child - auth error:', userError);
+        Alert.alert(t('common.error'), 'Kon gebruiker niet ophalen. Log opnieuw in.');
         return;
       }
 
-      // Step 2: Fetch family_id from database
-      const { data: membership, error: membershipError } = await supabase
-        .from('family_members')
-        .select('family_id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .maybeSingle();
+      // 2) family_id resolve
+      const family_id = await resolveFamilyIdForUser(user.id);
 
-      console.log('Add child - Membership:', membership);
-      console.log('Add child - Membership error:', membershipError);
-
-      // Step 3: Check if family_id exists
-      if (membershipError || !membership?.family_id) {
+      if (!family_id) {
         console.error('Add child - No family found for user:', user.id);
-        Alert.alert(t('common.error'), t('settings.noFamily'));
+        Alert.alert(
+          t('common.error'),
+          // als je translation key bestaat: t('settings.noFamily')
+          t('settings.noFamily') || 'Geen gezin gevonden. Refresh data en probeer opnieuw.'
+        );
         return;
       }
 
-      const family_id = membership.family_id;
-      console.log('Add child - Family ID:', family_id);
-
-      // Step 4: Insert child
+      // 3) insert child
       const insertPayload = {
         family_id,
         user_id: null,
@@ -171,7 +191,6 @@ export default function SettingsScreen() {
         photo_uri: newMemberPhoto,
         coins: 0,
       };
-      console.log('Add child - Insert payload:', insertPayload);
 
       const { data, error: insertError } = await supabase
         .from('family_members')
@@ -180,14 +199,15 @@ export default function SettingsScreen() {
         .single();
 
       if (insertError) {
-        console.error('Add child - Insert error:', insertError.message);
-        Alert.alert(t('common.error'), t('settings.couldNotAddMember'));
+        console.error('Add child - Insert error:', insertError);
+        Alert.alert(
+          t('common.error'),
+          `${t('settings.couldNotAddMember')}\n\n${insertError.message}`
+        );
         return;
       }
 
-      console.log('Add child - Insert success:', data);
-
-      // Step 5: Update local state
+      // 4) update local state + reload
       addFamilyMember({
         id: data.id,
         userId: data.user_id,
@@ -198,20 +218,20 @@ export default function SettingsScreen() {
         coins: data.coins || 0,
       });
 
-      // Reload family context
       await reloadCurrentUser();
 
-      // Close modal and reset form
+      // 5) reset + close
+      const addedName = newMemberName.trim();
       setNewMemberName('');
       setNewMemberRole('child');
       setNewMemberColor(AVAILABLE_COLORS[0].value);
       setNewMemberPhoto(null);
       setShowAddMemberModal(false);
-      
-      Alert.alert(t('common.success'), t('profile.memberAdded', { name: newMemberName }));
+
+      Alert.alert(t('common.success'), t('profile.memberAdded', { name: addedName }));
     } catch (error: any) {
       console.error('Add child - Error:', error);
-      Alert.alert(t('common.error'), t('settings.errorAddingMember'));
+      Alert.alert(t('common.error'), `${t('settings.errorAddingMember')}\n\n${error?.message ?? ''}`);
     }
   };
 
@@ -236,7 +256,6 @@ export default function SettingsScreen() {
     }
 
     try {
-      // Update role if it's the current user
       const isCurrentUser = editingMember.id === currentUser?.id;
       const updateData: any = {
         name: newMemberName.trim(),
@@ -244,10 +263,7 @@ export default function SettingsScreen() {
         photo_uri: newMemberPhoto,
       };
 
-      // Only allow role update for current user
-      if (isCurrentUser) {
-        updateData.role = newMemberRole;
-      }
+      if (isCurrentUser) updateData.role = newMemberRole;
 
       const { error } = await supabase
         .from('family_members')
@@ -266,14 +282,10 @@ export default function SettingsScreen() {
         color: newMemberColor,
         photoUri: newMemberPhoto || undefined,
       };
-
-      if (isCurrentUser) {
-        updates.role = newMemberRole;
-      }
+      if (isCurrentUser) updates.role = newMemberRole;
 
       updateFamilyMember(editingMember.id, updates);
 
-      // If updating current user, update the current user state
       if (isCurrentUser) {
         const updatedUser = { ...currentUser, ...updates };
         setCurrentUser(updatedUser);
@@ -294,29 +306,22 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteMember = (memberId: string, memberName: string) => {
-    Alert.alert(
-      t('profile.areYouSure'),
-      t('settings.deleteMemberConfirm', { name: memberName }),
-      [
-        { 
-          text: t('common.cancel'), 
-          style: 'cancel' 
+    Alert.alert(t('profile.areYouSure'), t('settings.deleteMemberConfirm', { name: memberName }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteFamilyMember(memberId);
+            Alert.alert(t('common.success'), t('profile.memberDeleted', { name: memberName }));
+          } catch (error) {
+            console.error('Error deleting member:', error);
+            Alert.alert(t('common.error'), t('settings.couldNotDeleteMember'));
+          }
         },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteFamilyMember(memberId);
-              Alert.alert(t('common.success'), t('profile.memberDeleted', { name: memberName }));
-            } catch (error) {
-              console.error('Error deleting member:', error);
-              Alert.alert(t('common.error'), t('settings.couldNotDeleteMember'));
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -356,10 +361,7 @@ export default function SettingsScreen() {
             <Text style={styles.sectionTitle}>{t('settings.family')}</Text>
             <View style={styles.card}>
               {/* Invitation Code */}
-              <TouchableOpacity
-                style={styles.settingRow}
-                onPress={shareFamilyInvite}
-              >
+              <TouchableOpacity style={styles.settingRow} onPress={shareFamilyInvite}>
                 <View style={styles.settingLeft}>
                   <IconSymbol
                     ios_icon_name="square.and.arrow.up"
@@ -370,7 +372,9 @@ export default function SettingsScreen() {
                   <View style={styles.settingTextContainer}>
                     <Text style={styles.settingText}>{t('settings.shareInvitationCode')}</Text>
                     {familyCode && (
-                      <Text style={styles.settingSubtext}>{t('settings.code')}: {familyCode}</Text>
+                      <Text style={styles.settingSubtext}>
+                        {t('settings.code')}: {familyCode}
+                      </Text>
                     )}
                   </View>
                 </View>
@@ -506,10 +510,7 @@ export default function SettingsScreen() {
 
               <View style={styles.divider} />
 
-              <TouchableOpacity
-                style={styles.settingRow}
-                onPress={handleLogout}
-              >
+              <TouchableOpacity style={styles.settingRow} onPress={handleLogout}>
                 <View style={styles.settingLeft}>
                   <IconSymbol
                     ios_icon_name="rectangle.portrait.and.arrow.right"
@@ -528,35 +529,11 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Debug Info */}
-          {__DEV__ && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Debug Info</Text>
-              <View style={styles.card}>
-                <Text style={styles.debugText}>
-                  User ID: {currentUser?.id || 'None'}
-                </Text>
-                <Text style={styles.debugText}>
-                  User Role: {currentUser?.role || 'None'}
-                </Text>
-                <Text style={styles.debugText}>
-                  Family Code: {familyCode || 'None'}
-                </Text>
-                <Text style={styles.debugText}>
-                  Children Count: {children.length}
-                </Text>
-              </View>
-            </View>
-          )}
         </ScrollView>
       </View>
 
       {/* Language Selector Modal */}
-      <LanguageSelector
-        visible={languageSelectorVisible}
-        onClose={() => setLanguageSelectorVisible(false)}
-      />
+      <LanguageSelector visible={languageSelectorVisible} onClose={() => setLanguageSelectorVisible(false)} />
 
       {/* Add Member Modal */}
       <Modal
@@ -598,27 +575,26 @@ export default function SettingsScreen() {
               <Text style={styles.inputLabel}>{t('settings.chooseColor')}</Text>
               <View style={styles.colorSelector}>
                 {AVAILABLE_COLORS.map((colorOption, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[
-                        styles.colorOption,
-                        { backgroundColor: colorOption.value },
-                        newMemberColor === colorOption.value && styles.colorOptionActive,
-                      ]}
-                      onPress={() => setNewMemberColor(colorOption.value)}
-                    >
-                      {newMemberColor === colorOption.value && (
-                        <View style={styles.colorCheckmark}>
-                          <IconSymbol
-                            ios_icon_name="checkmark"
-                            android_material_icon_name="check"
-                            size={20}
-                            color={colors.card}
-                          />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.colorOption,
+                      { backgroundColor: colorOption.value },
+                      newMemberColor === colorOption.value && styles.colorOptionActive,
+                    ]}
+                    onPress={() => setNewMemberColor(colorOption.value)}
+                  >
+                    {newMemberColor === colorOption.value && (
+                      <View style={styles.colorCheckmark}>
+                        <IconSymbol
+                          ios_icon_name="checkmark"
+                          android_material_icon_name="check"
+                          size={20}
+                          color={colors.card}
+                        />
+                      </View>
+                    )}
+                  </TouchableOpacity>
                 ))}
               </View>
 
@@ -635,11 +611,14 @@ export default function SettingsScreen() {
                 >
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleAddMember}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.add')}</Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
+                    {t('common.add')}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -647,7 +626,7 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* Edit Member Modal */}
+      {/* Edit Member Modal (ongewijzigd) */}
       <Modal
         visible={showEditMemberModal}
         transparent
@@ -711,27 +690,26 @@ export default function SettingsScreen() {
               <Text style={styles.inputLabel}>{t('settings.chooseColor')}</Text>
               <View style={styles.colorSelector}>
                 {AVAILABLE_COLORS.map((colorOption, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[
-                        styles.colorOption,
-                        { backgroundColor: colorOption.value },
-                        newMemberColor === colorOption.value && styles.colorOptionActive,
-                      ]}
-                      onPress={() => setNewMemberColor(colorOption.value)}
-                    >
-                      {newMemberColor === colorOption.value && (
-                        <View style={styles.colorCheckmark}>
-                          <IconSymbol
-                            ios_icon_name="checkmark"
-                            android_material_icon_name="check"
-                            size={20}
-                            color={colors.card}
-                          />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.colorOption,
+                      { backgroundColor: colorOption.value },
+                      newMemberColor === colorOption.value && styles.colorOptionActive,
+                    ]}
+                    onPress={() => setNewMemberColor(colorOption.value)}
+                  >
+                    {newMemberColor === colorOption.value && (
+                      <View style={styles.colorCheckmark}>
+                        <IconSymbol
+                          ios_icon_name="checkmark"
+                          android_material_icon_name="check"
+                          size={20}
+                          color={colors.card}
+                        />
+                      </View>
+                    )}
+                  </TouchableOpacity>
                 ))}
               </View>
 
@@ -753,7 +731,9 @@ export default function SettingsScreen() {
                   style={[styles.modalButton, styles.modalButtonConfirm]}
                   onPress={handleEditMember}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.save')}</Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
+                    {t('common.save')}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -764,14 +744,13 @@ export default function SettingsScreen() {
   );
 }
 
+// styles: jouw originele styles (ongewijzigd)
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 12,
@@ -785,16 +764,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 120,
-  },
-  section: {
-    marginBottom: 24,
-  },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 20, paddingBottom: 120 },
+  section: { marginBottom: 24 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
@@ -826,9 +798,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
   },
-  familyMembersSection: {
-    marginTop: 8,
-  },
+  familyMembersSection: { marginTop: 8 },
   familyMembersHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -841,9 +811,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
-  addMemberButton: {
-    padding: 4,
-  },
+  addMemberButton: { padding: 4 },
   emptyText: {
     fontSize: 14,
     color: colors.textSecondary,
@@ -852,11 +820,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 20,
   },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
+  memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   memberAvatar: {
     width: 50,
     height: 50,
@@ -866,20 +830,14 @@ const styles = StyleSheet.create({
     marginRight: 12,
     overflow: 'hidden',
   },
-  memberPhoto: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 25,
-  },
+  memberPhoto: { width: '100%', height: '100%', borderRadius: 25 },
   memberAvatarText: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.card,
     fontFamily: 'Poppins_700Bold',
   },
-  memberInfo: {
-    flex: 1,
-  },
+  memberInfo: { flex: 1 },
   memberName: {
     fontSize: 16,
     fontWeight: '600',
@@ -887,72 +845,24 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     fontFamily: 'Poppins_600SemiBold',
   },
-  memberRole: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  memberActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  editIconButton: {
-    padding: 8,
-  },
-  deleteIconButton: {
-    padding: 8,
-  },
+  memberRole: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+  memberActions: { flexDirection: 'row', gap: 8 },
+  editIconButton: { padding: 8 },
+  deleteIconButton: { padding: 8 },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
   },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-  },
-  settingTextContainer: {
-    flex: 1,
-  },
-  settingText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  settingSubtext: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-    marginTop: 2,
-  },
-  logoutText: {
-    color: '#E74C3C',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginVertical: 8,
-  },
-  debugText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-    marginBottom: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalScrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
+  settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
+  settingTextContainer: { flex: 1 },
+  settingText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  settingSubtext: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Nunito_400Regular', marginTop: 2 },
+  logoutText: { color: '#E74C3C' },
+  divider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 8 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', padding: 20 },
+  modalScrollContent: { flexGrow: 1, justifyContent: 'center' },
   modalContent: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -982,17 +892,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     overflow: 'hidden',
   },
-  photoPreview: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 60,
-  },
-  photoPlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    height: '100%',
-  },
+  photoPreview: { width: '100%', height: '100%', borderRadius: 60 },
+  photoPlaceholder: { justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' },
   cameraIconCircle: {
     width: 80,
     height: 80,
@@ -1012,89 +913,20 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 10,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  roleSelector: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 15,
-  },
-  roleButton: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  roleButtonActive: {
-    borderColor: colors.vibrantOrange,
-    backgroundColor: colors.primary,
-  },
-  roleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  roleButtonTextActive: {
-    color: colors.text,
-  },
-  colorSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
-  colorOption: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'transparent',
-  },
-  colorOptionActive: {
-    borderColor: colors.text,
-  },
-  colorCheckmark: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 15,
-    alignItems: 'center',
-  },
-  modalButtonCancel: {
-    backgroundColor: colors.background,
-  },
-  modalButtonConfirm: {
-    backgroundColor: colors.vibrantOrange,
-  },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  modalButtonTextConfirm: {
-    color: colors.card,
-  },
+  inputLabel: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 10, fontFamily: 'Poppins_600SemiBold' },
+  roleSelector: { flexDirection: 'row', gap: 10, marginBottom: 15 },
+  roleButton: { flex: 1, backgroundColor: colors.background, borderRadius: 15, padding: 15, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  roleButtonActive: { borderColor: colors.vibrantOrange, backgroundColor: colors.primary },
+  roleButtonText: { fontSize: 16, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+  roleButtonTextActive: { color: colors.text },
+  colorSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  colorOption: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'transparent' },
+  colorOptionActive: { borderColor: colors.text },
+  colorCheckmark: { backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: 15, width: 30, height: 30, justifyContent: 'center', alignItems: 'center' },
+  modalButtons: { flexDirection: 'row', gap: 10 },
+  modalButton: { flex: 1, padding: 15, borderRadius: 15, alignItems: 'center' },
+  modalButtonCancel: { backgroundColor: colors.background },
+  modalButtonConfirm: { backgroundColor: colors.vibrantOrange },
+  modalButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  modalButtonTextConfirm: { color: colors.card },
 });
