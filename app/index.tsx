@@ -23,6 +23,20 @@ export default function Index() {
     console.log('=== APP INDEX - AUTH CHECK START ===');
     console.log('Timestamp:', new Date().toISOString());
     
+    // 🚀 DEVELOPMENT SHORTCUT - Bypass auth flow in development mode
+    if (__DEV__) {
+      console.log('🔧 DEVELOPMENT MODE DETECTED');
+      console.log('🚀 Bypassing auth flow and navigating directly to home screen');
+      console.log('⚠️ This is a temporary development shortcut');
+      setDebugInfo('DEV MODE: Bypassing auth...');
+      
+      setTimeout(() => {
+        router.replace('/(tabs)/(home)');
+        setIsChecking(false);
+      }, 500);
+      return;
+    }
+    
     const timeoutId = setTimeout(() => {
       console.error('⏱️ AUTH CHECK TIMEOUT - redirecting to welcome');
       setDebugInfo('Timeout - redirecting to welcome...');
@@ -141,6 +155,11 @@ export default function Index() {
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.accent} />
       <Text style={styles.debugText}>{debugInfo}</Text>
+      {__DEV__ && (
+        <Text style={styles.devModeText}>
+          🔧 Development Mode Active
+        </Text>
+      )}
       <Text style={styles.debugSubtext}>
         If this takes too long, the app will redirect automatically
       </Text>
@@ -162,6 +181,13 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
     textAlign: 'center',
+  },
+  devModeText: {
+    fontSize: 16,
+    color: colors.accent,
+    fontFamily: 'Nunito_700Bold',
+    textAlign: 'center',
+    marginTop: 8,
   },
   debugSubtext: {
     fontSize: 12,
