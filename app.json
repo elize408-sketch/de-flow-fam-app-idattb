@@ -5,10 +5,10 @@
     "slug": "Flow Fam",
     "version": "1.0.6",
     "orientation": "portrait",
-    "icon": "./assets/images/1ce873c4-b13b-46ab-93fd-639f41ad63cb.png",
+    "icon": "./assets/images/ad140c28-4e3a-4941-a32b-028b482df723.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/1ce873c4-b13b-46ab-93fd-639f41ad63cb.png",
+      "image": "./assets/images/ad140c28-4e3a-4941-a32b-028b482df723.png",
       "resizeMode": "contain",
       "backgroundColor": "#F9F6F1"
     },
@@ -28,13 +28,13 @@
       "package": "nl.flowfam.gezinsapp",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/1ce873c4-b13b-46ab-93fd-639f41ad63cb.png",
+        "foregroundImage": "./assets/images/ad140c28-4e3a-4941-a32b-028b482df723.png",
         "backgroundColor": "#F9F6F1"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/images/1ce873c4-b13b-46ab-93fd-639f41ad63cb.png",
+      "favicon": "./assets/images/ad140c28-4e3a-4941-a32b-028b482df723.png",
       "bundler": "metro"
     },
     "plugins": [
