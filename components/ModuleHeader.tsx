@@ -1,10 +1,10 @@
-
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { IconSymbol } from './IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import { useModuleTheme } from '@/contexts/ThemeContext';
 import { useFamily } from '@/contexts/FamilyContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ModuleHeaderProps {
   title: string;
@@ -25,16 +25,24 @@ export default function ModuleHeader({
 }: ModuleHeaderProps) {
   const { accentColor } = useModuleTheme();
   const { currentUser } = useFamily();
+  const insets = useSafeAreaInsets();
 
   // Only show add button if user is a parent and showAddButton is true
   const shouldShowAddButton = showAddButton && currentUser?.role === 'parent' && onAddPress;
 
   return (
-    <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
+    <View
+      style={[
+        styles.container,
+        backgroundColor ? { backgroundColor } : null,
+        { paddingTop: insets.top + 12 }, // ✅ fix voor notch/Dynamic Island
+      ]}
+    >
       <View style={styles.textContainer}>
         <Text style={styles.title}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
+
       {shouldShowAddButton && (
         <TouchableOpacity
           style={[styles.addButton, { backgroundColor: accentColor }]}
@@ -59,7 +67,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 16,
     backgroundColor: '#FFFFFF',
   },
@@ -85,6 +92,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
+    // let op: boxShadow werkt niet op native, maar laten we ‘m staan als jullie web ook doen
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
