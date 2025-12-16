@@ -181,7 +181,9 @@
       "notes": "Notes",
       "documents": "Documents",
       "shop": "Boutique",
-      "profile": "Profil"
+      "profile": "Profil",
+      "contactbook": "Carnet de contacts",
+      "roosters": "Horaires"
     }
   },
   "profile": {
@@ -731,17 +733,20 @@
     "subtitle": "Vos notifications",
     "noNotifications": "Aucune notification",
     "newTaskAssigned": "Nouvelle tâche assignée",
-    "newTaskMessage": "Vous avez une nouvelle tâche: {{task}}",
+    "newTaskMessage": "Vous avez une nouvelle tâche",
     "reminder": "Rappel",
-    "reminderMessage": "N'oubliez pas de {{task}}",
+    "reminderMessage": "N'oubliez pas votre tâche",
     "rewardEarned": "Récompense gagnée!",
     "rewardMessage": "Vous avez gagné {{count}} pièces",
     "familyUpdate": "Mise à jour familiale",
-    "familyUpdateMessage": "{{name}} a mis à jour l'agenda",
+    "familyUpdateMessage": "L'agenda a été mis à jour",
     "minutesAgo": "il y a {{count}} minutes",
     "hourAgo": "il y a 1 heure",
     "hoursAgo": "il y a {{count}} heures",
-    "yesterday": "Hier"
+    "yesterday": "Hier",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette notification?",
+    "clearAll": "Tout effacer",
+    "clearAllConfirm": "Êtes-vous sûr de vouloir supprimer toutes les notifications?"
   },
   "schoolSchedule": {
     "title": "Emploi du temps scolaire",

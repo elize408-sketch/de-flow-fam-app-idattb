@@ -55,15 +55,15 @@ export default function HomeScreen() {
       route: '/meals',
     },
     {
-      title: 'Contactboek',
+      title: t('home.menu.contactbook'),
       color: '#9B59B6',
       icon: 'book-outline',
       route: '/contactbook',
     },
     {
-      title: 'Roosters',
+      title: t('home.menu.roosters'),
       color: '#3498DB',
-      icon: 'time-outline',
+      icon: 'calendar-clock',
       route: '/(tabs)/roosters',
     },
     {

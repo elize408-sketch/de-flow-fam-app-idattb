@@ -163,7 +163,9 @@
       "notes": "Notas",
       "documents": "Documentos",
       "shop": "Tienda",
-      "profile": "Perfil"
+      "profile": "Perfil",
+      "contactbook": "Libro de contactos",
+      "roosters": "Horarios"
     }
   },
   "profile": {
@@ -713,17 +715,20 @@
     "subtitle": "Tus notificaciones",
     "noNotifications": "Sin notificaciones",
     "newTaskAssigned": "Nueva tarea asignada",
-    "newTaskMessage": "Tienes una nueva tarea: {{task}}",
+    "newTaskMessage": "Tienes una nueva tarea",
     "reminder": "Recordatorio",
-    "reminderMessage": "No olvides {{task}}",
+    "reminderMessage": "No olvides tu tarea",
     "rewardEarned": "¡Recompensa ganada!",
     "rewardMessage": "Has ganado {{count}} monedas",
     "familyUpdate": "Actualización familiar",
-    "familyUpdateMessage": "{{name}} ha actualizado la agenda",
+    "familyUpdateMessage": "La agenda ha sido actualizada",
     "minutesAgo": "hace {{count}} minutos",
     "hourAgo": "hace 1 hora",
     "hoursAgo": "hace {{count}} horas",
-    "yesterday": "Ayer"
+    "yesterday": "Ayer",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar esta notificación?",
+    "clearAll": "Borrar todo",
+    "clearAllConfirm": "¿Estás seguro de que quieres eliminar todas las notificaciones?"
   },
   "schoolSchedule": {
     "title": "Horario escolar",

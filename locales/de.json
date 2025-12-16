@@ -181,7 +181,9 @@
       "notes": "Notizen",
       "documents": "Dokumente",
       "shop": "Shop",
-      "profile": "Profil"
+      "profile": "Profil",
+      "contactbook": "Kontaktbuch",
+      "roosters": "Stundenpläne"
     }
   },
   "profile": {
@@ -731,17 +733,20 @@
     "subtitle": "Ihre Benachrichtigungen",
     "noNotifications": "Keine Benachrichtigungen",
     "newTaskAssigned": "Neue Aufgabe zugewiesen",
-    "newTaskMessage": "Sie haben eine neue Aufgabe: {{task}}",
+    "newTaskMessage": "Sie haben eine neue Aufgabe",
     "reminder": "Erinnerung",
-    "reminderMessage": "Vergessen Sie nicht {{task}}",
+    "reminderMessage": "Vergessen Sie Ihre Aufgabe nicht",
     "rewardEarned": "Belohnung verdient!",
     "rewardMessage": "Sie haben {{count}} Münzen verdient",
     "familyUpdate": "Familienaktualisierung",
-    "familyUpdateMessage": "{{name}} hat die Agenda aktualisiert",
+    "familyUpdateMessage": "Die Agenda wurde aktualisiert",
     "minutesAgo": "vor {{count}} Minuten",
     "hourAgo": "vor 1 Stunde",
     "hoursAgo": "vor {{count}} Stunden",
-    "yesterday": "Gestern"
+    "yesterday": "Gestern",
+    "deleteConfirm": "Sind Sie sicher, dass Sie diese Benachrichtigung löschen möchten?",
+    "clearAll": "Alle löschen",
+    "clearAllConfirm": "Sind Sie sicher, dass Sie alle Benachrichtigungen löschen möchten?"
   },
   "schoolSchedule": {
     "title": "Stundenplan",

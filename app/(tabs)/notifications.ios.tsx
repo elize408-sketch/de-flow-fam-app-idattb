@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
@@ -104,6 +105,48 @@ export default function NotificationsScreen() {
     );
   };
 
+  const deleteNotification = (id: string) => {
+    Alert.alert(
+      t('common.delete'),
+      t('notifications.deleteConfirm'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => {
+            console.log('Deleting notification:', id);
+            setNotifications(prev => prev.filter(notif => notif.id !== id));
+          },
+        },
+      ]
+    );
+  };
+
+  const clearAllNotifications = () => {
+    Alert.alert(
+      t('notifications.clearAll'),
+      t('notifications.clearAllConfirm'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('notifications.clearAll'),
+          style: 'destructive',
+          onPress: () => {
+            console.log('Clearing all notifications');
+            setNotifications([]);
+          },
+        },
+      ]
+    );
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Show loading state while translations are loading
@@ -127,11 +170,27 @@ export default function NotificationsScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
-          {unreadCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount}</Text>
-            </View>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
+          </View>
+          {notifications.length > 0 && (
+            <TouchableOpacity
+              onPress={clearAllNotifications}
+              style={styles.clearAllButton}
+              activeOpacity={0.7}
+            >
+              <IconSymbol
+                ios_icon_name="trash.fill"
+                android_material_icon_name="delete"
+                size={24}
+                color={colors.vibrantOrange}
+              />
+            </TouchableOpacity>
           )}
         </View>
 
@@ -158,31 +217,47 @@ export default function NotificationsScreen() {
 
               return (
                 <React.Fragment key={index}>
-                  <TouchableOpacity
+                  <View
                     style={[
                       styles.notificationCard,
                       !notification.read && styles.notificationCardUnread,
                     ]}
-                    onPress={() => markAsRead(notification.id)}
-                    activeOpacity={0.7}
                   >
-                    <View style={[styles.iconContainer, { backgroundColor: iconColor + '20' }]}>
-                      <IconSymbol
-                        ios_icon_name={icon.ios}
-                        android_material_icon_name={icon.android as any}
-                        size={24}
-                        color={iconColor}
-                      />
-                    </View>
-                    <View style={styles.notificationContent}>
-                      <View style={styles.notificationHeader}>
-                        <Text style={styles.notificationTitle}>{notification.title}</Text>
-                        {!notification.read && <View style={styles.unreadDot} />}
+                    <TouchableOpacity
+                      style={styles.notificationContent}
+                      onPress={() => markAsRead(notification.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.iconContainer, { backgroundColor: iconColor + '20' }]}>
+                        <IconSymbol
+                          ios_icon_name={icon.ios}
+                          android_material_icon_name={icon.android as any}
+                          size={24}
+                          color={iconColor}
+                        />
                       </View>
-                      <Text style={styles.notificationMessage}>{notification.message}</Text>
-                      <Text style={styles.notificationTime}>{notification.time}</Text>
-                    </View>
-                  </TouchableOpacity>
+                      <View style={styles.notificationTextContent}>
+                        <View style={styles.notificationHeader}>
+                          <Text style={styles.notificationTitle}>{notification.title}</Text>
+                          {!notification.read && <View style={styles.unreadDot} />}
+                        </View>
+                        <Text style={styles.notificationMessage}>{notification.message}</Text>
+                        <Text style={styles.notificationTime}>{notification.time}</Text>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => deleteNotification(notification.id)}
+                      style={styles.deleteButton}
+                      activeOpacity={0.7}
+                    >
+                      <IconSymbol
+                        ios_icon_name="trash"
+                        android_material_icon_name="delete"
+                        size={20}
+                        color={colors.text + '60'}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </React.Fragment>
               );
             })
@@ -212,6 +287,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
@@ -232,6 +312,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     fontFamily: 'Poppins_700Bold',
+  },
+  clearAllButton: {
+    padding: 8,
   },
   scrollView: {
     flex: 1,
@@ -268,6 +351,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -280,6 +364,10 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: colors.vibrantOrange,
   },
+  notificationContent: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   iconContainer: {
     width: 48,
     height: 48,
@@ -288,7 +376,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  notificationContent: {
+  notificationTextContent: {
     flex: 1,
   },
   notificationHeader: {
@@ -320,5 +408,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text + '80',
     fontFamily: 'Poppins_400Regular',
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 8,
   },
 });

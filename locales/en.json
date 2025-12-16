@@ -182,7 +182,9 @@
       "notes": "Notes",
       "documents": "Documents",
       "shop": "Shop",
-      "profile": "Profile"
+      "profile": "Profile",
+      "contactbook": "Contact Book",
+      "roosters": "Schedules"
     }
   },
   "profile": {
@@ -728,7 +730,10 @@
     "familyUpdate": "Family update",
     "familyUpdateMessage": "The agenda has been updated",
     "minutesAgo": "{{count}} minutes ago",
-    "hoursAgo": "{{count}} hours ago"
+    "hoursAgo": "{{count}} hours ago",
+    "deleteConfirm": "Are you sure you want to delete this notification?",
+    "clearAll": "Clear All",
+    "clearAllConfirm": "Are you sure you want to delete all notifications?"
   },
   "language": {
     "title": "Language",
