@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   StyleSheet,
@@ -28,37 +27,37 @@ export default function HomeScreen() {
       title: t('home.menu.tasks'),
       color: '#7ED321',
       icon: 'check-circle-outline',
-      route: '/tasks',
+      route: '/(tabs)/tasks',
     },
     {
       title: t('home.menu.shopping'),
       color: colors.warmOrange,
       icon: 'cart-outline',
-      route: '/shopping',
+      route: '/(tabs)/shopping',
     },
     {
       title: t('home.menu.finances'),
       color: '#34C759',
       icon: 'currency-eur',
-      route: '/finances',
+      route: '/(tabs)/finances',
     },
     {
       title: t('home.menu.photobook'),
       color: colors.redPink,
       icon: 'camera-outline',
-      route: '/memories',
+      route: '/(tabs)/memories',
     },
     {
       title: t('home.menu.meals'),
       color: colors.warmOrange,
       icon: 'food-outline',
-      route: '/meals',
+      route: '/(tabs)/meals',
     },
     {
       title: t('home.menu.contactbook'),
       color: '#9B59B6',
       icon: 'book-outline',
-      route: '/contactbook',
+      route: '/(tabs)/contactbook',
     },
     {
       title: t('home.menu.roosters'),
@@ -70,7 +69,7 @@ export default function HomeScreen() {
       title: t('home.menu.shop'),
       color: colors.redPink,
       icon: 'shopping-outline',
-      route: '/shop',
+      route: '/(tabs)/shop',
     },
   ];
 
@@ -81,7 +80,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Illustration Block */}
         <View style={styles.illustrationCard}>
           <Image
             source={require('@/assets/images/ed920307-19f7-48d1-96f4-53ed71f8af30.jpeg')}
@@ -90,17 +88,15 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* Menu Items */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
-            <React.Fragment key={index}>
-              <HomeMenuItem
-                title={item.title}
-                color={item.color}
-                icon={item.icon}
-                onPress={() => router.push(item.route as any)}
-              />
-            </React.Fragment>
+            <HomeMenuItem
+              key={index}
+              title={item.title}
+              color={item.color}
+              icon={item.icon}
+              onPress={() => router.push(item.route)}
+            />
           ))}
         </View>
       </ScrollView>
@@ -122,7 +118,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 120,
-    alignItems: 'stretch',
   },
   illustrationCard: {
     backgroundColor: '#FFFFFF',
@@ -133,18 +128,12 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: colors.darkBrown,
-        shadowOffset: {
-          width: 0,
-          height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
       },
       android: {
         elevation: 2,
-      },
-      web: {
-        boxShadow: `0px 2px 12px rgba(76, 59, 52, 0.08)`,
       },
     }),
   },
