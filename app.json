@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "nl.flowfam.gezinsapp",
       "deploymentTarget": "16.0",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -26,7 +26,7 @@
     },
     "android": {
       "package": "nl.flowfam.gezinsapp",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/ad140c28-4e3a-4941-a32b-028b482df723.png",
         "backgroundColor": "#F9F6F1"

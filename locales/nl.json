@@ -256,3 +256,21 @@
     "eventsCreated": "afspraken aangemaakt"
   }
 }
+{
+  "tasks": {
+    "title": "Taken",
+    "subtitle": "Taken overzicht",
+    "assignedTo": "Toegewezen aan",
+    "addTask": "Taak toevoegen",
+    "taskName": "Taaknaam",
+    "chooseIcon": "Kies een icoon:",
+    "assignTo": "Toewijzen aan:",
+    "repeat": "Herhaling",
+    "repeatNone": "Geen",
+    "repeatDaily": "Dagelijks",
+    "repeatWeekly": "Wekelijks",
+    "repeatMonthly": "Maandelijks",
+    "cancel": "Annuleren",
+    "add": "Toevoegen"
+  }
+}

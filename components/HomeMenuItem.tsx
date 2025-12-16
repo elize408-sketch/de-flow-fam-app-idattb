@@ -1,5 +1,12 @@
 import React, { useRef } from "react";
-import { TouchableOpacity, Text, StyleSheet, Animated, View, Platform } from "react-native";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Animated,
+  View,
+  Platform,
+} from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
@@ -8,22 +15,17 @@ interface HomeMenuItemProps {
   color: string;
   icon: string;
 
-  /**
-   * Je mag óf onPress meegeven, óf route.
-   * Als beide bestaan, wint onPress.
-   */
-  onPress?: () => void;
-  route?: string;
+  // Gebruik bij voorkeur route (dan regelen we alles hier)
+  route: string;
 }
 
 function normalizeRoute(route: string) {
-  // Expo Router kan soms beter overweg met routes zonder "/(tabs)"
-  // Dus: "/(tabs)/agenda" -> "/agenda"
   if (!route) return "/";
+  // route groups mogen niet in het pad staan
   return route.startsWith("/(tabs)/") ? route.replace("/(tabs)", "") : route;
 }
 
-export function HomeMenuItem({ title, color, icon, onPress, route }: HomeMenuItemProps) {
+export function HomeMenuItem({ title, color, icon, route }: HomeMenuItemProps) {
   const router = useRouter();
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -46,21 +48,10 @@ export function HomeMenuItem({ title, color, icon, onPress, route }: HomeMenuIte
   };
 
   const handlePress = () => {
-    // 1) Als jij onPress meegeeft vanuit home: gebruik die
-    if (onPress) {
-      onPress();
-      return;
-    }
+    const to = normalizeRoute(route);
 
-    // 2) Anders: navigeer op basis van route
-    if (route) {
-      const to = normalizeRoute(route);
-      router.push(to as any);
-      return;
-    }
-
-    // 3) Niets meegekregen -> niks doen (maar nu weet je wél waarom)
-    console.warn(`[HomeMenuItem] Geen onPress of route voor: ${title}`);
+    // Belangrijk: navigate switcht tabs, push wil stapelen
+    router.navigate(to as any);
   };
 
   return (
@@ -94,12 +85,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.12,
         shadowRadius: 5,
       },
-      android: {
-        elevation: 3,
-      },
-      web: {
-        boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.12)" as any,
-      },
+      android: { elevation: 3 },
+      web: { boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.12)" as any },
     }),
   },
   contentWrapper: {

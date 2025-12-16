@@ -1,28 +1,18 @@
 import "react-native-url-polyfill/auto";
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
 
 /**
- * 1️⃣ Lees extra config uit Expo
- * (werkt voor dev, preview én TestFlight)
+ * ✅ EXPO_PUBLIC env vars komen via process.env
  */
-const extra =
-  Constants.expoConfig?.extra ??
-  Constants.manifest?.extra ??
-  (Constants as any).manifest2?.extra;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 /**
- * 2️⃣ Haal Supabase keys op
- */
-const supabaseUrl = extra?.SUPABASE_URL;
-const supabaseAnonKey = extra?.SUPABASE_ANON_KEY;
-
-/**
- * 3️⃣ Alleen debug logging in DEV (geen popup!)
+ * 🧪 Debug (alleen in DEV)
  */
 if (__DEV__) {
-  console.log("🧪 Supabase config check", {
+  console.log("🧪 Supabase env check", {
     hasUrl: !!supabaseUrl,
     hasKey: !!supabaseAnonKey,
     url: supabaseUrl,
@@ -30,18 +20,14 @@ if (__DEV__) {
 }
 
 /**
- * 4️⃣ Veiligheidscheck
+ * ❌ Hard falen als ze ontbreken (liever direct duidelijk)
  */
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("❌ Supabase env vars missing", {
-    supabaseUrl,
-    supabaseAnonKey,
-  });
-  throw new Error("Supabase environment variables are missing");
+  throw new Error("❌ Supabase environment variables are missing");
 }
 
 /**
- * 5️⃣ Maak Supabase client aan
+ * ✅ Supabase client
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

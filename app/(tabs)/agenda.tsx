@@ -1,6 +1,15 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Alert,
+  Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,60 +25,60 @@ export default function AgendaScreen() {
   const { t } = useTranslation();
   const { appointments, familyMembers, addAppointment, deleteAppointment } = useFamily();
   const { setModule, accentColor } = useModuleTheme();
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [newAppointmentTitle, setNewAppointmentTitle] = useState('');
   const [newAppointmentDate, setNewAppointmentDate] = useState(new Date());
   const [newAppointmentTime, setNewAppointmentTime] = useState('10:00');
   const [newAppointmentEndTime, setNewAppointmentEndTime] = useState('');
   const [newAppointmentAssignedTo, setNewAppointmentAssignedTo] = useState<string[]>([]);
-  const [newAppointmentRepeat, setNewAppointmentRepeat] = useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
+  const [newAppointmentRepeat, setNewAppointmentRepeat] =
+    useState<'daily' | 'weekly' | 'monthly' | 'none'>('none');
   const [newAppointmentEndDate, setNewAppointmentEndDate] = useState<Date | null>(null);
   const [newAppointmentWeekdays, setNewAppointmentWeekdays] = useState<string[]>([]);
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [selectedMemberFilters, setSelectedMemberFilters] = useState<string[]>([]);
 
-  // Set module theme on mount
   useEffect(() => {
     setModule('agenda' as ModuleName);
   }, [setModule]);
 
-  // Helper function to check if a date matches a repeating appointment
+  // ✅ UUID guard (om de echte oorzaak zichtbaar te maken)
+  const isUuid = (value: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
   const doesRepeatMatchDate = (appointment: Appointment, date: Date): boolean => {
     const aptDate = new Date(appointment.date);
-    
-    // Check if we're past the end date
+
     if (appointment.endDate) {
       const endDate = new Date(appointment.endDate);
       endDate.setHours(23, 59, 59, 999);
       if (date > endDate) return false;
     }
-    
+
     if (appointment.repeatType === 'daily') {
-      // Daily: show on any date after the start date
       return date >= aptDate;
     } else if (appointment.repeatType === 'weekly') {
-      // Weekly: show on selected weekdays
       if (date < aptDate) return false;
-      
-      // If weekdays are specified, check if current day matches
+
       if (appointment.weekdays && appointment.weekdays.length > 0) {
         const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
         const currentDay = dayNames[date.getDay()];
         return appointment.weekdays.includes(currentDay);
       }
-      
-      // Fallback to same day of week
+
       return date.getDay() === aptDate.getDay();
     } else if (appointment.repeatType === 'monthly') {
-      // Monthly: show on the same day of each month
       if (date < aptDate) return false;
       return date.getDate() === aptDate.getDate();
     } else {
-      // Non-repeating: exact date match
       return (
         date.getDate() === aptDate.getDate() &&
         date.getMonth() === aptDate.getMonth() &&
@@ -79,11 +88,11 @@ export default function AgendaScreen() {
   };
 
   const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter(apt => doesRepeatMatchDate(apt, date))
+    return appointments
+      .filter((apt) => doesRepeatMatchDate(apt, date))
       .sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  // Get upcoming appointments (next 30 days)
   const upcomingAppointments = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -92,18 +101,15 @@ export default function AgendaScreen() {
 
     const upcoming: Array<{ date: Date; appointment: Appointment }> = [];
 
-    // Check each day in the next 30 days
     for (let d = new Date(today); d <= thirtyDaysFromNow; d.setDate(d.getDate() + 1)) {
       const dayAppointments = getAppointmentsForDate(new Date(d));
-      dayAppointments.forEach(apt => {
-        // Apply member filter
+      dayAppointments.forEach((apt) => {
         if (selectedMemberFilters.length > 0) {
-          const hasMatchingMember = apt.assignedTo.some(memberId => 
+          const hasMatchingMember = apt.assignedTo.some((memberId) =>
             selectedMemberFilters.includes(memberId)
           );
           if (!hasMatchingMember) return;
         }
-        
         upcoming.push({ date: new Date(d), appointment: apt });
       });
     }
@@ -116,33 +122,15 @@ export default function AgendaScreen() {
   }, [appointments, selectedMemberFilters]);
 
   const toggleMemberSelection = (memberId: string) => {
-    setNewAppointmentAssignedTo(prev => {
-      if (prev.includes(memberId)) {
-        return prev.filter(id => id !== memberId);
-      } else {
-        return [...prev, memberId];
-      }
-    });
+    setNewAppointmentAssignedTo((prev) => (prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]));
   };
 
   const toggleMemberFilter = (memberId: string) => {
-    setSelectedMemberFilters(prev => {
-      if (prev.includes(memberId)) {
-        return prev.filter(id => id !== memberId);
-      } else {
-        return [...prev, memberId];
-      }
-    });
+    setSelectedMemberFilters((prev) => (prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]));
   };
 
   const toggleWeekday = (day: string) => {
-    setNewAppointmentWeekdays(prev => {
-      if (prev.includes(day)) {
-        return prev.filter(d => d !== day);
-      } else {
-        return [...prev, day];
-      }
-    });
+    setNewAppointmentWeekdays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
   const handleAddAppointment = () => {
@@ -156,13 +144,12 @@ export default function AgendaScreen() {
       return;
     }
 
-    // Validate weekly selection
     if (newAppointmentRepeat === 'weekly' && newAppointmentWeekdays.length === 0) {
       Alert.alert(t('common.error'), 'Selecteer minimaal één dag voor wekelijkse herhaling');
       return;
     }
 
-    const firstMember = familyMembers.find(m => m.id === newAppointmentAssignedTo[0]);
+    const firstMember = familyMembers.find((m) => m.id === newAppointmentAssignedTo[0]);
     const appointmentColor = firstMember?.color || colors.accent;
 
     addAppointment({
@@ -177,7 +164,6 @@ export default function AgendaScreen() {
       weekdays: newAppointmentRepeat === 'weekly' ? newAppointmentWeekdays : undefined,
     });
 
-    // Reset form and close modal
     setNewAppointmentTitle('');
     setNewAppointmentDate(new Date());
     setNewAppointmentTime('10:00');
@@ -187,94 +173,85 @@ export default function AgendaScreen() {
     setNewAppointmentEndDate(null);
     setNewAppointmentWeekdays([]);
     setShowAddModal(false);
-    
+
     Alert.alert(t('common.success'), t('agenda.appointmentAdded'));
   };
 
   const handleDeleteAppointment = async (appointmentId: string, isRecurring: boolean) => {
+    // ✅ Dit maakt jouw uuid-probleem direct zichtbaar i.p.v. vage errors
+    if (!appointmentId || !isUuid(String(appointmentId))) {
+      Alert.alert(
+        t('common.error'),
+        `Kan afspraak niet verwijderen: id is geen UUID (${String(appointmentId)}). \n\nFix dit in useFamily/addAppointment (Supabase id).`
+      );
+      return;
+    }
+
     if (isRecurring) {
-      // Show options for recurring appointments
-      Alert.alert(
-        t('agenda.deleteConfirm'),
-        t('agenda.deleteRecurringOptions'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('agenda.deleteOnlyThis'),
-            style: 'destructive',
-            onPress: () => {
-              Alert.alert(
-                t('agenda.confirmDeleteSingle'),
-                t('agenda.confirmDeleteSingleMessage'),
-                [
-                  { text: t('common.cancel'), style: 'cancel' },
-                  {
-                    text: t('common.delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        await deleteAppointment(appointmentId, false);
-                        setSelectedDay(null);
-                        Alert.alert(t('common.success'), t('agenda.appointmentDeleted'));
-                      } catch (error) {
-                        Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
-                      }
-                    },
-                  },
-                ]
-              );
-            },
+      Alert.alert(t('agenda.deleteConfirm'), t('agenda.deleteRecurringOptions'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('agenda.deleteOnlyThis'),
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(t('agenda.confirmDeleteSingle'), t('agenda.confirmDeleteSingleMessage'), [
+              { text: t('common.cancel'), style: 'cancel' },
+              {
+                text: t('common.delete'),
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await deleteAppointment(appointmentId, false);
+                    setSelectedDay(null);
+                    Alert.alert(t('common.success'), t('agenda.appointmentDeleted'));
+                  } catch (error) {
+                    Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
+                  }
+                },
+              },
+            ]);
           },
-          {
-            text: t('agenda.deleteEntireSeries'),
-            style: 'destructive',
-            onPress: () => {
-              Alert.alert(
-                t('agenda.confirmDeleteSeries'),
-                t('agenda.confirmDeleteSeriesMessage'),
-                [
-                  { text: t('common.cancel'), style: 'cancel' },
-                  {
-                    text: t('common.delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        await deleteAppointment(appointmentId, true);
-                        setSelectedDay(null);
-                        Alert.alert(t('common.success'), t('agenda.seriesDeleted'));
-                      } catch (error) {
-                        Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
-                      }
-                    },
-                  },
-                ]
-              );
-            },
+        },
+        {
+          text: t('agenda.deleteEntireSeries'),
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(t('agenda.confirmDeleteSeries'), t('agenda.confirmDeleteSeriesMessage'), [
+              { text: t('common.cancel'), style: 'cancel' },
+              {
+                text: t('common.delete'),
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await deleteAppointment(appointmentId, true);
+                    setSelectedDay(null);
+                    Alert.alert(t('common.success'), t('agenda.seriesDeleted'));
+                  } catch (error) {
+                    Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
+                  }
+                },
+              },
+            ]);
           },
-        ]
-      );
+        },
+      ]);
     } else {
-      // Simple delete for non-recurring appointments
-      Alert.alert(
-        t('agenda.deleteConfirm'),
-        t('agenda.deleteMessage'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('common.delete'),
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await deleteAppointment(appointmentId, false);
-                setSelectedDay(null);
-                Alert.alert(t('common.success'), t('agenda.appointmentDeleted'));
-              } catch (error) {
-                Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
-              }
-            },
+      Alert.alert(t('agenda.deleteConfirm'), t('agenda.deleteMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAppointment(appointmentId, false);
+              setSelectedDay(null);
+              Alert.alert(t('common.success'), t('agenda.appointmentDeleted'));
+            } catch (error) {
+              Alert.alert(t('common.error'), 'Kon afspraak niet verwijderen');
+            }
           },
-        ]
-      );
+        },
+      ]);
     }
   };
 
@@ -327,34 +304,28 @@ export default function AgendaScreen() {
   const renderMonthCalendar = () => {
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
     const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1).getDay();
-    // Convert Sunday (0) to 7 for Monday-first week
     const firstDayIndex = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-    
+
     const days = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayIndex; i++) {
-      days.push(
-        <View key={`empty-${i}`} style={styles.dayCell} />
-      );
+      days.push(<View key={`empty-${i}`} style={styles.dayCell} />);
     }
 
-    // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(selectedYear, selectedMonth, day);
       date.setHours(0, 0, 0, 0);
-      
+
       let dayAppointments = getAppointmentsForDate(date);
-      
-      // Apply member filter
+
       if (selectedMemberFilters.length > 0) {
-        dayAppointments = dayAppointments.filter(apt => 
-          apt.assignedTo.some(memberId => selectedMemberFilters.includes(memberId))
+        dayAppointments = dayAppointments.filter((apt) =>
+          apt.assignedTo.some((memberId) => selectedMemberFilters.includes(memberId))
         );
       }
-      
+
       const isToday = date.getTime() === today.getTime();
       const totalCount = dayAppointments.length;
 
@@ -366,9 +337,9 @@ export default function AgendaScreen() {
             styles.dayCellActive,
             isToday && [styles.dayCellToday, { borderColor: accentColor }],
           ]}
-          onPress={() => {
-            setSelectedDay(date);
-          }}
+          onPress={() => setSelectedDay(date)}
+          activeOpacity={0.8}
+          hitSlop={6}
         >
           <View style={styles.dayCellHeader}>
             <Text style={[styles.dayNumber, isToday && [styles.dayNumberToday, { color: accentColor }]]}>
@@ -380,24 +351,18 @@ export default function AgendaScreen() {
               </View>
             )}
           </View>
+
           <View style={styles.appointmentsContainer}>
             {dayAppointments.slice(0, 3).map((apt, index) => {
               const isRepeating = apt.repeatType && apt.repeatType !== 'none';
               const bgColor = isRepeating ? '#ADD6FF' : apt.color;
-              
+
               return (
-                <React.Fragment key={index}>
-                  <View
-                    style={[
-                      styles.appointmentBar,
-                      { backgroundColor: bgColor },
-                    ]}
-                  >
-                    <Text style={styles.appointmentBarText} numberOfLines={1}>
-                      {apt.time} {apt.title}
-                    </Text>
-                  </View>
-                </React.Fragment>
+                <View key={index} style={[styles.appointmentBar, { backgroundColor: bgColor }]}>
+                  <Text style={styles.appointmentBarText} numberOfLines={1}>
+                    {apt.time} {apt.title}
+                  </Text>
+                </View>
               );
             })}
           </View>
@@ -414,14 +379,12 @@ export default function AgendaScreen() {
     const days = [];
 
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(
-        <View key={`empty-${i}`} style={styles.calendarDay} />
-      );
+      days.push(<View key={`empty-${i}`} style={styles.calendarDay} />);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(selectedYear, selectedMonth, day);
-      const isSelected = 
+      const isSelected =
         newAppointmentDate.getDate() === day &&
         newAppointmentDate.getMonth() === selectedMonth &&
         newAppointmentDate.getFullYear() === selectedYear;
@@ -432,19 +395,16 @@ export default function AgendaScreen() {
           style={[
             styles.calendarDay,
             styles.calendarDayActive,
-            isSelected && [styles.calendarDaySelected, { backgroundColor: accentColor }]
+            isSelected && [styles.calendarDaySelected, { backgroundColor: accentColor }],
           ]}
           onPress={() => {
             setNewAppointmentDate(date);
             setShowDatePicker(false);
           }}
+          activeOpacity={0.85}
+          hitSlop={8}
         >
-          <Text style={[
-            styles.calendarDayText,
-            isSelected && styles.calendarDayTextSelected
-          ]}>
-            {day}
-          </Text>
+          <Text style={[styles.calendarDayText, isSelected && styles.calendarDayTextSelected]}>{day}</Text>
         </TouchableOpacity>
       );
     }
@@ -458,14 +418,13 @@ export default function AgendaScreen() {
     const days = [];
 
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(
-        <View key={`empty-${i}`} style={styles.calendarDay} />
-      );
+      days.push(<View key={`empty-${i}`} style={styles.calendarDay} />);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(selectedYear, selectedMonth, day);
-      const isSelected = newAppointmentEndDate &&
+      const isSelected =
+        !!newAppointmentEndDate &&
         newAppointmentEndDate.getDate() === day &&
         newAppointmentEndDate.getMonth() === selectedMonth &&
         newAppointmentEndDate.getFullYear() === selectedYear;
@@ -476,19 +435,16 @@ export default function AgendaScreen() {
           style={[
             styles.calendarDay,
             styles.calendarDayActive,
-            isSelected && [styles.calendarDaySelected, { backgroundColor: accentColor }]
+            isSelected && [styles.calendarDaySelected, { backgroundColor: accentColor }],
           ]}
           onPress={() => {
             setNewAppointmentEndDate(date);
             setShowEndDatePicker(false);
           }}
+          activeOpacity={0.85}
+          hitSlop={8}
         >
-          <Text style={[
-            styles.calendarDayText,
-            isSelected && styles.calendarDayTextSelected
-          ]}>
-            {day}
-          </Text>
+          <Text style={[styles.calendarDayText, isSelected && styles.calendarDayTextSelected]}>{day}</Text>
         </TouchableOpacity>
       );
     }
@@ -498,11 +454,7 @@ export default function AgendaScreen() {
 
   return (
     <View style={styles.container}>
-      <ModuleHeader
-        title={t('agenda.title')}
-        subtitle={t('agenda.subtitle')}
-        backgroundColor="#FFFFFF"
-      />
+      <ModuleHeader title={t('agenda.title')} subtitle={t('agenda.subtitle')} backgroundColor="#FFFFFF" />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <ThemedButton
@@ -513,64 +465,75 @@ export default function AgendaScreen() {
           style={styles.addButton}
         />
 
-        {/* Monthly Calendar View */}
         <View style={styles.monthlyCalendar}>
           <View style={styles.monthHeader}>
-            <TouchableOpacity onPress={() => changeMonth('prev')} style={styles.monthNavButton}>
+            <TouchableOpacity
+              onPress={() => changeMonth('prev')}
+              style={styles.monthNavButton}
+              hitSlop={12}
+              activeOpacity={0.7}
+            >
               <Ionicons name="chevron-back" size={24} color={colors.text} />
             </TouchableOpacity>
+
             <Text style={styles.monthTitle}>
               {monthNames[selectedMonth]} {selectedYear}
             </Text>
-            <TouchableOpacity onPress={() => changeMonth('next')} style={styles.monthNavButton}>
+
+            <TouchableOpacity
+              onPress={() => changeMonth('next')}
+              style={styles.monthNavButton}
+              hitSlop={12}
+              activeOpacity={0.7}
+            >
               <Ionicons name="chevron-forward" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.weekDaysHeader}>
             {dayNames.map((day, index) => (
-              <React.Fragment key={index}>
-                <View style={styles.weekDayCell}>
-                  <Text style={styles.weekDayText}>{day}</Text>
-                </View>
-              </React.Fragment>
+              <View key={index} style={styles.weekDayCell}>
+                <Text style={styles.weekDayText}>{day}</Text>
+              </View>
             ))}
           </View>
 
-          <View style={styles.monthGrid}>
-            {renderMonthCalendar()}
-          </View>
+          <View style={styles.monthGrid}>{renderMonthCalendar()}</View>
         </View>
 
-        {/* Member Filter */}
         <View style={styles.filterSection}>
           <Text style={styles.filterTitle}>Toon afspraken voor:</Text>
           <View style={styles.memberFilterContainer}>
             {familyMembers.map((member, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.memberFilterChip,
+                  selectedMemberFilters.includes(member.id) && [
+                    styles.memberFilterChipActive,
+                    { backgroundColor: member.color },
+                  ],
+                ]}
+                onPress={() => toggleMemberFilter(member.id)}
+                activeOpacity={0.8}
+                hitSlop={6}
+              >
+                <View style={[styles.memberFilterAvatar, { backgroundColor: member.color }]}>
+                  <Text style={styles.memberFilterAvatarText}>{member.name.charAt(0)}</Text>
+                </View>
+                <Text
                   style={[
-                    styles.memberFilterChip,
-                    selectedMemberFilters.includes(member.id) && [styles.memberFilterChipActive, { backgroundColor: member.color }],
-                  ]}
-                  onPress={() => toggleMemberFilter(member.id)}
-                >
-                  <View style={[styles.memberFilterAvatar, { backgroundColor: member.color }]}>
-                    <Text style={styles.memberFilterAvatarText}>{member.name.charAt(0)}</Text>
-                  </View>
-                  <Text style={[
                     styles.memberFilterName,
-                    selectedMemberFilters.includes(member.id) && styles.memberFilterNameActive
-                  ]}>
-                    {member.name}
-                  </Text>
-                </TouchableOpacity>
-              </React.Fragment>
+                    selectedMemberFilters.includes(member.id) && styles.memberFilterNameActive,
+                  ]}
+                >
+                  {member.name}
+                </Text>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Upcoming Appointments */}
         <View style={styles.upcomingSection}>
           <Text style={styles.upcomingTitle}>Komende afspraken</Text>
           {upcomingAppointments.length === 0 ? (
@@ -579,51 +542,45 @@ export default function AgendaScreen() {
             </View>
           ) : (
             upcomingAppointments.map((item, index) => {
-              const members = familyMembers.filter(m => item.appointment.assignedTo.includes(m.id));
+              const members = familyMembers.filter((m) => item.appointment.assignedTo.includes(m.id));
               const isRecurring = item.appointment.repeatType && item.appointment.repeatType !== 'none';
-              
+
               return (
-                <React.Fragment key={index}>
-                  <View style={[styles.upcomingCard, { borderLeftColor: item.appointment.color }]}>
-                    <View style={styles.upcomingCardDate}>
-                      <Text style={styles.upcomingCardDay}>
-                        {item.date.toLocaleDateString('nl-NL', { weekday: 'short' })}
+                <View key={index} style={[styles.upcomingCard, { borderLeftColor: item.appointment.color }]}>
+                  <View style={styles.upcomingCardDate}>
+                    <Text style={styles.upcomingCardDay}>
+                      {item.date.toLocaleDateString('nl-NL', { weekday: 'short' })}
+                    </Text>
+                    <Text style={styles.upcomingCardDayNumber}>{item.date.getDate()}</Text>
+                    <Text style={styles.upcomingCardMonth}>
+                      {item.date.toLocaleDateString('nl-NL', { month: 'short' })}
+                    </Text>
+                  </View>
+
+                  <View style={styles.upcomingCardContent}>
+                    <View style={styles.upcomingCardHeader}>
+                      <Text style={styles.upcomingCardTime}>
+                        {item.appointment.time}
+                        {item.appointment.endTime ? ` - ${item.appointment.endTime}` : ''}
                       </Text>
-                      <Text style={styles.upcomingCardDayNumber}>
-                        {item.date.getDate()}
-                      </Text>
-                      <Text style={styles.upcomingCardMonth}>
-                        {item.date.toLocaleDateString('nl-NL', { month: 'short' })}
-                      </Text>
+                      {isRecurring && (
+                        <View style={styles.repeatBadge}>
+                          <Ionicons name="repeat" size={12} color={colors.textSecondary} />
+                        </View>
+                      )}
                     </View>
-                    
-                    <View style={styles.upcomingCardContent}>
-                      <View style={styles.upcomingCardHeader}>
-                        <Text style={styles.upcomingCardTime}>
-                          {item.appointment.time}
-                          {item.appointment.endTime ? ` - ${item.appointment.endTime}` : ''}
-                        </Text>
-                        {isRecurring && (
-                          <View style={styles.repeatBadge}>
-                            <Ionicons name="repeat" size={12} color={colors.textSecondary} />
-                          </View>
-                        )}
-                      </View>
-                      
-                      <Text style={styles.upcomingCardTitle}>{item.appointment.title}</Text>
-                      
-                      <View style={styles.upcomingCardMembers}>
-                        {members.map((member, mIndex) => (
-                          <React.Fragment key={mIndex}>
-                            <View style={[styles.memberBadge, { backgroundColor: member.color }]}>
-                              <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
-                            </View>
-                          </React.Fragment>
-                        ))}
-                      </View>
+
+                    <Text style={styles.upcomingCardTitle}>{item.appointment.title}</Text>
+
+                    <View style={styles.upcomingCardMembers}>
+                      {members.map((member, mIndex) => (
+                        <View key={mIndex} style={[styles.memberBadge, { backgroundColor: member.color }]}>
+                          <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
+                        </View>
+                      ))}
                     </View>
                   </View>
-                </React.Fragment>
+                </View>
               );
             })
           )}
@@ -632,100 +589,80 @@ export default function AgendaScreen() {
 
       {/* Day Detail Modal */}
       {selectedDay && (
-        <Modal
-          visible={true}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setSelectedDay(null)}
-        >
+        <Modal visible={true} transparent animationType="slide" onRequestClose={() => setSelectedDay(null)}>
           <View style={styles.modalOverlay}>
             <View style={styles.dayDetailModal}>
               <View style={styles.dayDetailHeader}>
-                <TouchableOpacity
-                  style={styles.modalBackButton}
-                  onPress={() => setSelectedDay(null)}
-                >
+                <TouchableOpacity style={styles.modalBackButton} onPress={() => setSelectedDay(null)} hitSlop={12}>
                   <Ionicons name="chevron-back" size={26} color="#333" />
                 </TouchableOpacity>
+
                 <Text style={styles.dayDetailTitle}>
-                  {selectedDay.toLocaleDateString('nl-NL', { 
-                    weekday: 'long', 
-                    day: 'numeric', 
-                    month: 'long' 
-                  })}
+                  {selectedDay.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </Text>
+
                 <View style={styles.modalHeaderSpacer} />
               </View>
 
               <ScrollView style={styles.dayDetailContent}>
                 {getAppointmentsForDate(selectedDay).length === 0 ? (
                   <View style={styles.noAppointments}>
-                    <Text style={styles.noAppointmentsText}>
-                      {t('home.noAppointmentsToday')}
-                    </Text>
+                    <Text style={styles.noAppointmentsText}>{t('home.noAppointmentsToday')}</Text>
                   </View>
                 ) : (
                   getAppointmentsForDate(selectedDay).map((apt, index) => {
-                    const members = familyMembers.filter(m => apt.assignedTo.includes(m.id));
+                    const members = familyMembers.filter((m) => apt.assignedTo.includes(m.id));
                     const isRecurring = apt.repeatType && apt.repeatType !== 'none';
-                    
-                    return (
-                      <React.Fragment key={index}>
-                        <View style={[styles.appointmentCard, { borderLeftColor: apt.color }]}>
-                          <View style={styles.appointmentCardContent}>
-                            <View style={styles.appointmentCardHeader}>
-                              <Text style={styles.appointmentCardTime}>
-                                {apt.time}{apt.endTime ? ` - ${apt.endTime}` : ''}
-                              </Text>
-                              {isRecurring && (
-                                <View style={styles.repeatBadge}>
-                                  <Ionicons name="repeat" size={14} color={colors.textSecondary} />
-                                  <Text style={styles.repeatBadgeText}>
-                                    {t('agenda.repeats')}
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                            
-                            <Text style={styles.appointmentCardTitle}>{apt.title}</Text>
-                            
-                            <View style={styles.appointmentCardMembers}>
-                              {members.map((member, mIndex) => (
-                                <React.Fragment key={mIndex}>
-                                  <View style={[styles.memberBadge, { backgroundColor: member.color }]}>
-                                    <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
-                                  </View>
-                                </React.Fragment>
-                              ))}
-                              <Text style={styles.memberNames}>
-                                {members.map(m => m.name).join(', ')}
-                              </Text>
-                            </View>
 
-                            {/* Delete Buttons */}
-                            <View style={styles.deleteButtonsContainer}>
-                              <TouchableOpacity
-                                style={styles.deleteButton}
-                                onPress={() => handleDeleteAppointment(apt.id, isRecurring)}
-                              >
-                                <Ionicons name="trash-outline" size={18} color="#fff" />
-                                <Text style={styles.deleteButtonText}>
-                                  {isRecurring ? t('agenda.deleteOptions') : t('common.delete')}
-                                </Text>
-                              </TouchableOpacity>
-                            </View>
+                    return (
+                      <View key={index} style={[styles.appointmentCard, { borderLeftColor: apt.color }]}>
+                        <View style={styles.appointmentCardContent}>
+                          <View style={styles.appointmentCardHeader}>
+                            <Text style={styles.appointmentCardTime}>
+                              {apt.time}
+                              {apt.endTime ? ` - ${apt.endTime}` : ''}
+                            </Text>
+
+                            {isRecurring && (
+                              <View style={styles.repeatBadge}>
+                                <Ionicons name="repeat" size={14} color={colors.textSecondary} />
+                                <Text style={styles.repeatBadgeText}>{t('agenda.repeats')}</Text>
+                              </View>
+                            )}
+                          </View>
+
+                          <Text style={styles.appointmentCardTitle}>{apt.title}</Text>
+
+                          <View style={styles.appointmentCardMembers}>
+                            {members.map((member, mIndex) => (
+                              <View key={mIndex} style={[styles.memberBadge, { backgroundColor: member.color }]}>
+                                <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
+                              </View>
+                            ))}
+                            <Text style={styles.memberNames}>{members.map((m) => m.name).join(', ')}</Text>
+                          </View>
+
+                          <View style={styles.deleteButtonsContainer}>
+                            <TouchableOpacity
+                              style={styles.deleteButton}
+                              onPress={() => handleDeleteAppointment(String((apt as any).id), !!isRecurring)}
+                              activeOpacity={0.8}
+                              hitSlop={8}
+                            >
+                              <Ionicons name="trash-outline" size={18} color="#fff" />
+                              <Text style={styles.deleteButtonText}>
+                                {isRecurring ? t('agenda.deleteOptions') : t('common.delete')}
+                              </Text>
+                            </TouchableOpacity>
                           </View>
                         </View>
-                      </React.Fragment>
+                      </View>
                     );
                   })
                 )}
               </ScrollView>
 
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setSelectedDay(null)}
-              >
+              <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedDay(null)} activeOpacity={0.8}>
                 <Text style={styles.closeButtonText}>{t('common.close')}</Text>
               </TouchableOpacity>
             </View>
@@ -757,9 +694,11 @@ export default function AgendaScreen() {
                     setNewAppointmentEndDate(null);
                     setNewAppointmentWeekdays([]);
                   }}
+                  hitSlop={12}
                 >
                   <Ionicons name="chevron-back" size={26} color="#333" />
                 </TouchableOpacity>
+
                 <Text style={styles.modalTitle}>{t('agenda.newAppointment')}</Text>
                 <View style={styles.modalHeaderSpacer} />
               </View>
@@ -772,6 +711,7 @@ export default function AgendaScreen() {
                 onChangeText={setNewAppointmentTitle}
               />
 
+              {/* ✅ Date open modal */}
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => {
@@ -779,11 +719,11 @@ export default function AgendaScreen() {
                   setSelectedYear(newAppointmentDate.getFullYear());
                   setShowDatePicker(true);
                 }}
+                activeOpacity={0.85}
+                hitSlop={8}
               >
                 <Ionicons name="calendar-outline" size={22} color="#333" />
-                <Text style={styles.dateButtonText}>
-                  {newAppointmentDate.toLocaleDateString('nl-NL')}
-                </Text>
+                <Text style={styles.dateButtonText}>{newAppointmentDate.toLocaleDateString('nl-NL')}</Text>
               </TouchableOpacity>
 
               <View style={styles.timeInputContainer}>
@@ -812,25 +752,29 @@ export default function AgendaScreen() {
               <Text style={styles.inputLabel}>{t('agenda.forWho')}</Text>
               <View style={styles.memberSelector}>
                 {familyMembers.map((member, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[
-                        styles.memberOption,
-                        newAppointmentAssignedTo.includes(member.id) && [styles.memberOptionActive, { borderColor: accentColor }],
-                      ]}
-                      onPress={() => toggleMemberSelection(member.id)}
-                    >
-                      <View style={[styles.memberAvatar, { backgroundColor: member.color || colors.accent }]}>
-                        <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.memberOption,
+                      newAppointmentAssignedTo.includes(member.id) && [
+                        styles.memberOptionActive,
+                        { borderColor: accentColor },
+                      ],
+                    ]}
+                    onPress={() => toggleMemberSelection(member.id)}
+                    activeOpacity={0.85}
+                    hitSlop={6}
+                  >
+                    <View style={[styles.memberAvatar, { backgroundColor: member.color || colors.accent }]}>
+                      <Text style={styles.memberAvatarText}>{member.name.charAt(0)}</Text>
+                    </View>
+                    <Text style={styles.memberName}>{member.name}</Text>
+                    {newAppointmentAssignedTo.includes(member.id) && (
+                      <View style={[styles.checkmark, { backgroundColor: accentColor }]}>
+                        <Ionicons name="checkmark" size={16} color={colors.card} />
                       </View>
-                      <Text style={styles.memberName}>{member.name}</Text>
-                      {newAppointmentAssignedTo.includes(member.id) && (
-                        <View style={[styles.checkmark, { backgroundColor: accentColor }]}>
-                          <Ionicons name="checkmark" size={16} color={colors.card} />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
+                    )}
+                  </TouchableOpacity>
                 ))}
               </View>
 
@@ -842,60 +786,63 @@ export default function AgendaScreen() {
                   { value: 'weekly', label: t('profile.repeatWeekly') },
                   { value: 'monthly', label: t('profile.repeatMonthly') },
                 ].map((option, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.repeatOption,
+                      newAppointmentRepeat === option.value && [
+                        styles.repeatOptionActive,
+                        { borderColor: accentColor, backgroundColor: accentColor + '20' },
+                      ],
+                    ]}
+                    onPress={() => setNewAppointmentRepeat(option.value as any)}
+                    activeOpacity={0.85}
+                    hitSlop={6}
+                  >
+                    <Text
                       style={[
-                        styles.repeatOption,
-                        newAppointmentRepeat === option.value && [styles.repeatOptionActive, { borderColor: accentColor, backgroundColor: accentColor + '20' }],
+                        styles.repeatOptionText,
+                        newAppointmentRepeat === option.value && styles.repeatOptionTextActive,
                       ]}
-                      onPress={() => setNewAppointmentRepeat(option.value as any)}
                     >
-                      <Text
-                        style={[
-                          styles.repeatOptionText,
-                          newAppointmentRepeat === option.value && styles.repeatOptionTextActive,
-                        ]}
-                      >
-                        {option.label}
-                      </Text>
-                    </TouchableOpacity>
-                  </React.Fragment>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
                 ))}
               </View>
 
-              {/* Weekday Selector for Weekly Repeat */}
               {newAppointmentRepeat === 'weekly' && (
                 <>
                   <Text style={styles.inputLabel}>Selecteer dagen:</Text>
                   <View style={styles.weekdaySelector}>
                     {weekdayShortNames.map((day, index) => (
-                      <React.Fragment key={index}>
-                        <TouchableOpacity
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.weekdayButton,
+                          newAppointmentWeekdays.includes(weekdayValues[index]) && [
+                            styles.weekdayButtonActive,
+                            { backgroundColor: accentColor },
+                          ],
+                        ]}
+                        onPress={() => toggleWeekday(weekdayValues[index])}
+                        activeOpacity={0.85}
+                        hitSlop={6}
+                      >
+                        <Text
                           style={[
-                            styles.weekdayButton,
-                            newAppointmentWeekdays.includes(weekdayValues[index]) && [
-                              styles.weekdayButtonActive,
-                              { backgroundColor: accentColor }
-                            ],
+                            styles.weekdayButtonText,
+                            newAppointmentWeekdays.includes(weekdayValues[index]) && styles.weekdayButtonTextActive,
                           ]}
-                          onPress={() => toggleWeekday(weekdayValues[index])}
                         >
-                          <Text
-                            style={[
-                              styles.weekdayButtonText,
-                              newAppointmentWeekdays.includes(weekdayValues[index]) && styles.weekdayButtonTextActive,
-                            ]}
-                          >
-                            {day}
-                          </Text>
-                        </TouchableOpacity>
-                      </React.Fragment>
+                          {day}
+                        </Text>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 </>
               )}
 
-              {/* End Date for Recurring Events */}
               {newAppointmentRepeat !== 'none' && (
                 <>
                   <Text style={styles.inputLabel}>Einddatum (optioneel):</Text>
@@ -906,19 +853,17 @@ export default function AgendaScreen() {
                       setSelectedYear(newAppointmentEndDate?.getFullYear() || new Date().getFullYear());
                       setShowEndDatePicker(true);
                     }}
+                    activeOpacity={0.85}
+                    hitSlop={8}
                   >
                     <Ionicons name="calendar-outline" size={22} color="#333" />
                     <Text style={styles.dateButtonText}>
-                      {newAppointmentEndDate 
-                        ? newAppointmentEndDate.toLocaleDateString('nl-NL')
-                        : 'Geen einddatum'}
+                      {newAppointmentEndDate ? newAppointmentEndDate.toLocaleDateString('nl-NL') : 'Geen einddatum'}
                     </Text>
                   </TouchableOpacity>
+
                   {newAppointmentEndDate && (
-                    <TouchableOpacity
-                      style={styles.clearEndDateButton}
-                      onPress={() => setNewAppointmentEndDate(null)}
-                    >
+                    <TouchableOpacity style={styles.clearEndDateButton} onPress={() => setNewAppointmentEndDate(null)} activeOpacity={0.85}>
                       <Text style={styles.clearEndDateText}>Einddatum wissen</Text>
                     </TouchableOpacity>
                   )}
@@ -939,16 +884,17 @@ export default function AgendaScreen() {
                     setNewAppointmentEndDate(null);
                     setNewAppointmentWeekdays([]);
                   }}
+                  activeOpacity={0.85}
                 >
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleAddAppointment}
+                  activeOpacity={0.85}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
-                    {t('common.add')}
-                  </Text>
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.add')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -956,24 +902,17 @@ export default function AgendaScreen() {
         </View>
       </Modal>
 
-      {/* Calendar Picker Modal */}
+      {/* ✅ Calendar Picker Modal (FIX: overlay sluit niet bij pijlen/dagen) */}
       <Modal
         visible={showDatePicker}
         transparent
         animationType="fade"
         onRequestClose={() => setShowDatePicker(false)}
       >
-        <TouchableOpacity 
-          style={styles.calendarOverlay}
-          activeOpacity={1}
-          onPress={() => setShowDatePicker(false)}
-        >
-          <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
+        <Pressable style={styles.calendarOverlay} onPress={() => setShowDatePicker(false)}>
+          <Pressable style={styles.calendarModal} onPress={() => {}}>
             <View style={styles.calendarPickerHeader}>
-              <TouchableOpacity
-                style={styles.calendarBackButton}
-                onPress={() => setShowDatePicker(false)}
-              >
+              <TouchableOpacity style={styles.calendarBackButton} onPress={() => setShowDatePicker(false)} hitSlop={12}>
                 <Ionicons name="chevron-back" size={26} color="#333" />
               </TouchableOpacity>
               <Text style={styles.calendarPickerTitle}>{t('agenda.selectDate')}</Text>
@@ -981,71 +920,71 @@ export default function AgendaScreen() {
             </View>
 
             <View style={styles.calendarMonthNav}>
-              <TouchableOpacity onPress={() => {
-                if (selectedMonth === 0) {
-                  setSelectedMonth(11);
-                  setSelectedYear(selectedYear - 1);
-                } else {
-                  setSelectedMonth(selectedMonth - 1);
-                }
-              }} style={styles.calendarNavButton}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedMonth === 0) {
+                    setSelectedMonth(11);
+                    setSelectedYear(selectedYear - 1);
+                  } else {
+                    setSelectedMonth(selectedMonth - 1);
+                  }
+                }}
+                style={styles.calendarNavButton}
+                hitSlop={12}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="chevron-back" size={24} color={colors.text} />
               </TouchableOpacity>
+
               <Text style={styles.calendarMonthYear}>
                 {monthNames[selectedMonth]} {selectedYear}
               </Text>
-              <TouchableOpacity onPress={() => {
-                if (selectedMonth === 11) {
-                  setSelectedMonth(0);
-                  setSelectedYear(selectedYear + 1);
-                } else {
-                  setSelectedMonth(selectedMonth + 1);
-                }
-              }} style={styles.calendarNavButton}>
+
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedMonth === 11) {
+                    setSelectedMonth(0);
+                    setSelectedYear(selectedYear + 1);
+                  } else {
+                    setSelectedMonth(selectedMonth + 1);
+                  }
+                }}
+                style={styles.calendarNavButton}
+                hitSlop={12}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="chevron-forward" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.calendarWeekDays}>
               {['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'].map((day, index) => (
-                <React.Fragment key={index}>
-                  <Text style={styles.calendarWeekDay}>{day}</Text>
-                </React.Fragment>
+                <Text key={index} style={styles.calendarWeekDay}>
+                  {day}
+                </Text>
               ))}
             </View>
 
-            <View style={styles.calendarGrid}>
-              {renderDatePicker()}
-            </View>
+            <View style={styles.calendarGrid}>{renderDatePicker()}</View>
 
-            <TouchableOpacity
-              style={styles.calendarCloseButton}
-              onPress={() => setShowDatePicker(false)}
-            >
+            <TouchableOpacity style={styles.calendarCloseButton} onPress={() => setShowDatePicker(false)} activeOpacity={0.85}>
               <Text style={styles.calendarCloseButtonText}>{t('common.close')}</Text>
             </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
 
-      {/* End Date Picker Modal */}
+      {/* ✅ End Date Picker Modal (zelfde fix) */}
       <Modal
         visible={showEndDatePicker}
         transparent
         animationType="fade"
         onRequestClose={() => setShowEndDatePicker(false)}
       >
-        <TouchableOpacity 
-          style={styles.calendarOverlay}
-          activeOpacity={1}
-          onPress={() => setShowEndDatePicker(false)}
-        >
-          <View style={styles.calendarModal} onStartShouldSetResponder={() => true}>
+        <Pressable style={styles.calendarOverlay} onPress={() => setShowEndDatePicker(false)}>
+          <Pressable style={styles.calendarModal} onPress={() => {}}>
             <View style={styles.calendarPickerHeader}>
-              <TouchableOpacity
-                style={styles.calendarBackButton}
-                onPress={() => setShowEndDatePicker(false)}
-              >
+              <TouchableOpacity style={styles.calendarBackButton} onPress={() => setShowEndDatePicker(false)} hitSlop={12}>
                 <Ionicons name="chevron-back" size={26} color="#333" />
               </TouchableOpacity>
               <Text style={styles.calendarPickerTitle}>Selecteer einddatum</Text>
@@ -1053,68 +992,68 @@ export default function AgendaScreen() {
             </View>
 
             <View style={styles.calendarMonthNav}>
-              <TouchableOpacity onPress={() => {
-                if (selectedMonth === 0) {
-                  setSelectedMonth(11);
-                  setSelectedYear(selectedYear - 1);
-                } else {
-                  setSelectedMonth(selectedMonth - 1);
-                }
-              }} style={styles.calendarNavButton}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedMonth === 0) {
+                    setSelectedMonth(11);
+                    setSelectedYear(selectedYear - 1);
+                  } else {
+                    setSelectedMonth(selectedMonth - 1);
+                  }
+                }}
+                style={styles.calendarNavButton}
+                hitSlop={12}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="chevron-back" size={24} color={colors.text} />
               </TouchableOpacity>
+
               <Text style={styles.calendarMonthYear}>
                 {monthNames[selectedMonth]} {selectedYear}
               </Text>
-              <TouchableOpacity onPress={() => {
-                if (selectedMonth === 11) {
-                  setSelectedMonth(0);
-                  setSelectedYear(selectedYear + 1);
-                } else {
-                  setSelectedMonth(selectedMonth + 1);
-                }
-              }} style={styles.calendarNavButton}>
+
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedMonth === 11) {
+                    setSelectedMonth(0);
+                    setSelectedYear(selectedYear + 1);
+                  } else {
+                    setSelectedMonth(selectedMonth + 1);
+                  }
+                }}
+                style={styles.calendarNavButton}
+                hitSlop={12}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="chevron-forward" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.calendarWeekDays}>
               {['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'].map((day, index) => (
-                <React.Fragment key={index}>
-                  <Text style={styles.calendarWeekDay}>{day}</Text>
-                </React.Fragment>
+                <Text key={index} style={styles.calendarWeekDay}>
+                  {day}
+                </Text>
               ))}
             </View>
 
-            <View style={styles.calendarGrid}>
-              {renderEndDatePicker()}
-            </View>
+            <View style={styles.calendarGrid}>{renderEndDatePicker()}</View>
 
-            <TouchableOpacity
-              style={styles.calendarCloseButton}
-              onPress={() => setShowEndDatePicker(false)}
-            >
+            <TouchableOpacity style={styles.calendarCloseButton} onPress={() => setShowEndDatePicker(false)} activeOpacity={0.85}>
               <Text style={styles.calendarCloseButtonText}>{t('common.close')}</Text>
             </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  addButton: {
-    marginBottom: 20,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  contentContainer: { paddingHorizontal: 20, paddingBottom: 40 },
+  addButton: { marginBottom: 20 },
+
   monthlyCalendar: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -1123,98 +1062,30 @@ const styles = StyleSheet.create({
     elevation: 3,
     marginBottom: 20,
   },
-  monthHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  monthNavButton: {
-    padding: 8,
-  },
-  monthTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-  },
-  weekDaysHeader: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  weekDayCell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  weekDayText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  monthGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  dayCell: {
-    width: '14.28%',
-    minHeight: 85,
-    padding: 6,
-    borderWidth: 0.5,
-    borderColor: colors.textSecondary + '20',
-  },
-  dayCellActive: {
-    backgroundColor: colors.background,
-  },
-  dayCellToday: {
-    backgroundColor: '#78C3FF',
-    borderWidth: 2,
-  },
-  dayCellHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-  },
-  dayNumber: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  dayNumberToday: {
-    fontWeight: '700',
-    fontFamily: 'Poppins_700Bold',
-  },
-  badge: {
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    minWidth: 18,
-    alignItems: 'center',
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  appointmentsContainer: {
-    flex: 1,
-    gap: 3,
-  },
-  appointmentBar: {
-    borderRadius: 3,
-    paddingHorizontal: 3,
-    paddingVertical: 2,
-    marginBottom: 2,
-  },
-  appointmentBarText: {
-    fontSize: 8,
-    fontWeight: '600',
-    color: colors.card,
-    fontFamily: 'Poppins_600SemiBold',
-  },
+  monthHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  monthNavButton: { padding: 8 },
+  monthTitle: { fontSize: 18, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold' },
+
+  weekDaysHeader: { flexDirection: 'row', marginBottom: 10 },
+  weekDayCell: { flex: 1, alignItems: 'center' },
+  weekDayText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+
+  monthGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  dayCell: { width: '14.28%', minHeight: 85, padding: 6, borderWidth: 0.5, borderColor: colors.textSecondary + '20' },
+  dayCellActive: { backgroundColor: colors.background },
+  dayCellToday: { backgroundColor: '#78C3FF', borderWidth: 2 },
+
+  dayCellHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
+  dayNumber: { fontSize: 13, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  dayNumberToday: { fontWeight: '700', fontFamily: 'Poppins_700Bold' },
+
+  badge: { borderRadius: 8, paddingHorizontal: 4, paddingVertical: 1, minWidth: 18, alignItems: 'center' },
+  badgeText: { fontSize: 9, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
+
+  appointmentsContainer: { flex: 1, gap: 3 },
+  appointmentBar: { borderRadius: 3, paddingHorizontal: 3, paddingVertical: 2, marginBottom: 2 },
+  appointmentBarText: { fontSize: 8, fontWeight: '600', color: colors.card, fontFamily: 'Poppins_600SemiBold' },
+
   filterSection: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -1223,51 +1094,15 @@ const styles = StyleSheet.create({
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
-  filterTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 15,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  memberFilterContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  memberFilterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  memberFilterChipActive: {
-  },
-  memberFilterAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  memberFilterAvatarText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  memberFilterName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  memberFilterNameActive: {
-    color: colors.card,
-  },
+  filterTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 15, fontFamily: 'Poppins_600SemiBold' },
+  memberFilterContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  memberFilterChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 12, gap: 8 },
+  memberFilterChipActive: {},
+  memberFilterAvatar: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  memberFilterAvatarText: { fontSize: 12, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
+  memberFilterName: { fontSize: 14, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  memberFilterNameActive: { color: colors.card },
+
   upcomingSection: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -1275,548 +1110,118 @@ const styles = StyleSheet.create({
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
   },
-  upcomingTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 15,
-    fontFamily: 'Poppins_700Bold',
-  },
-  emptyUpcoming: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyUpcomingText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  upcomingCard: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 12,
-    flexDirection: 'row',
-    borderLeftWidth: 4,
-  },
-  upcomingCardDate: {
-    alignItems: 'center',
-    marginRight: 15,
-    minWidth: 50,
-  },
-  upcomingCardDay: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-    textTransform: 'uppercase',
-  },
-  upcomingCardDayNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-  },
-  upcomingCardMonth: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-    textTransform: 'uppercase',
-  },
-  upcomingCardContent: {
-    flex: 1,
-  },
-  upcomingCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-    gap: 8,
-  },
-  upcomingCardTime: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.accent,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  upcomingCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-    marginBottom: 8,
-  },
-  upcomingCardMembers: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  dayDetailModal: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
-    maxHeight: '80%',
-    boxShadow: `0px 8px 24px ${colors.shadow}`,
-    elevation: 5,
-  },
-  dayDetailHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  dayDetailTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-    flex: 1,
-  },
-  dayDetailContent: {
-    maxHeight: 400,
-  },
-  noAppointments: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  noAppointmentsText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  appointmentCard: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-  },
-  appointmentCardContent: {
-    gap: 10,
-  },
-  appointmentCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  appointmentCardTime: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.accent,
-    fontFamily: 'Poppins_700Bold',
-  },
-  repeatBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.textSecondary + '20',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  repeatBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  appointmentCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  appointmentCardMembers: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  memberBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  memberBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  memberNames: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontFamily: 'Nunito_400Regular',
-  },
-  deleteButtonsContainer: {
-    marginTop: 8,
-    gap: 8,
-  },
-  deleteButton: {
-    backgroundColor: '#E74C3C',
-    borderRadius: 10,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  deleteButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  closeButton: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  closeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  modalScrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  modalContent: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-    boxShadow: `0px 8px 24px ${colors.shadow}`,
-    elevation: 5,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  modalBackButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-    flex: 1,
-  },
-  modalHeaderSpacer: {
-    width: 40,
-  },
-  input: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 15,
-    fontFamily: 'Nunito_400Regular',
-  },
-  dateButton: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: colors.text,
-    fontFamily: 'Nunito_400Regular',
-    flex: 1,
-  },
-  timeInputContainer: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  timeInput: {
-    fontSize: 16,
-    color: colors.text,
-    fontFamily: 'Nunito_400Regular',
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 10,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  memberSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
-  memberOption: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 10,
-    alignItems: 'center',
-    minWidth: 70,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    position: 'relative',
-  },
-  memberOptionActive: {
-    backgroundColor: colors.primary,
-  },
-  memberAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  memberAvatarText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.card,
-    fontFamily: 'Poppins_700Bold',
-  },
-  memberName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  checkmark: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  repeatSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
-  repeatOption: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 12,
-    flex: 1,
-    minWidth: '45%',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  repeatOptionActive: {
-  },
-  repeatOptionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  repeatOptionTextActive: {
-    color: colors.text,
-  },
-  weekdaySelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  weekdayButton: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 12,
-    minWidth: 45,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  weekdayButtonActive: {
-  },
-  weekdayButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  weekdayButtonTextActive: {
-    color: colors.card,
-  },
-  clearEndDateButton: {
-    backgroundColor: colors.background,
-    borderRadius: 10,
-    padding: 10,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  clearEndDateText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 15,
-    alignItems: 'center',
-  },
-  modalButtonCancel: {
-    backgroundColor: colors.background,
-  },
-  modalButtonConfirm: {
-  },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  modalButtonTextConfirm: {
-    color: colors.card,
-  },
-  calendarOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  calendarModal: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
-    width: '100%',
-    maxWidth: 350,
-    boxShadow: `0px 8px 24px ${colors.shadow}`,
-    elevation: 5,
-  },
-  calendarPickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  calendarBackButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  calendarPickerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-    flex: 1,
-  },
-  calendarHeaderSpacer: {
-    width: 40,
-  },
-  calendarMonthNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  calendarNavButton: {
-    padding: 8,
-  },
-  calendarMonthYear: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-  },
-  calendarWeekDays: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  calendarWeekDay: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 20,
-  },
-  calendarDay: {
-    width: '14.28%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 4,
-  },
-  calendarDayActive: {
-    borderRadius: 8,
-  },
-  calendarDaySelected: {
-  },
-  calendarDayText: {
-    fontSize: 14,
-    color: colors.text,
-    fontFamily: 'Nunito_400Regular',
-  },
-  calendarDayTextSelected: {
-    color: colors.card,
-    fontWeight: '700',
-    fontFamily: 'Poppins_700Bold',
-  },
-  calendarCloseButton: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    alignItems: 'center',
-  },
-  calendarCloseButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
+  upcomingTitle: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 15, fontFamily: 'Poppins_700Bold' },
+  emptyUpcoming: { padding: 20, alignItems: 'center' },
+  emptyUpcomingText: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+
+  upcomingCard: { backgroundColor: colors.background, borderRadius: 15, padding: 15, marginBottom: 12, flexDirection: 'row', borderLeftWidth: 4 },
+  upcomingCardDate: { alignItems: 'center', marginRight: 15, minWidth: 50 },
+  upcomingCardDay: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase' },
+  upcomingCardDayNumber: { fontSize: 24, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold' },
+  upcomingCardMonth: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase' },
+  upcomingCardContent: { flex: 1 },
+  upcomingCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, gap: 8 },
+  upcomingCardTime: { fontSize: 14, fontWeight: '600', color: colors.accent, fontFamily: 'Poppins_600SemiBold' },
+  upcomingCardTitle: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold', marginBottom: 8 },
+  upcomingCardMembers: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', padding: 20 },
+  dayDetailModal: { backgroundColor: colors.card, borderRadius: 20, padding: 20, maxHeight: '80%', boxShadow: `0px 8px 24px ${colors.shadow}`, elevation: 5 },
+  dayDetailHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  dayDetailTitle: { fontSize: 18, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold', textAlign: 'center', flex: 1 },
+  dayDetailContent: { maxHeight: 400 },
+  noAppointments: { padding: 40, alignItems: 'center' },
+  noAppointmentsText: { fontSize: 16, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+
+  appointmentCard: { backgroundColor: colors.background, borderRadius: 12, padding: 15, marginBottom: 12, borderLeftWidth: 4 },
+  appointmentCardContent: { gap: 10 },
+  appointmentCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  appointmentCardTime: { fontSize: 14, fontWeight: '700', color: colors.accent, fontFamily: 'Poppins_700Bold' },
+  repeatBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.textSecondary + '20', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  repeatBadgeText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+  appointmentCardTitle: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+
+  appointmentCardMembers: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  memberBadge: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  memberBadgeText: { fontSize: 12, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
+  memberNames: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+
+  deleteButtonsContainer: { marginTop: 8, gap: 8 },
+  deleteButton: { backgroundColor: '#E74C3C', borderRadius: 10, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  deleteButtonText: { fontSize: 14, fontWeight: '600', color: '#fff', fontFamily: 'Poppins_600SemiBold' },
+
+  closeButton: { backgroundColor: colors.background, borderRadius: 15, padding: 15, alignItems: 'center', marginTop: 15 },
+  closeButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+
+  modalScrollContent: { flexGrow: 1, justifyContent: 'center' },
+  modalContent: { backgroundColor: colors.card, borderRadius: 20, padding: 20, width: '100%', maxWidth: 400, alignSelf: 'center', boxShadow: `0px 8px 24px ${colors.shadow}`, elevation: 5 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  modalBackButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
+  modalTitle: { fontSize: 24, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold', textAlign: 'center', flex: 1 },
+  modalHeaderSpacer: { width: 40 },
+
+  input: { backgroundColor: colors.background, borderRadius: 15, padding: 15, fontSize: 16, color: colors.text, marginBottom: 15, fontFamily: 'Nunito_400Regular' },
+
+  dateButton: { backgroundColor: colors.background, borderRadius: 15, padding: 15, marginBottom: 15, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dateButtonText: { fontSize: 16, color: colors.text, fontFamily: 'Nunito_400Regular', flex: 1 },
+
+  timeInputContainer: { backgroundColor: colors.background, borderRadius: 15, padding: 15, marginBottom: 15, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  timeInput: { fontSize: 16, color: colors.text, fontFamily: 'Nunito_400Regular', flex: 1 },
+
+  inputLabel: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 10, fontFamily: 'Poppins_600SemiBold' },
+
+  memberSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  memberOption: { backgroundColor: colors.background, borderRadius: 15, padding: 10, alignItems: 'center', minWidth: 70, borderWidth: 2, borderColor: 'transparent', position: 'relative' },
+  memberOptionActive: { backgroundColor: colors.primary },
+  memberAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 5 },
+  memberAvatarText: { fontSize: 18, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
+  memberName: { fontSize: 12, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  checkmark: { position: 'absolute', top: 5, right: 5, borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
+
+  repeatSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  repeatOption: { backgroundColor: colors.background, borderRadius: 15, padding: 12, flex: 1, minWidth: '45%', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  repeatOptionActive: {},
+  repeatOptionText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+  repeatOptionTextActive: { color: colors.text },
+
+  weekdaySelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  weekdayButton: { backgroundColor: colors.background, borderRadius: 12, padding: 12, minWidth: 45, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  weekdayButtonActive: {},
+  weekdayButtonText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+  weekdayButtonTextActive: { color: colors.card },
+
+  clearEndDateButton: { backgroundColor: colors.background, borderRadius: 10, padding: 10, alignItems: 'center', marginBottom: 15 },
+  clearEndDateText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+
+  modalButtons: { flexDirection: 'row', gap: 10 },
+  modalButton: { flex: 1, padding: 15, borderRadius: 15, alignItems: 'center' },
+  modalButtonCancel: { backgroundColor: colors.background },
+  modalButtonConfirm: {},
+  modalButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  modalButtonTextConfirm: { color: colors.card },
+
+  calendarOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  calendarModal: { backgroundColor: colors.card, borderRadius: 20, padding: 20, width: '100%', maxWidth: 350, boxShadow: `0px 8px 24px ${colors.shadow}`, elevation: 5 },
+
+  calendarPickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  calendarBackButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
+  calendarPickerTitle: { fontSize: 20, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold', textAlign: 'center', flex: 1 },
+  calendarHeaderSpacer: { width: 40 },
+
+  calendarMonthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  calendarNavButton: { padding: 8 },
+  calendarMonthYear: { fontSize: 18, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold' },
+
+  calendarWeekDays: { flexDirection: 'row', marginBottom: 10 },
+  calendarWeekDay: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 },
+  calendarDay: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', padding: 4 },
+  calendarDayActive: { borderRadius: 8 },
+  calendarDaySelected: {},
+  calendarDayText: { fontSize: 14, color: colors.text, fontFamily: 'Nunito_400Regular' },
+  calendarDayTextSelected: { color: colors.card, fontWeight: '700', fontFamily: 'Poppins_700Bold' },
+
+  calendarCloseButton: { backgroundColor: colors.background, borderRadius: 15, padding: 15, alignItems: 'center' },
+  calendarCloseButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
 });

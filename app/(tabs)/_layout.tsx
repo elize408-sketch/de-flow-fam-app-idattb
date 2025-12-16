@@ -1,23 +1,25 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Stack } from 'expo-router';
-import FloatingTabBar from '@/components/FloatingTabBar';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { Stack } from "expo-router";
+import FloatingTabBar from "@/components/FloatingTabBar";
 
 export default function TabLayout() {
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <Stack
         screenOptions={{
-          headerShown: false,   // ⛔️ NO headers anywhere
-          animation: 'none',
+          headerShown: false,
+          animation: "none",
         }}
       >
         <Stack.Screen name="(home)" options={{ headerShown: false }} />
+
         <Stack.Screen name="notifications" options={{ headerShown: false }} />
         <Stack.Screen name="child" options={{ headerShown: false }} />
         <Stack.Screen name="child-dashboard" options={{ headerShown: false }} />
         <Stack.Screen name="profile" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
+
         <Stack.Screen name="tasks" options={{ headerShown: false }} />
         <Stack.Screen name="rewards" options={{ headerShown: false }} />
         <Stack.Screen name="agenda" options={{ headerShown: false }} />
@@ -30,10 +32,20 @@ export default function TabLayout() {
         <Stack.Screen name="memories" options={{ headerShown: false }} />
         <Stack.Screen name="reminders" options={{ headerShown: false }} />
         <Stack.Screen name="shop" options={{ headerShown: false }} />
+
+        {/* ✅ Deze miste je */}
+        <Stack.Screen name="contactbook" options={{ headerShown: false }} />
+        <Stack.Screen name="roosters" options={{ headerShown: false }} />
       </Stack>
 
-      {/* 🔽 Je eigen custom tabbar */}
-      <FloatingTabBar />
+      {/* ✅ Heel belangrijk: laat de tabbar GEEN touches “stelen” van de rest */}
+      <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+        <FloatingTabBar />
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+});
