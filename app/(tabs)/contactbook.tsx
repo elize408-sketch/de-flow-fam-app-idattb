@@ -9,6 +9,7 @@ import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
 import ModuleHeader from '@/components/ModuleHeader';
 import ThemedButton from '@/components/ThemedButton';
 import { supabase } from '@/utils/supabase';
+import { useTranslation } from 'react-i18next';
 
 interface Contact {
   id: string;
@@ -33,6 +34,7 @@ const CATEGORY_OPTIONS = [
 
 export default function ContactbookScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { setModule, accentColor } = useModuleTheme();
   const { currentFamily, currentUser } = useFamily();
   
@@ -71,7 +73,7 @@ export default function ContactbookScreen() {
 
       if (error) {
         console.error('Error loading contacts:', error);
-        Alert.alert('Fout', 'Kon contacten niet laden');
+        Alert.alert(t('common.error'), t('contactbook.couldNotLoad'));
         return;
       }
 
@@ -81,11 +83,11 @@ export default function ContactbookScreen() {
       }
     } catch (error) {
       console.error('Error loading contacts:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het laden van contacten');
+      Alert.alert(t('common.error'), t('contactbook.errorLoading'));
     } finally {
       setLoading(false);
     }
-  }, [currentFamily]);
+  }, [currentFamily, t]);
 
   useEffect(() => {
     loadContacts();
@@ -117,12 +119,12 @@ export default function ContactbookScreen() {
 
   const handleSaveContact = async () => {
     if (!name.trim()) {
-      Alert.alert('Fout', 'Vul een naam in');
+      Alert.alert(t('common.error'), t('contactbook.fillName'));
       return;
     }
 
     if (!currentFamily || !currentUser) {
-      Alert.alert('Fout', 'Geen gezin of gebruiker gevonden');
+      Alert.alert(t('common.error'), t('contactbook.noFamilyOrUser'));
       return;
     }
 
@@ -143,11 +145,11 @@ export default function ContactbookScreen() {
 
         if (error) {
           console.error('Error updating contact:', error);
-          Alert.alert('Fout', `Kon contact niet bijwerken: ${error.message}`);
+          Alert.alert(t('common.error'), `${t('contactbook.couldNotUpdate')}: ${error.message}`);
           return;
         }
 
-        Alert.alert('Gelukt!', 'Contact bijgewerkt');
+        Alert.alert(t('common.success'), t('contactbook.contactUpdated'));
       } else {
         // Create new contact
         const { error } = await supabase
@@ -164,11 +166,11 @@ export default function ContactbookScreen() {
 
         if (error) {
           console.error('Error adding contact:', error);
-          Alert.alert('Fout', `Kon contact niet toevoegen: ${error.message}`);
+          Alert.alert(t('common.error'), `${t('contactbook.couldNotAdd')}: ${error.message}`);
           return;
         }
 
-        Alert.alert('Gelukt!', 'Contact toegevoegd');
+        Alert.alert(t('common.success'), t('contactbook.contactAdded'));
       }
 
       setShowAddModal(false);
@@ -176,18 +178,18 @@ export default function ContactbookScreen() {
       loadContacts();
     } catch (error: any) {
       console.error('Error saving contact:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het opslaan van het contact');
+      Alert.alert(t('common.error'), t('contactbook.errorSaving'));
     }
   };
 
   const handleDeleteContact = async (contact: Contact) => {
     Alert.alert(
-      'Verwijderen?',
-      `Weet je zeker dat je "${contact.name}" wilt verwijderen?`,
+      t('contactbook.deleteConfirm'),
+      t('contactbook.deleteMessage', { name: contact.name }),
       [
-        { text: 'Annuleren', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Verwijderen',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -199,15 +201,15 @@ export default function ContactbookScreen() {
 
               if (error) {
                 console.error('Error deleting contact:', error);
-                Alert.alert('Fout', `Kon contact niet verwijderen: ${error.message}`);
+                Alert.alert(t('common.error'), `${t('contactbook.couldNotDelete')}: ${error.message}`);
                 return;
               }
 
-              Alert.alert('Gelukt!', 'Contact verwijderd');
+              Alert.alert(t('common.success'), t('contactbook.contactDeleted'));
               loadContacts();
             } catch (error: any) {
               console.error('Error deleting contact:', error);
-              Alert.alert('Fout', 'Er ging iets mis bij het verwijderen van het contact');
+              Alert.alert(t('common.error'), t('contactbook.errorDeleting'));
             }
           },
         },
@@ -229,12 +231,12 @@ export default function ContactbookScreen() {
     return (
       <View style={styles.container}>
         <ModuleHeader
-          title="Contactboek"
-          subtitle="Belangrijke contacten"
+          title={t('contactbook.title')}
+          subtitle={t('contactbook.subtitle')}
           backgroundColor="#FFFFFF"
         />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Laden...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -243,25 +245,24 @@ export default function ContactbookScreen() {
   return (
     <View style={styles.container}>
       <ModuleHeader
-        title="Contactboek"
-        subtitle="Belangrijke contacten"
+        title={t('contactbook.title')}
+        subtitle={t('contactbook.subtitle')}
         backgroundColor="#FFFFFF"
       />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <ThemedButton
-          title="Contact toevoegen"
+          title={t('contactbook.addContact')}
           onPress={handleOpenAddModal}
           icon="plus"
           androidIcon="add"
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: colors.warmOrange }]}
         />
 
         {contacts.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateEmoji}>📇</Text>
-            <Text style={styles.emptyStateText}>Nog geen contacten</Text>
-            <Text style={styles.emptyStateSubtext}>Voeg het eerste contact toe!</Text>
+            <Text style={styles.emptyStateText}>{t('contactbook.noContacts')}</Text>
+            <Text style={styles.emptyStateSubtext}>{t('contactbook.addFirstContact')}</Text>
           </View>
         ) : (
           <View style={styles.contactsList}>
@@ -308,7 +309,7 @@ export default function ContactbookScreen() {
                       onPress={() => handleOpenEditModal(contact)}
                     >
                       <Ionicons name="pencil-outline" size={18} color="#fff" />
-                      <Text style={styles.actionButtonText}>Bewerken</Text>
+                      <Text style={styles.actionButtonText}>{t('common.edit')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -316,7 +317,7 @@ export default function ContactbookScreen() {
                       onPress={() => handleDeleteContact(contact)}
                     >
                       <Ionicons name="trash-outline" size={18} color="#fff" />
-                      <Text style={styles.actionButtonText}>Verwijderen</Text>
+                      <Text style={styles.actionButtonText}>{t('common.delete')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -360,7 +361,7 @@ export default function ContactbookScreen() {
                 <Ionicons name="chevron-back" size={26} color="#333" />
               </TouchableOpacity>
               <Text style={styles.modalTitle}>
-                {editingContact ? 'Contact bewerken' : 'Nieuw contact'}
+                {editingContact ? t('contactbook.editContact') : t('contactbook.newContact')}
               </Text>
               <View style={styles.modalHeaderSpacer} />
             </View>
@@ -370,17 +371,17 @@ export default function ContactbookScreen() {
               contentContainerStyle={styles.modalScrollContent}
               keyboardShouldPersistTaps="handled"
             >
-              <Text style={styles.inputLabel}>Naam *</Text>
+              <Text style={styles.inputLabel}>{t('contactbook.nameLabel')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Naam"
+                placeholder={t('contactbook.namePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={name}
                 onChangeText={setName}
                 autoFocus={false}
               />
 
-              <Text style={styles.inputLabel}>Categorie</Text>
+              <Text style={styles.inputLabel}>{t('contactbook.categoryLabel')}</Text>
               <View style={styles.categorySelector}>
                 {CATEGORY_OPTIONS.map((cat, index) => (
                   <React.Fragment key={index}>
@@ -402,20 +403,20 @@ export default function ContactbookScreen() {
                 ))}
               </View>
 
-              <Text style={styles.inputLabel}>Telefoonnummer</Text>
+              <Text style={styles.inputLabel}>{t('contactbook.phoneLabel')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="06 12345678"
+                placeholder={t('contactbook.phonePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
               />
 
-              <Text style={styles.inputLabel}>E-mail</Text>
+              <Text style={styles.inputLabel}>{t('contactbook.emailLabel')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="email@voorbeeld.nl"
+                placeholder={t('contactbook.emailPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={email}
                 onChangeText={setEmail}
@@ -423,10 +424,10 @@ export default function ContactbookScreen() {
                 autoCapitalize="none"
               />
 
-              <Text style={styles.inputLabel}>Notitie</Text>
+              <Text style={styles.inputLabel}>{t('contactbook.noteLabel')}</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Extra informatie..."
+                placeholder={t('contactbook.notePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={note}
                 onChangeText={setNote}
@@ -442,14 +443,14 @@ export default function ContactbookScreen() {
                     resetForm();
                   }}
                 >
-                  <Text style={styles.modalButtonText}>Annuleren</Text>
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
                   onPress={handleSaveContact}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
-                    {editingContact ? 'Bijwerken' : 'Toevoegen'}
+                    {editingContact ? t('common.save') : t('common.add')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -478,6 +479,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 140,
   },
   addButton: {
@@ -486,24 +488,23 @@ const styles = StyleSheet.create({
   emptyState: {
     backgroundColor: colors.card,
     borderRadius: 20,
-    padding: 40,
+    padding: 60,
     alignItems: 'center',
+    justifyContent: 'center',
     boxShadow: `0px 4px 12px ${colors.shadow}`,
     elevation: 3,
-  },
-  emptyStateEmoji: {
-    fontSize: 60,
-    marginBottom: 15,
+    minHeight: 300,
   },
   emptyStateText: {
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 5,
+    marginBottom: 10,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
   },
   emptyStateSubtext: {
-    fontSize: 14,
+    fontSize: 16,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
     textAlign: 'center',
