@@ -1,17 +1,20 @@
-
 {
   "expo": {
     "name": "Flow Fam",
-    "slug": "Flow Fam",
+    "slug": "flow-fam",
     "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/ad140c28-4e3a-4941-a32b-028b482df723.png",
     "userInterfaceStyle": "automatic",
+
     "splash": {
       "image": "./assets/images/ad140c28-4e3a-4941-a32b-028b482df723.png",
       "resizeMode": "contain",
       "backgroundColor": "#F9F6F1"
     },
+
+    "scheme": "flowfam",
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "nl.flowfam.gezinsapp",
@@ -24,6 +27,7 @@
         "CFBundleName": "FlowFam"
       }
     },
+
     "android": {
       "package": "nl.flowfam.gezinsapp",
       "versionCode": 1,
@@ -33,10 +37,12 @@
       },
       "edgeToEdgeEnabled": true
     },
+
     "web": {
       "favicon": "./assets/images/ad140c28-4e3a-4941-a32b-028b482df723.png",
       "bundler": "metro"
     },
+
     "plugins": [
       "expo-font",
       "expo-router",
@@ -63,11 +69,12 @@
         }
       ]
     ],
-    "scheme": "flowfam",
+
     "experiments": {
       "typedRoutes": true,
       "newArchEnabled": true
     },
+
     "extra": {
       "router": {},
       "eas": {
@@ -76,15 +83,12 @@
       "SUPABASE_URL": "https://iykrwfgfdpnlfmdexrpr.supabase.co",
       "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5a3J3ZmdmZHBubGZtZGV4cnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNTA4ODIsImV4cCI6MjA3OTYyNjg4Mn0.e2KS_hzDwXb-oGPQW7tC6g70Wo5CDMVb61gGVqPiYTI"
     },
+
     "sdkVersion": "54.0.0",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "platforms": ["ios", "android", "web"],
+
     "cli": {
       "appVersionSource": "local"
     }
-  },
-  "scheme": "Flow Fam"
+  }
 }
