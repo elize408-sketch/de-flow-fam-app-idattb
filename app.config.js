@@ -75,7 +75,7 @@ export default ({ config }) => ({
 
   experiments: {
     typedRoutes: true,
-    newArchEnabled: true,
+    newArchEnabled: false,
   },
 
   extra: {
