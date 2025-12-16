@@ -1,4 +1,3 @@
-
 {
   "common": {
     "loading": "Laden...",
@@ -104,6 +103,7 @@
     "notAvailable": "Niet beschikbaar",
     "comingSoon": "Binnenkort beschikbaar"
   },
+
   "home": {
     "title": "Home",
     "welcome": "Welkom",
@@ -123,6 +123,7 @@
     },
     "noAppointmentsToday": "Geen afspraken vandaag"
   },
+
   "agenda": {
     "title": "Agenda",
     "subtitle": "Gezinsagenda",
@@ -175,6 +176,7 @@
       "sunday": "Zo"
     }
   },
+
   "profile": {
     "repeat": "Herhaling",
     "repeatNone": "Geen",
@@ -182,6 +184,7 @@
     "repeatWeekly": "Wekelijks",
     "repeatMonthly": "Maandelijks"
   },
+
   "contactbook": {
     "title": "Contactboek",
     "subtitle": "Belangrijke contacten",
@@ -214,6 +217,7 @@
     "errorDeleting": "Er ging iets mis bij het verwijderen van het contact",
     "noFamilyOrUser": "Geen familie of gebruiker gevonden"
   },
+
   "roosters": {
     "title": "Roosters",
     "subtitle": "Beheer gezinsroosters",
@@ -254,23 +258,36 @@
     "delete": "Verwijderen",
     "addToAgenda": "Naar agenda",
     "eventsCreated": "afspraken aangemaakt"
-  }
-}
-{
+  },
+
   "tasks": {
     "title": "Taken",
-    "subtitle": "Taken overzicht",
+    "subtitle": "Taken voor het gezin",
     "assignedTo": "Toegewezen aan",
     "addTask": "Taak toevoegen",
     "taskName": "Taaknaam",
-    "chooseIcon": "Kies een icoon:",
-    "assignTo": "Toewijzen aan:",
+    "chooseIcon": "Kies een icoon",
+    "assignTo": "Toewijzen aan",
     "repeat": "Herhaling",
     "repeatNone": "Geen",
     "repeatDaily": "Dagelijks",
     "repeatWeekly": "Wekelijks",
     "repeatMonthly": "Maandelijks",
-    "cancel": "Annuleren",
-    "add": "Toevoegen"
+    "add": "Toevoegen",
+    "cancel": "Annuleren"
+  },
+
+  "shopping": {
+    "title": "Boodschappen",
+    "subtitle": "Boodschappenlijst",
+    "noItems": "Nog geen items",
+    "addFirstItem": "Voeg je eerste item toe!",
+    "newItem": "Nieuw boodschappen item",
+    "namePlaceholder": "Naam (bijv. melk, brood)",
+    "quantity": "Aantal",
+    "unit": "Eenheid",
+    "example": "Bijvoorbeeld: 1 liter, 500 gram, 2 stuks",
+    "add": "Toevoegen",
+    "cancel": "Annuleren"
   }
 }
