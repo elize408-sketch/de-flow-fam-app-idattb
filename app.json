@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Flow Fam",
@@ -11,7 +12,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#F9F6F1"
     },
-    "scheme": "flowfam",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "nl.flowfam.gezinsapp",
@@ -84,6 +84,5 @@
     "cli": {
       "appVersionSource": "local"
     }
-  },
-  "scheme": "Flow Fam"
+  }
 }
