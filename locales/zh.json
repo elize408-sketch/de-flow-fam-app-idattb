@@ -85,7 +85,7 @@
     "contactUpdated": "联系人已更新",
     "contactDeleted": "联系人已删除",
     "deleteConfirm": "删除？",
-    "deleteMessage": "您确定要删除"{{name}}"吗？",
+    "deleteMessage": "确定要删除“{(name)}”吗？",
     "couldNotLoad": "无法加载联系人",
     "errorLoading": "加载联系人时出错",
     "couldNotAdd": "无法添加联系人",
