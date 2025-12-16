@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   StyleSheet,
   View,
@@ -6,70 +6,68 @@ import {
   ScrollView,
   Platform,
   Image,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { HomeMenuItem } from '@/components/HomeMenuItem';
-import { colors } from '@/styles/commonStyles';
+} from "react-native";
+import { useTranslation } from "react-i18next";
+import { HomeMenuItem } from "@/components/HomeMenuItem";
+import { colors } from "@/styles/commonStyles";
 
 export default function HomeScreen() {
-  const router = useRouter();
   const { t } = useTranslation();
 
   const menuItems = [
     {
-      title: t('home.menu.agenda'),
-      color: '#4A90E2',
-      icon: 'calendar-month-outline',
-      route: '/(tabs)/agenda',
+      title: t("home.menu.agenda"),
+      color: "#4A90E2",
+      icon: "calendar-month-outline",
+      route: "/(tabs)/agenda",
     },
     {
-      title: t('home.menu.tasks'),
-      color: '#7ED321',
-      icon: 'check-circle-outline',
-      route: '/(tabs)/tasks',
+      title: t("home.menu.tasks"),
+      color: "#7ED321",
+      icon: "check-circle-outline",
+      route: "/(tabs)/tasks",
     },
     {
-      title: t('home.menu.shopping'),
+      title: t("home.menu.shopping"),
       color: colors.warmOrange,
-      icon: 'cart-outline',
-      route: '/(tabs)/shopping',
+      icon: "cart-outline",
+      route: "/(tabs)/shopping",
     },
     {
-      title: t('home.menu.finances'),
-      color: '#34C759',
-      icon: 'currency-eur',
-      route: '/(tabs)/finances',
+      title: t("home.menu.finances"),
+      color: "#34C759",
+      icon: "currency-eur",
+      route: "/(tabs)/finances",
     },
     {
-      title: t('home.menu.photobook'),
+      title: t("home.menu.photobook"),
       color: colors.redPink,
-      icon: 'camera-outline',
-      route: '/(tabs)/memories',
+      icon: "camera-outline",
+      route: "/(tabs)/memories",
     },
     {
-      title: t('home.menu.meals'),
+      title: t("home.menu.meals"),
       color: colors.warmOrange,
-      icon: 'food-outline',
-      route: '/(tabs)/meals',
+      icon: "food-outline",
+      route: "/(tabs)/meals",
     },
     {
-      title: t('home.menu.contactbook'),
-      color: '#9B59B6',
-      icon: 'book-outline',
-      route: '/(tabs)/contactbook',
+      title: t("home.menu.contactbook"),
+      color: "#9B59B6",
+      icon: "book-outline",
+      route: "/(tabs)/contactbook",
     },
     {
-      title: t('home.menu.roosters'),
-      color: '#3498DB',
-      icon: 'calendar-clock',
-      route: '/(tabs)/roosters',
+      title: t("home.menu.roosters"),
+      color: "#3498DB",
+      icon: "calendar-clock",
+      route: "/(tabs)/roosters",
     },
     {
-      title: t('home.menu.shop'),
+      title: t("home.menu.shop"),
       color: colors.redPink,
-      icon: 'shopping-outline',
-      route: '/(tabs)/shop',
+      icon: "shopping-outline",
+      route: "/(tabs)/shop",
     },
   ];
 
@@ -82,20 +80,20 @@ export default function HomeScreen() {
       >
         <View style={styles.illustrationCard}>
           <Image
-            source={require('@/assets/images/ed920307-19f7-48d1-96f4-53ed71f8af30.jpeg')}
+            source={require("@/assets/images/ed920307-19f7-48d1-96f4-53ed71f8af30.jpeg")}
             style={styles.familyImage}
             resizeMode="contain"
           />
         </View>
 
         <View style={styles.menuContainer}>
-          {menuItems.map((item, index) => (
+          {menuItems.map((item) => (
             <HomeMenuItem
-              key={index}
+              key={item.route}
               title={item.title}
               color={item.color}
               icon={item.icon}
-              onPress={() => router.push(item.route)}
+              route={item.route}
             />
           ))}
         </View>
@@ -107,23 +105,23 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   scrollView: {
     flex: 1,
   },
   container: {
     flexGrow: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 48 : 12,
+    paddingTop: Platform.OS === "android" ? 48 : 12,
     paddingBottom: 120,
   },
   illustrationCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 8,
     ...Platform.select({
       ios: {
@@ -134,6 +132,9 @@ const styles = StyleSheet.create({
       },
       android: {
         elevation: 2,
+      },
+      web: {
+        boxShadow: `0px 2px 12px rgba(76, 59, 52, 0.08)`,
       },
     }),
   },
