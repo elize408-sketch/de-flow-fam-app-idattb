@@ -56,6 +56,13 @@ export default function RootLayout() {
               <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
               <Stack.Screen name="formsheet" options={{ presentation: 'formSheet', headerShown: false }} />
               <Stack.Screen name="transparent-modal" options={{ presentation: 'transparentModal', headerShown: false }} />
+              <Stack.Screen 
+                name="(tabs)/shopping/add-item" 
+                options={{ 
+                  presentation: 'modal', 
+                  headerShown: false 
+                }} 
+              />
             </Stack>
           </WidgetProvider>
         </FamilyProvider>

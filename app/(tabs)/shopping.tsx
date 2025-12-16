@@ -1,14 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useFamily } from '@/contexts/FamilyContext';
 import { ShoppingItem, PantryItem, IngredientCategory } from '@/types/family';
-import { CATEGORY_ORDER, CATEGORY_LABELS, categorizeIngredient, parseIngredient } from '@/utils/ingredientCategories';
+import { CATEGORY_ORDER, CATEGORY_LABELS } from '@/utils/ingredientCategories';
 import { generateShoppingListPDF } from '@/utils/pdfGenerator';
-import { Ionicons } from '@expo/vector-icons';
 import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
 import ModuleHeader from '@/components/ModuleHeader';
 import ThemedButton from '@/components/ThemedButton';
@@ -20,62 +19,19 @@ export default function ShoppingScreen() {
   const { setModule, accentColor } = useModuleTheme();
   const { 
     shoppingList, 
-    addShoppingItem, 
     toggleShoppingItem, 
     deleteShoppingItem,
     pantryItems,
-    addPantryItem,
-    updatePantryItem,
     deletePantryItem,
-    currentUser,
     shareShoppingListText,
   } = useFamily();
   
   const [activeTab, setActiveTab] = useState<TabType>('shopping');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemQuantity, setNewItemQuantity] = useState('');
-  const [newItemUnit, setNewItemUnit] = useState('');
 
   // Set module theme on mount
   useEffect(() => {
     setModule('shopping' as ModuleName);
   }, [setModule]);
-
-  const handleAddItem = () => {
-    if (!newItemName.trim()) {
-      Alert.alert('Fout', 'Vul een item in');
-      return;
-    }
-
-    const parsed = parseIngredient(`${newItemQuantity} ${newItemUnit} ${newItemName}`.trim());
-    const category = categorizeIngredient(parsed.name);
-
-    if (activeTab === 'shopping') {
-      addShoppingItem({
-        name: parsed.name,
-        quantity: parsed.quantity,
-        unit: parsed.unit,
-        category,
-        completed: false,
-        addedBy: currentUser?.id || '',
-      });
-      Alert.alert('Gelukt!', 'Item toegevoegd aan boodschappenlijst');
-    } else {
-      addPantryItem({
-        name: parsed.name,
-        quantity: parsed.quantity,
-        unit: parsed.unit,
-        category,
-      });
-      Alert.alert('Gelukt!', 'Item toegevoegd aan voorraadkast');
-    }
-
-    setNewItemName('');
-    setNewItemQuantity('');
-    setNewItemUnit('');
-    setShowAddModal(false);
-  };
 
   const handleExportPDF = async () => {
     try {
@@ -204,7 +160,7 @@ export default function ShoppingScreen() {
 
             <ThemedButton
               title="Item toevoegen"
-              onPress={() => setShowAddModal(true)}
+              onPress={() => router.push('/(tabs)/shopping/add-item?tab=shopping')}
               icon="plus"
               androidIcon="add"
               style={styles.addButton}
@@ -329,7 +285,7 @@ export default function ShoppingScreen() {
           <>
             <ThemedButton
               title="Item toevoegen"
-              onPress={() => setShowAddModal(true)}
+              onPress={() => router.push('/(tabs)/shopping/add-item?tab=pantry')}
               icon="plus"
               androidIcon="add"
               style={styles.addButton}
@@ -385,101 +341,6 @@ export default function ShoppingScreen() {
           </>
         )}
       </ScrollView>
-
-      <Modal
-        visible={showAddModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowAddModal(false)}
-      >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <TouchableOpacity 
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setShowAddModal(false)}
-          />
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={() => {
-                  setShowAddModal(false);
-                  setNewItemName('');
-                  setNewItemQuantity('');
-                  setNewItemUnit('');
-                }}
-              >
-                <Ionicons name="chevron-back" size={26} color="#333" />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>
-                {activeTab === 'shopping' ? 'Nieuw boodschappen item' : 'Nieuw voorraad item'}
-              </Text>
-              <View style={styles.modalHeaderSpacer} />
-            </View>
-
-            <ScrollView 
-              style={styles.modalScrollView}
-              contentContainerStyle={styles.modalScrollContent}
-              keyboardShouldPersistTaps="handled"
-            >
-              <TextInput
-                style={styles.input}
-                placeholder="Naam (bijv. Melk, Brood, Eieren)"
-                placeholderTextColor={colors.textSecondary}
-                value={newItemName}
-                onChangeText={setNewItemName}
-                autoFocus={false}
-              />
-
-              <View style={styles.quantityRow}>
-                <TextInput
-                  style={[styles.input, styles.quantityInput]}
-                  placeholder="Aantal"
-                  placeholderTextColor={colors.textSecondary}
-                  value={newItemQuantity}
-                  onChangeText={setNewItemQuantity}
-                  keyboardType="numeric"
-                />
-                
-                <TextInput
-                  style={[styles.input, styles.unitInput]}
-                  placeholder="Eenheid"
-                  placeholderTextColor={colors.textSecondary}
-                  value={newItemUnit}
-                  onChangeText={setNewItemUnit}
-                />
-              </View>
-
-              <Text style={styles.helperText}>
-                Bijvoorbeeld: 1 liter, 500 gram, 2 stuks
-              </Text>
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonCancel]}
-                  onPress={() => {
-                    setShowAddModal(false);
-                    setNewItemName('');
-                    setNewItemQuantity('');
-                    setNewItemUnit('');
-                  }}
-                >
-                  <Text style={styles.modalButtonText}>Annuleren</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
-                  onPress={handleAddItem}
-                >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </View>
   );
 }
@@ -634,104 +495,5 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 10,
-  },
-  modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '80%',
-    boxShadow: `0px -4px 24px ${colors.shadow}`,
-    elevation: 5,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  modalBackButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
-    flex: 1,
-  },
-  modalHeaderSpacer: {
-    width: 40,
-  },
-  modalScrollView: {
-    maxHeight: 500,
-  },
-  modalScrollContent: {
-    paddingBottom: 20,
-  },
-  input: {
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 15,
-    fontFamily: 'Nunito_400Regular',
-  },
-  quantityRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 0,
-  },
-  quantityInput: {
-    flex: 1,
-  },
-  unitInput: {
-    flex: 1,
-  },
-  helperText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 20,
-    fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 15,
-    alignItems: 'center',
-  },
-  modalButtonCancel: {
-    backgroundColor: colors.background,
-  },
-  modalButtonConfirm: {
-  },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  modalButtonTextConfirm: {
-    color: colors.card,
   },
 });
