@@ -178,11 +178,9 @@
   },
 
   "profile": {
-    "repeat": "Herhaling",
-    "repeatNone": "Geen",
-    "repeatDaily": "Dagelijks",
-    "repeatWeekly": "Wekelijks",
-    "repeatMonthly": "Maandelijks"
+    "title": "Profiel",
+    "editProfile": "Profiel bewerken",
+    "settings": "Instellingen"
   },
 
   "contactbook": {
