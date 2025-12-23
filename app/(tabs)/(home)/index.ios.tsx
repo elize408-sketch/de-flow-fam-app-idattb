@@ -115,9 +115,13 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { currentUser } = useFamily();
 
-  const firstName = currentUser?.name?.split(" ")[0] || "daar";
+  // Extract first name from user profile, fallback to empty string
+  const firstName = currentUser?.name?.split(" ")[0]?.trim() || "";
   const greeting = getGreeting();
   const dailyMessage = getDailyMessage();
+
+  // Build greeting text with personalization
+  const greetingText = firstName ? `${greeting}, ${firstName}!` : `${greeting}!`;
 
   // Dashboard cards with specific color scheme
   // Row 1: Agenda (ORANGE), Taken (BEIGE)
@@ -196,9 +200,7 @@ export default function HomeScreen() {
         >
           {/* Welcome Header */}
           <View style={styles.headerSection}>
-            <Text style={styles.greetingText}>
-              {greeting}, <Text style={styles.firstNameText}>{firstName}!</Text>
-            </Text>
+            <Text style={styles.greetingText}>{greetingText}</Text>
             <Text style={styles.dailyMessage}>{dailyMessage}</Text>
           </View>
 
@@ -243,7 +245,7 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     marginBottom: 32,
-    marginTop: 8,
+    marginTop: 24, // ✅ Increased from 8 to 24 (+16px extra spacing)
   },
   greetingText: {
     fontSize: 28,
@@ -251,9 +253,6 @@ const styles = StyleSheet.create({
     color: "#4c3b34",
     fontFamily: "Poppins_700Bold",
     marginBottom: 8,
-  },
-  firstNameText: {
-    color: "#4c3b34",
   },
   dailyMessage: {
     fontSize: 16,
