@@ -26,18 +26,18 @@ interface TimeSlot {
 }
 
 const TASK_ICONS = [
-  { name: 'briefcase', label: 'Work' },
+  { name: 'briefcase', label: 'Werk' },
   { name: 'car', label: 'Transport' },
-  { name: 'cart', label: 'Shopping' },
-  { name: 'home', label: 'Home' },
-  { name: 'restaurant', label: 'Food' },
-  { name: 'fitness', label: 'Exercise' },
-  { name: 'bed', label: 'Rest' },
-  { name: 'phone', label: 'Call' },
-  { name: 'mail', label: 'Email' },
-  { name: 'calendar', label: 'Meeting' },
-  { name: 'medical', label: 'Health' },
-  { name: 'school', label: 'Education' },
+  { name: 'cart', label: 'Boodschappen' },
+  { name: 'home', label: 'Huis' },
+  { name: 'restaurant', label: 'Eten' },
+  { name: 'fitness', label: 'Sport' },
+  { name: 'bed', label: 'Rust' },
+  { name: 'phone', label: 'Bellen' },
+  { name: 'mail', label: 'E-mail' },
+  { name: 'calendar', label: 'Vergadering' },
+  { name: 'medical', label: 'Gezondheid' },
+  { name: 'school', label: 'Onderwijs' },
 ];
 
 export default function AdultTasksScreen() {
@@ -63,6 +63,13 @@ export default function AdultTasksScreen() {
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    taskName?: string;
+    startTime?: string;
+    assignedTo?: string;
+  }>({});
+
   // Get adult family members only
   const adults = useMemo(
     () => familyMembers.filter((m) => m.role === 'parent'),
@@ -75,13 +82,18 @@ export default function AdultTasksScreen() {
 
     try {
       setLoading(true);
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*, task_assignments(family_member_id)')
         .eq('family_id', currentFamily.id)
         .eq('is_adult_task', true)
-        .gte('due_date', new Date(selectedDate.setHours(0, 0, 0, 0)).toISOString())
-        .lt('due_date', new Date(selectedDate.setHours(23, 59, 59, 999)).toISOString());
+        .gte('due_date', startOfDay.toISOString())
+        .lt('due_date', endOfDay.toISOString());
 
       if (error) throw error;
 
@@ -104,7 +116,7 @@ export default function AdultTasksScreen() {
       setAdultTasks(formatted);
     } catch (error) {
       console.error('Error loading adult tasks:', error);
-      Alert.alert(t('common.error'), 'Could not load tasks');
+      Alert.alert(t('common.error'), t('tasks.couldNotLoad'));
     } finally {
       setLoading(false);
     }
@@ -159,14 +171,27 @@ export default function AdultTasksScreen() {
     return (hours * 60 + minutes) / (24 * 60);
   };
 
-  const handleAddTask = async () => {
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
     if (!taskName.trim()) {
-      Alert.alert(t('common.error'), 'Please enter a task name');
-      return;
+      newErrors.taskName = t('tasks.fillTaskName');
+    }
+
+    if (!startTime) {
+      newErrors.startTime = t('tasks.selectStartTime');
     }
 
     if (selectedAdults.length === 0) {
-      Alert.alert(t('common.error'), 'Please assign at least one adult');
+      newErrors.assignedTo = t('tasks.selectAdult');
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddTask = async () => {
+    if (!validateForm()) {
       return;
     }
 
@@ -181,6 +206,10 @@ export default function AdultTasksScreen() {
 
       const taskId = randomUUID();
 
+      // Set due date to selected date
+      const dueDate = new Date(selectedDate);
+      dueDate.setHours(0, 0, 0, 0);
+
       // Insert task
       const { error: taskError } = await supabase.from('tasks').insert({
         id: taskId,
@@ -191,7 +220,7 @@ export default function AdultTasksScreen() {
         completed: false,
         repeat_type: repeatType,
         custom_days: customDays.length > 0 ? customDays : null,
-        due_date: selectedDate.toISOString(),
+        due_date: dueDate.toISOString(),
         time: startTime,
         end_time: endTime,
         duration_minutes: duration,
@@ -214,13 +243,13 @@ export default function AdultTasksScreen() {
 
       if (assignError) throw assignError;
 
-      Alert.alert(t('common.success'), 'Task added successfully');
+      Alert.alert(t('common.success'), t('tasks.taskAdded'));
       resetForm();
       setShowAddModal(false);
       loadAdultTasks();
     } catch (error) {
       console.error('Error adding task:', error);
-      Alert.alert(t('common.error'), 'Could not add task');
+      Alert.alert(t('common.error'), t('tasks.couldNotAdd'));
     }
   };
 
@@ -238,14 +267,14 @@ export default function AdultTasksScreen() {
       );
     } catch (error) {
       console.error('Error completing task:', error);
-      Alert.alert(t('common.error'), 'Could not complete task');
+      Alert.alert(t('common.error'), t('tasks.couldNotAdd'));
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     Alert.alert(
-      t('common.delete'),
-      'Are you sure you want to delete this task?',
+      t('tasks.deleteConfirm'),
+      t('tasks.deleteMessage'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -258,10 +287,10 @@ export default function AdultTasksScreen() {
               if (error) throw error;
 
               setAdultTasks((prev) => prev.filter((task) => task.id !== taskId));
-              Alert.alert(t('common.success'), 'Task deleted');
+              Alert.alert(t('common.success'), t('tasks.taskDeleted'));
             } catch (error) {
               console.error('Error deleting task:', error);
-              Alert.alert(t('common.error'), 'Could not delete task');
+              Alert.alert(t('common.error'), t('tasks.couldNotDelete'));
             }
           },
         },
@@ -278,6 +307,7 @@ export default function AdultTasksScreen() {
     setRepeatType('none');
     setCustomDays([]);
     setTaskNotes('');
+    setErrors({});
   };
 
   const toggleAdultSelection = (memberId: string) => {
@@ -286,16 +316,16 @@ export default function AdultTasksScreen() {
         ? prev.filter((id) => id !== memberId)
         : [...prev, memberId]
     );
+    // Clear error when user selects an adult
+    if (errors.assignedTo) {
+      setErrors((prev) => ({ ...prev, assignedTo: undefined }));
+    }
   };
 
   const toggleCustomDay = (day: string) => {
     setCustomDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
-  };
-
-  const formatTime = (time: string) => {
-    return time;
   };
 
   const calculateDuration = (start: string, end: string) => {
@@ -424,24 +454,32 @@ export default function AdultTasksScreen() {
               ios_icon_name="exclamationmark.triangle"
               android_material_icon_name="warning"
               size={12}
-              color={colors.vibrantOrange}
+              color={colors.accent}
             />
-            <Text style={styles.overlapWarningText}>Overlap</Text>
+            <Text style={styles.overlapWarningText}>{t('tasks.overlap')}</Text>
           </View>
         )}
       </TouchableOpacity>
     );
   };
 
-  const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const weekDays = [
+    { key: 'monday', label: t('tasks.monday') },
+    { key: 'tuesday', label: t('tasks.tuesday') },
+    { key: 'wednesday', label: t('tasks.wednesday') },
+    { key: 'thursday', label: t('tasks.thursday') },
+    { key: 'friday', label: t('tasks.friday') },
+    { key: 'saturday', label: t('tasks.saturday') },
+    { key: 'sunday', label: t('tasks.sunday') },
+  ];
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Adult Tasks</Text>
-          <Text style={styles.headerSubtitle}>Timeline-based planning</Text>
+          <Text style={styles.headerTitle}>{t('tasks.title')}</Text>
+          <Text style={styles.headerSubtitle}>{t('tasks.subtitle')}</Text>
         </View>
         <TouchableOpacity
           style={styles.addButton}
@@ -473,7 +511,7 @@ export default function AdultTasksScreen() {
           />
         </TouchableOpacity>
         <Text style={styles.dateText}>
-          {selectedDate.toLocaleDateString('en-US', {
+          {selectedDate.toLocaleDateString('nl-NL', {
             weekday: 'short',
             month: 'short',
             day: 'numeric',
@@ -497,7 +535,7 @@ export default function AdultTasksScreen() {
           style={styles.todayButton}
           onPress={() => setSelectedDate(new Date())}
         >
-          <Text style={styles.todayButtonText}>Today</Text>
+          <Text style={styles.todayButtonText}>{t('tasks.today')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -521,7 +559,7 @@ export default function AdultTasksScreen() {
               selectedFilter === 'all' && styles.filterChipTextActive,
             ]}
           >
-            All
+            {t('tasks.all')}
           </Text>
         </TouchableOpacity>
         {adults.map((adult) => (
@@ -584,20 +622,30 @@ export default function AdultTasksScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalTitle}>Add Adult Task</Text>
+              <Text style={styles.modalTitle}>{t('tasks.addTitle')}</Text>
 
               {/* Task Name */}
-              <Text style={styles.inputLabel}>Task Name *</Text>
+              <Text style={styles.inputLabel}>
+                {t('tasks.taskName')} *
+              </Text>
               <TextInput
-                style={styles.input}
-                placeholder="e.g., Morning workout, Team meeting"
+                style={[styles.input, errors.taskName && styles.inputError]}
+                placeholder={t('tasks.taskNamePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={taskName}
-                onChangeText={setTaskName}
+                onChangeText={(text) => {
+                  setTaskName(text);
+                  if (errors.taskName) {
+                    setErrors((prev) => ({ ...prev, taskName: undefined }));
+                  }
+                }}
               />
+              {errors.taskName && (
+                <Text style={styles.errorText}>{errors.taskName}</Text>
+              )}
 
               {/* Icon Picker */}
-              <Text style={styles.inputLabel}>Icon</Text>
+              <Text style={styles.inputLabel}>{t('tasks.chooseIcon')}</Text>
               <TouchableOpacity
                 style={styles.iconPickerButton}
                 onPress={() => setShowIconPicker(!showIconPicker)}
@@ -608,7 +656,7 @@ export default function AdultTasksScreen() {
                   size={24}
                   color={colors.accent}
                 />
-                <Text style={styles.iconPickerButtonText}>Choose icon</Text>
+                <Text style={styles.iconPickerButtonText}>{t('tasks.chooseIcon')}</Text>
               </TouchableOpacity>
 
               {showIconPicker && (
@@ -630,7 +678,7 @@ export default function AdultTasksScreen() {
                         android_material_icon_name={icon.name}
                         size={24}
                         color={
-                          taskIcon === icon.name ? colors.accent : colors.text
+                          taskIcon === icon.name ? colors.card : colors.text
                         }
                       />
                     </TouchableOpacity>
@@ -641,16 +689,21 @@ export default function AdultTasksScreen() {
               {/* Time Selection */}
               <View style={styles.timeRow}>
                 <View style={styles.timeColumn}>
-                  <Text style={styles.inputLabel}>Start Time *</Text>
+                  <Text style={styles.inputLabel}>
+                    {t('tasks.startTime')} *
+                  </Text>
                   <TouchableOpacity
-                    style={styles.timeInput}
+                    style={[styles.timeInput, errors.startTime && styles.inputError]}
                     onPress={() => setShowStartTimePicker(true)}
                   >
                     <Text style={styles.timeInputText}>{startTime}</Text>
                   </TouchableOpacity>
+                  {errors.startTime && (
+                    <Text style={styles.errorText}>{errors.startTime}</Text>
+                  )}
                 </View>
                 <View style={styles.timeColumn}>
-                  <Text style={styles.inputLabel}>End Time</Text>
+                  <Text style={styles.inputLabel}>{t('tasks.endTime')}</Text>
                   <TouchableOpacity
                     style={styles.timeInput}
                     onPress={() => setShowEndTimePicker(true)}
@@ -661,7 +714,9 @@ export default function AdultTasksScreen() {
               </View>
 
               {/* Assign to Adults */}
-              <Text style={styles.inputLabel}>Assign to *</Text>
+              <Text style={styles.inputLabel}>
+                {t('tasks.assignTo')} *
+              </Text>
               <View style={styles.adultSelector}>
                 {adults.map((adult) => (
                   <TouchableOpacity
@@ -670,6 +725,7 @@ export default function AdultTasksScreen() {
                       styles.adultOption,
                       selectedAdults.includes(adult.id) &&
                         styles.adultOptionActive,
+                      errors.assignedTo && styles.inputError,
                     ]}
                     onPress={() => toggleAdultSelection(adult.id)}
                   >
@@ -695,16 +751,19 @@ export default function AdultTasksScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+              {errors.assignedTo && (
+                <Text style={styles.errorText}>{errors.assignedTo}</Text>
+              )}
 
               {/* Repeat Type */}
-              <Text style={styles.inputLabel}>Repeat</Text>
+              <Text style={styles.inputLabel}>{t('tasks.repeat')}</Text>
               <View style={styles.repeatSelector}>
                 {[
-                  { value: 'none', label: 'None' },
-                  { value: 'daily', label: 'Daily' },
-                  { value: 'weekdays', label: 'Weekdays' },
-                  { value: 'weekly', label: 'Weekly' },
-                  { value: 'custom', label: 'Custom' },
+                  { value: 'none', label: t('tasks.repeatNone') },
+                  { value: 'daily', label: t('tasks.repeatDaily') },
+                  { value: 'weekdays', label: t('tasks.repeatWeekdays') },
+                  { value: 'weekly', label: t('tasks.repeatWeekly') },
+                  { value: 'custom', label: t('tasks.repeatCustom') },
                 ].map((option) => (
                   <TouchableOpacity
                     key={option.value}
@@ -730,25 +789,25 @@ export default function AdultTasksScreen() {
               {/* Custom Days */}
               {repeatType === 'custom' && (
                 <>
-                  <Text style={styles.inputLabel}>Select Days</Text>
+                  <Text style={styles.inputLabel}>{t('tasks.selectDays')}</Text>
                   <View style={styles.customDaysSelector}>
                     {weekDays.map((day) => (
                       <TouchableOpacity
-                        key={day}
+                        key={day.key}
                         style={[
                           styles.dayOption,
-                          customDays.includes(day) && styles.dayOptionActive,
+                          customDays.includes(day.key) && styles.dayOptionActive,
                         ]}
-                        onPress={() => toggleCustomDay(day)}
+                        onPress={() => toggleCustomDay(day.key)}
                       >
                         <Text
                           style={[
                             styles.dayOptionText,
-                            customDays.includes(day) &&
+                            customDays.includes(day.key) &&
                               styles.dayOptionTextActive,
                           ]}
                         >
-                          {day.substring(0, 3)}
+                          {day.label}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -757,10 +816,10 @@ export default function AdultTasksScreen() {
               )}
 
               {/* Notes */}
-              <Text style={styles.inputLabel}>Notes (optional)</Text>
+              <Text style={styles.inputLabel}>{t('tasks.notesOptional')}</Text>
               <TextInput
                 style={[styles.input, styles.notesInput]}
-                placeholder="Add any additional notes..."
+                placeholder={t('tasks.notesPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={taskNotes}
                 onChangeText={setTaskNotes}
@@ -806,6 +865,9 @@ export default function AdultTasksScreen() {
               const hours = date.getHours().toString().padStart(2, '0');
               const minutes = date.getMinutes().toString().padStart(2, '0');
               setStartTime(`${hours}:${minutes}`);
+              if (errors.startTime) {
+                setErrors((prev) => ({ ...prev, startTime: undefined }));
+              }
             }
           }}
         />
@@ -863,6 +925,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 4,
   },
   dateSelector: {
     flexDirection: 'row',
@@ -885,7 +949,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.beige,
   },
   todayButtonText: {
     fontSize: 14,
@@ -907,7 +971,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     gap: 6,
   },
   filterChipActive: {
@@ -957,7 +1021,7 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     height: 1,
-    backgroundColor: colors.shadow,
+    backgroundColor: colors.border,
   },
   timelineTasks: {
     flex: 1,
@@ -978,10 +1042,10 @@ const styles = StyleSheet.create({
   },
   taskCardCompleted: {
     opacity: 0.6,
-    borderLeftColor: colors.vibrantGreen,
+    borderLeftColor: colors.success,
   },
   taskCardOverlapping: {
-    borderColor: colors.vibrantOrange,
+    borderColor: colors.warning,
     borderWidth: 2,
   },
   taskCardHeader: {
@@ -993,7 +1057,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -1021,7 +1085,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.vibrantGreen,
+    backgroundColor: colors.success,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1051,7 +1115,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1061,12 +1125,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: colors.shadow,
+    borderTopColor: colors.border,
     gap: 4,
   },
   overlapWarningText: {
     fontSize: 11,
-    color: colors.vibrantOrange,
+    color: colors.warning,
     fontFamily: 'Nunito_400Regular',
   },
   currentTimeIndicator: {
@@ -1081,12 +1145,12 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: colors.vibrantRed,
+    backgroundColor: colors.error,
   },
   currentTimeLine: {
     flex: 1,
     height: 2,
-    backgroundColor: colors.vibrantRed,
+    backgroundColor: colors.error,
   },
   modalOverlay: {
     flex: 1,
@@ -1116,11 +1180,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
   },
   input: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
     color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  inputError: {
+    borderColor: colors.error,
+  },
+  errorText: {
+    fontSize: 12,
+    color: colors.error,
+    marginTop: 4,
     fontFamily: 'Nunito_400Regular',
   },
   notesInput: {
@@ -1130,7 +1205,7 @@ const styles = StyleSheet.create({
   iconPickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     borderRadius: 12,
     padding: 14,
     gap: 12,
@@ -1150,12 +1225,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   iconOptionActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   timeRow: {
     flexDirection: 'row',
@@ -1165,10 +1243,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   timeInput: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   timeInputText: {
     fontSize: 18,
@@ -1182,13 +1262,16 @@ const styles = StyleSheet.create({
   adultOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     borderRadius: 12,
     padding: 12,
     gap: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   adultOptionActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.beige,
+    borderColor: colors.accent,
   },
   adultAvatar: {
     width: 36,
@@ -1219,7 +1302,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
   },
   repeatOptionActive: {
     backgroundColor: colors.accent,
@@ -1241,7 +1324,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
     alignItems: 'center',
   },
   dayOptionActive: {
@@ -1268,10 +1351,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalButtonCancel: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.softCream,
   },
   modalButtonConfirm: {
     backgroundColor: colors.accent,
+    boxShadow: `0px 4px 12px ${colors.shadow}`,
+    elevation: 4,
   },
   modalButtonText: {
     fontSize: 16,
