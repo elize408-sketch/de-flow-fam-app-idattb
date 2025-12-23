@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@/styles/commonStyles';
@@ -10,6 +10,8 @@ import IconPicker from '@/components/IconPicker';
 import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
 import ModuleHeader from '@/components/ModuleHeader';
 import TaskCompletionAnimation from '@/components/TaskCompletionAnimation';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TasksScreen() {
   const router = useRouter();
@@ -38,6 +40,12 @@ export default function TasksScreen() {
   const [completedTaskName, setCompletedTaskName] = useState('');
   const [validationErrors, setValidationErrors] = useState<{[key: string]: boolean}>({});
 
+  // Time picker states
+  const [startTime, setStartTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(new Date());
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+
   const isParent = currentUser?.role === 'parent';
   const children = familyMembers.filter(m => m.role === 'child');
 
@@ -45,6 +53,26 @@ export default function TasksScreen() {
   const visibleTasks = isParent 
     ? tasks 
     : tasks.filter(t => t.assignedTo === currentUser?.id);
+
+  const formatTime = (date: Date) => {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  const handleStartTimeChange = (event: any, selectedDate?: Date) => {
+    setShowStartTimePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setStartTime(selectedDate);
+    }
+  };
+
+  const handleEndTimeChange = (event: any, selectedDate?: Date) => {
+    setShowEndTimePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setEndTime(selectedDate);
+    }
+  };
 
   const handleAddTask = () => {
     const errors: {[key: string]: boolean} = {};
@@ -203,15 +231,32 @@ export default function TasksScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{t('tasks.addTask')}</Text>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => {
+                    setShowAddTaskModal(false);
+                    setNewTaskName('');
+                    setNewTaskCoins('');
+                    setNewTaskIcon('check');
+                    setNewTaskRepeat('none');
+                    setSelectedChild('');
+                    setValidationErrors({});
+                  }}
+                  hitSlop={12}
+                >
+                  <Ionicons name="chevron-back" size={26} color="#333" />
+                </TouchableOpacity>
 
+                <Text style={styles.modalTitle}>{t('tasks.addTask')}</Text>
+                <View style={styles.modalHeaderSpacer} />
+              </View>
+
+              <Text style={styles.inputLabel}>{t('tasks.taskName')} *</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  validationErrors.taskName && styles.inputError
-                ]}
-                placeholder={t('tasks.taskName')}
-                placeholderTextColor={validationErrors.taskName ? '#E74C3C' : colors.textSecondary}
+                style={styles.input}
+                placeholder={t('tasks.taskNamePlaceholder') || 'bijv. Ochtendroutine, Overleg'}
+                placeholderTextColor={colors.textSecondary}
                 value={newTaskName}
                 onChangeText={(text) => {
                   setNewTaskName(text);
@@ -221,23 +266,6 @@ export default function TasksScreen() {
                 }}
               />
 
-              <TextInput
-                style={[
-                  styles.input,
-                  validationErrors.taskCoins && styles.inputError
-                ]}
-                placeholder={t('rewards.coins', { count: 0 })}
-                placeholderTextColor={validationErrors.taskCoins ? '#E74C3C' : colors.textSecondary}
-                value={newTaskCoins}
-                onChangeText={(text) => {
-                  setNewTaskCoins(text);
-                  if (validationErrors.taskCoins && text.trim()) {
-                    setValidationErrors(prev => ({ ...prev, taskCoins: false }));
-                  }
-                }}
-                keyboardType="numeric"
-              />
-
               <IconPicker
                 selectedIcon={newTaskIcon}
                 onSelectIcon={setNewTaskIcon}
@@ -245,17 +273,65 @@ export default function TasksScreen() {
                 taskName={newTaskName}
               />
 
-              <Text style={styles.inputLabel}>{t('tasks.assignTo')}</Text>
-              <View style={[
-                styles.childSelector,
-                validationErrors.selectedChild && styles.childSelectorError
-              ]}>
+              <View style={styles.timeRow}>
+                <View style={styles.timeColumn}>
+                  <Text style={styles.inputLabel}>{t('tasks.startTime')} *</Text>
+                  <TouchableOpacity
+                    style={styles.timeButton}
+                    onPress={() => setShowStartTimePicker(true)}
+                    activeOpacity={0.85}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="time-outline" size={22} color="#333" />
+                    <Text style={styles.timeButtonText}>{formatTime(startTime)}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.timeColumn}>
+                  <Text style={styles.inputLabel}>{t('tasks.endTime')}</Text>
+                  <TouchableOpacity
+                    style={styles.timeButton}
+                    onPress={() => setShowEndTimePicker(true)}
+                    activeOpacity={0.85}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="time-outline" size={22} color="#333" />
+                    <Text style={styles.timeButtonText}>{formatTime(endTime)}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {showStartTimePicker && (
+                <DateTimePicker
+                  value={startTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="default"
+                  onChange={handleStartTimeChange}
+                />
+              )}
+
+              {showEndTimePicker && (
+                <DateTimePicker
+                  value={endTime}
+                  mode="time"
+                  is24Hour={true}
+                  display="default"
+                  onChange={handleEndTimeChange}
+                />
+              )}
+
+              <Text style={styles.inputLabel}>{t('tasks.assignTo')} *</Text>
+              <View style={styles.childSelector}>
                 {children.map((child, index) => (
                   <React.Fragment key={index}>
                     <TouchableOpacity
                       style={[
                         styles.childOption,
-                        selectedChild === child.id && styles.childOptionActive,
+                        selectedChild === child.id && [
+                          styles.childOptionActive,
+                          { borderColor: '#F4EAE1' },
+                        ],
                       ]}
                       onPress={() => {
                         setSelectedChild(child.id);
@@ -263,11 +339,18 @@ export default function TasksScreen() {
                           setValidationErrors(prev => ({ ...prev, selectedChild: false }));
                         }
                       }}
+                      activeOpacity={0.85}
+                      hitSlop={6}
                     >
                       <View style={[styles.childAvatar, { backgroundColor: child.color }]}>
                         <Text style={styles.childAvatarText}>{child.name.charAt(0)}</Text>
                       </View>
                       <Text style={styles.childName}>{child.name}</Text>
+                      {selectedChild === child.id && (
+                        <View style={[styles.checkmark, { backgroundColor: '#F4EAE1' }]}>
+                          <Ionicons name="checkmark" size={16} color={colors.text} />
+                        </View>
+                      )}
                     </TouchableOpacity>
                   </React.Fragment>
                 ))}
@@ -285,9 +368,14 @@ export default function TasksScreen() {
                     <TouchableOpacity
                       style={[
                         styles.repeatOption,
-                        newTaskRepeat === option.value && styles.repeatOptionActive,
+                        newTaskRepeat === option.value && [
+                          styles.repeatOptionActive,
+                          { borderColor: '#F4EAE1', backgroundColor: '#F4EAE1' + '40' },
+                        ],
                       ]}
                       onPress={() => setNewTaskRepeat(option.value as any)}
+                      activeOpacity={0.85}
+                      hitSlop={6}
                     >
                       <Text
                         style={[
@@ -302,6 +390,23 @@ export default function TasksScreen() {
                 ))}
               </View>
 
+              <Text style={styles.inputLabel}>{t('tasks.notificationsOptional')}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={t('tasks.notificationsPlaceholder') || 'Voeg eventueel notities toe...'}
+                placeholderTextColor={colors.textSecondary}
+                value={newTaskCoins}
+                onChangeText={(text) => {
+                  setNewTaskCoins(text);
+                  if (validationErrors.taskCoins && text.trim()) {
+                    setValidationErrors(prev => ({ ...prev, taskCoins: false }));
+                  }
+                }}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonCancel]}
@@ -314,12 +419,15 @@ export default function TasksScreen() {
                     setSelectedChild('');
                     setValidationErrors({});
                   }}
+                  activeOpacity={0.85}
                 >
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: colors.warmOrange }]}
                   onPress={handleAddTask}
+                  activeOpacity={0.85}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>{t('common.add')}</Text>
                 </TouchableOpacity>
@@ -471,13 +579,37 @@ const styles = StyleSheet.create({
     boxShadow: `0px 8px 24px ${colors.shadow}`,
     elevation: 5,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 20,
-    textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  modalHeaderSpacer: {
+    width: 40,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 10,
+    fontFamily: 'Poppins_600SemiBold',
   },
   input: {
     backgroundColor: colors.background,
@@ -487,19 +619,28 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 15,
     fontFamily: 'Nunito_400Regular',
-    borderWidth: 2,
-    borderColor: 'transparent',
   },
-  inputError: {
-    borderColor: '#E74C3C',
-    backgroundColor: '#FFE5E5',
+  timeRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 15,
   },
-  inputLabel: {
+  timeColumn: {
+    flex: 1,
+  },
+  timeButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  timeButtonText: {
     fontSize: 16,
-    fontWeight: '600',
     color: colors.text,
-    marginBottom: 10,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Nunito_400Regular',
+    flex: 1,
   },
   childSelector: {
     flexDirection: 'row',
@@ -507,23 +648,17 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 20,
   },
-  childSelectorError: {
-    borderWidth: 2,
-    borderColor: '#E74C3C',
-    borderRadius: 15,
-    padding: 10,
-  },
   childOption: {
     backgroundColor: colors.background,
     borderRadius: 15,
     padding: 10,
     alignItems: 'center',
-    minWidth: 80,
+    minWidth: 70,
     borderWidth: 2,
     borderColor: 'transparent',
+    position: 'relative',
   },
   childOptionActive: {
-    borderColor: colors.vibrantOrange,
     backgroundColor: colors.primary,
   },
   childAvatar: {
@@ -546,6 +681,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
+  checkmark: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   repeatSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -562,10 +707,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  repeatOptionActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.primary,
-  },
+  repeatOptionActive: {},
   repeatOptionText: {
     fontSize: 14,
     fontWeight: '600',
@@ -588,8 +730,7 @@ const styles = StyleSheet.create({
   modalButtonCancel: {
     backgroundColor: colors.background,
   },
-  modalButtonConfirm: {
-  },
+  modalButtonConfirm: {},
   modalButtonText: {
     fontSize: 16,
     fontWeight: '600',
