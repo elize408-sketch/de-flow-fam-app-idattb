@@ -105,15 +105,23 @@ function DashboardCard({
 
 interface Task {
   id: string;
-  title: string;
+  name: string;
   completed: boolean;
   due_date: string;
+  time?: string;
+}
+
+interface Appointment {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
 }
 
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { currentUser, family } = useFamily();
-  const [todayAppointments, setTodayAppointments] = useState(0);
+  const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
   const [todayTasks, setTodayTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -149,13 +157,14 @@ export default function HomeScreen() {
           .select("*")
           .eq("family_id", family.id)
           .gte("date", startOfDay.toISOString())
-          .lte("date", endOfDay.toISOString());
+          .lte("date", endOfDay.toISOString())
+          .order("time", { ascending: true });
 
         if (appointmentsError) {
           console.error("Error fetching appointments:", appointmentsError);
         } else {
           console.log("Appointments found:", appointments?.length || 0);
-          setTodayAppointments(appointments?.length || 0);
+          setTodayAppointments(appointments || []);
         }
 
         // Fetch today's open tasks (adult tasks)
@@ -166,7 +175,8 @@ export default function HomeScreen() {
           .eq("is_adult_task", true)
           .eq("completed", false)
           .gte("due_date", startOfDay.toISOString())
-          .lte("due_date", endOfDay.toISOString());
+          .lte("due_date", endOfDay.toISOString())
+          .order("time", { ascending: true });
 
         if (tasksError) {
           console.error("Error fetching tasks:", tasksError);
@@ -190,12 +200,18 @@ export default function HomeScreen() {
     setCurrentSlide(slideIndex);
   };
 
+  // Get first appointment for preview
+  const firstAppointment = todayAppointments.length > 0 ? todayAppointments[0] : null;
+  
+  // Get first task for preview
+  const firstTask = todayTasks.length > 0 ? todayTasks[0] : null;
+
   // Dashboard cards with new warm beige color
   const dashboardCards = [
     {
       title: t("home.menu.agenda"),
       icon: "calendar-month-outline",
-      subtitle: `${todayAppointments} ${todayAppointments === 1 ? 'afspraak' : 'afspraken'}`,
+      subtitle: `${todayAppointments.length} ${todayAppointments.length === 1 ? 'afspraak' : 'afspraken'}`,
       route: "/(tabs)/agenda",
       backgroundColor: "#F3EEE8",
     },
@@ -263,10 +279,17 @@ export default function HomeScreen() {
               {/* Slide 1: Appointments */}
               <View style={[styles.slide, { width: SLIDER_WIDTH }]}>
                 <View style={styles.slideContent}>
-                  <Text style={styles.slideNumber}>{todayAppointments}</Text>
+                  <Text style={styles.slideNumber}>{todayAppointments.length}</Text>
                   <Text style={styles.slideLabel}>
-                    {todayAppointments === 1 ? 'Afspraak vandaag' : 'Afspraken vandaag'}
+                    {todayAppointments.length === 1 ? 'Afspraak vandaag' : 'Afspraken vandaag'}
                   </Text>
+                  {firstAppointment && (
+                    <View style={styles.previewContainer}>
+                      <Text style={styles.previewText} numberOfLines={1}>
+                        {firstAppointment.time && `${firstAppointment.time} • `}{firstAppointment.title}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -277,18 +300,11 @@ export default function HomeScreen() {
                   <Text style={styles.slideLabel}>
                     {todayTasks.length === 1 ? 'Taak vandaag' : 'Taken vandaag'}
                   </Text>
-                  {todayTasks.length > 0 && (
-                    <View style={styles.tasksList}>
-                      {todayTasks.slice(0, 3).map((task, index) => (
-                        <Text key={index} style={styles.taskItem}>
-                          • {task.title}
-                        </Text>
-                      ))}
-                      {todayTasks.length > 3 && (
-                        <Text style={styles.taskItem}>
-                          + {todayTasks.length - 3} meer
-                        </Text>
-                      )}
+                  {firstTask && (
+                    <View style={styles.previewContainer}>
+                      <Text style={styles.previewText} numberOfLines={1}>
+                        {firstTask.time && `${firstTask.time} • `}{firstTask.name}
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -364,34 +380,34 @@ const styles = StyleSheet.create({
     borderColor: "#E6DED6",
   },
   slideContent: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
   },
   slideNumber: {
     fontSize: 40,
     fontWeight: "700",
     color: "#F08A48",
     fontFamily: "Poppins_700Bold",
-    marginBottom: 6,
+    marginBottom: 4,
+    alignSelf: "flex-start",
   },
   slideLabel: {
     fontSize: 16,
     fontWeight: "600",
     color: "#3B2F2A",
     fontFamily: "Poppins_600SemiBold",
-    textAlign: "center",
+    marginBottom: 8,
+    alignSelf: "flex-start",
   },
-  tasksList: {
-    marginTop: 12,
+  previewContainer: {
     width: "100%",
-    paddingHorizontal: 16,
+    marginTop: 4,
   },
-  taskItem: {
+  previewText: {
     fontSize: 13,
     color: "#8C817A",
     fontFamily: "Nunito_400Regular",
-    marginBottom: 4,
-    textAlign: "left",
+    alignSelf: "flex-start",
   },
   pagination: {
     flexDirection: "row",
