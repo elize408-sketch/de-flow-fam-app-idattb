@@ -23,6 +23,22 @@ export interface Task {
   createdBy?: string;
 }
 
+export interface AdultTask {
+  id: string;
+  name: string;
+  icon: string;
+  dueDate: Date;
+  startTime: string;
+  endTime?: string;
+  durationMinutes?: number;
+  assignedTo: string[]; // Array of family member IDs
+  completed: boolean;
+  repeatType: 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'custom' | 'none';
+  customDays?: string[]; // For custom recurrence (e.g., ['monday', 'wednesday', 'friday'])
+  createdBy?: string;
+  notes?: string;
+}
+
 export interface Reward {
   id: string;
   name: string;

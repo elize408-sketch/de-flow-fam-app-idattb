@@ -179,6 +179,7 @@ interface FamilyContextType {
   loadPantryItemsFromDB: () => Promise<void>;
   loadNotesFromDB: () => Promise<void>;
   reloadCurrentUser: () => Promise<void>;
+  loadAdultTasksFromDB: (date: Date) => Promise<void>;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -361,6 +362,30 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       }));
       setFamilyNotes(formatted);
     }
+  }, [currentFamily]);
+
+  const loadAdultTasksFromDB = useCallback(async (date: Date) => {
+    if (!currentFamily) return;
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*, task_assignments(family_member_id)')
+      .eq('family_id', currentFamily.id)
+      .eq('is_adult_task', true)
+      .gte('due_date', startOfDay.toISOString())
+      .lt('due_date', endOfDay.toISOString());
+
+    if (error) {
+      console.error('Error loading adult tasks:', error);
+      return;
+    }
+
+    return data;
   }, [currentFamily]);
 
   const reloadCurrentUser = useCallback(async () => {
@@ -1198,6 +1223,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         loadPantryItemsFromDB,
         loadNotesFromDB,
         reloadCurrentUser,
+        loadAdultTasksFromDB,
       }}
     >
       {children}

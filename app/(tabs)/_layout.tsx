@@ -21,6 +21,7 @@ export default function TabLayout() {
         <Stack.Screen name="settings" options={{ headerShown: false }} />
 
         <Stack.Screen name="tasks" options={{ headerShown: false }} />
+        <Stack.Screen name="adult-tasks" options={{ headerShown: false }} />
         <Stack.Screen name="rewards" options={{ headerShown: false }} />
         <Stack.Screen name="agenda" options={{ headerShown: false }} />
         <Stack.Screen name="household" options={{ headerShown: false }} />

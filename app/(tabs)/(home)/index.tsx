@@ -22,6 +22,12 @@ export default function HomeScreen() {
       route: "/(tabs)/agenda",
     },
     {
+      title: "Adult Tasks",
+      color: "#5856D6",
+      icon: "calendar-check-outline",
+      route: "/(tabs)/adult-tasks",
+    },
+    {
       title: t("home.menu.tasks"),
       color: "#7ED321",
       icon: "check-circle-outline",
