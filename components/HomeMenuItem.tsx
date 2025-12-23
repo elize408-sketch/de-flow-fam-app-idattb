@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import {
   TouchableOpacity,
@@ -12,22 +13,26 @@ import { useRouter } from "expo-router";
 
 interface HomeMenuItemProps {
   title: string;
-  color: string;
   icon: string;
-
-  // Gebruik bij voorkeur route (dan regelen we alles hier)
-  route: string;
+  route?: string;
+  onPress?: () => void;
+  index: number;
 }
 
 function normalizeRoute(route: string) {
   if (!route) return "/";
-  // route groups mogen niet in het pad staan
   return route.startsWith("/(tabs)/") ? route.replace("/(tabs)", "") : route;
 }
 
-export function HomeMenuItem({ title, color, icon, route }: HomeMenuItemProps) {
+export function HomeMenuItem({ title, icon, route, onPress, index }: HomeMenuItemProps) {
   const router = useRouter();
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Alternate between two color schemes
+  const isStyleA = index % 2 === 0;
+  const backgroundColor = isStyleA ? "#cfa692" : "#f4eae1";
+  const textColor = isStyleA ? "#FFFFFF" : "#4c3b34";
+  const iconColor = isStyleA ? "#FFFFFF" : "#4c3b34";
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -48,24 +53,26 @@ export function HomeMenuItem({ title, color, icon, route }: HomeMenuItemProps) {
   };
 
   const handlePress = () => {
-    const to = normalizeRoute(route);
-
-    // Belangrijk: navigate switcht tabs, push wil stapelen
-    router.navigate(to as any);
+    if (onPress) {
+      onPress();
+    } else if (route) {
+      const to = normalizeRoute(route);
+      router.navigate(to as any);
+    }
   };
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <TouchableOpacity
-        style={[styles.container, { backgroundColor: color }]}
+        style={[styles.container, { backgroundColor }]}
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={0.9}
       >
         <View style={styles.contentWrapper}>
-          <MaterialCommunityIcons name={icon as any} size={26} color="#FFFFFF" />
-          <Text style={styles.title}>{title}</Text>
+          <MaterialCommunityIcons name={icon as any} size={26} color={iconColor} />
+          <Text style={[styles.title, { color: textColor }]}>{title}</Text>
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -97,7 +104,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#FFFFFF",
     fontFamily: "Poppins_600SemiBold",
     flex: 1,
     letterSpacing: 0.3,

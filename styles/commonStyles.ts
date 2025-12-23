@@ -10,9 +10,16 @@ export const colors = {
   darkBrown: '#4c3b34',         // Text dark (warm dark brown, not black)
   lightGrey: '#f5f5f5',         // Background white
   
+  // Menu button alternating colors
+  menuButtonDark: '#cfa692',    // Button style A background
+  menuButtonLight: '#f4eae1',   // Button style B background
+  menuButtonDarkText: '#FFFFFF', // Button style A text/icon
+  menuButtonLightText: '#4c3b34', // Button style B text/icon
+  
   // Semantic mappings
   background: '#FFFFFF',        // Main background (white)
   backgroundAlt: '#f4eae1',     // Alternative background (soft cream)
+  backgroundLight: '#f4eae1',   // Light background (soft cream)
   text: '#4c3b34',              // Primary text (dark brown)
   textSecondary: '#8a7a72',     // Secondary text (lighter brown)
   primary: '#f08a48',           // Primary buttons (warm orange)
@@ -40,6 +47,7 @@ export const colors = {
   vibrantPurple: '#9013FE',
   vibrantTeal: '#50E3C2',
   vibrantRed: '#e53f59',
+  redPink: '#e53f59',
   
   // Status colors (muted)
   success: '#7ED321',

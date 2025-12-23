@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   StyleSheet,
@@ -17,61 +18,46 @@ export default function HomeScreen() {
   const menuItems = [
     {
       title: t("home.menu.agenda"),
-      color: "#4A90E2",
       icon: "calendar-month-outline",
       route: "/(tabs)/agenda",
     },
     {
-      title: "Adult Tasks",
-      color: "#5856D6",
+      title: "Taken",
       icon: "calendar-check-outline",
       route: "/(tabs)/adult-tasks",
     },
     {
-      title: t("home.menu.tasks"),
-      color: "#7ED321",
-      icon: "check-circle-outline",
-      route: "/(tabs)/tasks",
-    },
-    {
       title: t("home.menu.shopping"),
-      color: colors.warmOrange,
       icon: "cart-outline",
       route: "/(tabs)/shopping",
     },
     {
       title: t("home.menu.finances"),
-      color: "#34C759",
       icon: "currency-eur",
       route: "/(tabs)/finances",
     },
     {
-      title: t("home.menu.photobook"),
-      color: colors.redPink,
-      icon: "camera-outline",
-      route: "/(tabs)/memories",
-    },
-    {
       title: t("home.menu.meals"),
-      color: colors.warmOrange,
       icon: "food-outline",
       route: "/(tabs)/meals",
     },
     {
+      title: t("home.menu.photobook"),
+      icon: "camera-outline",
+      route: "/(tabs)/memories",
+    },
+    {
       title: t("home.menu.contactbook"),
-      color: "#9B59B6",
       icon: "book-outline",
       route: "/(tabs)/contactbook",
     },
     {
       title: t("home.menu.roosters"),
-      color: "#3498DB",
       icon: "calendar-clock",
       route: "/(tabs)/roosters",
     },
     {
       title: t("home.menu.shop"),
-      color: colors.redPink,
       icon: "shopping-outline",
       route: "/(tabs)/shop",
     },
@@ -93,13 +79,13 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.menuContainer}>
-          {menuItems.map((item) => (
+          {menuItems.map((item, index) => (
             <HomeMenuItem
               key={item.route}
               title={item.title}
-              color={item.color}
               icon={item.icon}
               route={item.route}
+              index={index}
             />
           ))}
         </View>
@@ -111,14 +97,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.backgroundLight,
   },
   scrollView: {
     flex: 1,
   },
   container: {
     flexGrow: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.backgroundLight,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === "android" ? 48 : 12,
     paddingBottom: 120,

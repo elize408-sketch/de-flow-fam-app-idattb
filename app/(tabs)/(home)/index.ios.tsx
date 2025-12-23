@@ -20,55 +20,46 @@ export default function HomeScreen() {
   const menuItems = [
     {
       title: t('home.menu.agenda'),
-      color: '#4A90E2',
       icon: 'calendar-month-outline',
       route: '/agenda',
     },
     {
-      title: t('home.menu.tasks'),
-      color: '#7ED321',
-      icon: 'check-circle-outline',
-      route: '/tasks',
+      title: 'Taken',
+      icon: 'calendar-check-outline',
+      route: '/adult-tasks',
     },
     {
       title: t('home.menu.shopping'),
-      color: colors.warmOrange,
       icon: 'cart-outline',
       route: '/shopping',
     },
     {
       title: t('home.menu.finances'),
-      color: '#34C759',
       icon: 'currency-eur',
       route: '/finances',
     },
     {
-      title: t('home.menu.photobook'),
-      color: colors.redPink,
-      icon: 'camera-outline',
-      route: '/memories',
-    },
-    {
       title: t('home.menu.meals'),
-      color: colors.warmOrange,
       icon: 'food-outline',
       route: '/meals',
     },
     {
-      title: 'Contactboek',
-      color: '#9B59B6',
+      title: t('home.menu.photobook'),
+      icon: 'camera-outline',
+      route: '/memories',
+    },
+    {
+      title: t('home.menu.contactbook'),
       icon: 'book-outline',
       route: '/contactbook',
     },
     {
-      title: 'Roosters',
-      color: '#3498DB',
-      icon: 'time-outline',
+      title: t('home.menu.roosters'),
+      icon: 'calendar-clock',
       route: '/(tabs)/roosters',
     },
     {
       title: t('home.menu.shop'),
-      color: colors.redPink,
       icon: 'shopping-outline',
       route: '/shop',
     },
@@ -81,7 +72,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Illustration Block */}
         <View style={styles.illustrationCard}>
           <Image
             source={require('@/assets/images/ed920307-19f7-48d1-96f4-53ed71f8af30.jpeg')}
@@ -90,15 +80,14 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* Menu Items */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
             <React.Fragment key={index}>
               <HomeMenuItem
                 title={item.title}
-                color={item.color}
                 icon={item.icon}
                 onPress={() => router.push(item.route as any)}
+                index={index}
               />
             </React.Fragment>
           ))}
@@ -111,14 +100,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.backgroundLight,
   },
   scrollView: {
     flex: 1,
   },
   container: {
     flexGrow: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.backgroundLight,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 12,
     paddingBottom: 120,
