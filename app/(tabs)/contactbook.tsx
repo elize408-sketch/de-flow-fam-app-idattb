@@ -446,7 +446,7 @@ export default function ContactbookScreen() {
                   <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: colors.warmOrange }]}
                   onPress={handleSaveContact}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>

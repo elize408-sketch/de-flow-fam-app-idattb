@@ -102,7 +102,8 @@
     "other": "Overig",
     "unknown": "Onbekend",
     "notAvailable": "Niet beschikbaar",
-    "comingSoon": "Binnenkort beschikbaar"
+    "comingSoon": "Binnenkort beschikbaar",
+    "yesterday": "Gisteren"
   },
 
   "home": {
@@ -181,7 +182,14 @@
   "profile": {
     "title": "Profiel",
     "editProfile": "Profiel bewerken",
-    "settings": "Instellingen"
+    "settings": "Instellingen",
+    "fillName": "Vul een naam in",
+    "memberAdded": "{{name}} is toegevoegd aan het gezin",
+    "memberUpdated": "Gezinslid bijgewerkt",
+    "memberDeleted": "{{name}} is verwijderd uit het gezin",
+    "areYouSure": "Weet je het zeker?",
+    "permissionRequired": "Toestemming vereist",
+    "photoPermissionMessage": "Je moet toegang geven tot je foto's"
   },
 
   "contactbook": {
@@ -298,7 +306,9 @@
     "thursday": "Do",
     "friday": "Vr",
     "saturday": "Za",
-    "sunday": "Zo"
+    "sunday": "Zo",
+    "noTasksChild": "Nog geen taken voor dit kind",
+    "waitForTasks": "Wacht op taken..."
   },
 
   "shopping": {
@@ -313,5 +323,61 @@
     "example": "Bijvoorbeeld: 1 liter, 500 gram, 2 stuks",
     "add": "Toevoegen",
     "cancel": "Annuleren"
+  },
+
+  "notifications": {
+    "title": "Notificaties",
+    "noNotifications": "Geen notificaties",
+    "clearAll": "Alles wissen",
+    "clearAllConfirm": "Weet je zeker dat je alle notificaties wilt wissen?",
+    "deleteConfirm": "Weet je zeker dat je deze notificatie wilt verwijderen?",
+    "newTaskAssigned": "Nieuwe taak toegewezen",
+    "newTaskMessage": "Je hebt een nieuwe taak gekregen",
+    "reminder": "Herinnering",
+    "reminderMessage": "Vergeet niet je taak af te ronden",
+    "rewardEarned": "Beloning verdiend",
+    "rewardMessage": "Je hebt {{count}} muntjes verdiend!",
+    "familyUpdate": "Gezinsupdate",
+    "familyUpdateMessage": "Er is een nieuwe update in je gezin",
+    "minutesAgo": "{{count}} minuten geleden",
+    "hoursAgo": "{{count}} uur geleden"
+  },
+
+  "children": {
+    "title": "Kinderen",
+    "noChildren": "Nog geen kinderen toegevoegd",
+    "addChildrenHint": "Voeg kinderen toe via Instellingen"
+  },
+
+  "settings": {
+    "title": "Instellingen",
+    "account": "Account",
+    "family": "Gezin",
+    "appSettings": "App-instellingen",
+    "notSet": "Niet ingesteld",
+    "role": "Rol",
+    "parent": "Ouder",
+    "child": "Kind",
+    "shareInvitationCode": "Uitnodigingscode delen",
+    "code": "Code",
+    "children": "Kinderen",
+    "noChildren": "Er zijn nog geen kinderen toegevoegd",
+    "addChild": "Kind toevoegen",
+    "editFamilyMember": "Gezinslid bewerken",
+    "chooseColor": "Kies een kleur",
+    "changeLanguage": "Taal wijzigen",
+    "refreshData": "Data verversen",
+    "refreshing": "Bezig met verversen...",
+    "dataRefreshed": "Data is ververst",
+    "refreshError": "Er ging iets mis bij het verversen",
+    "logoutConfirm": "Weet je zeker dat je wilt uitloggen?",
+    "logoutError": "Er ging iets mis bij het uitloggen",
+    "noFamily": "Geen gezin gevonden. Refresh data en probeer opnieuw.",
+    "couldNotAddMember": "Kon gezinslid niet toevoegen",
+    "couldNotUpdateMember": "Kon gezinslid niet bijwerken",
+    "couldNotDeleteMember": "Kon gezinslid niet verwijderen",
+    "errorAddingMember": "Er ging iets mis bij het toevoegen van het gezinslid",
+    "errorUpdatingMember": "Er ging iets mis bij het bijwerken van het gezinslid",
+    "deleteMemberConfirm": "Wil je {{name}} verwijderen uit het gezin?"
   }
 }

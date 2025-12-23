@@ -286,7 +286,7 @@ export default function MemoriesScreen() {
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: accentColor, flex: 2 }]}
+            style={[styles.actionButton, { backgroundColor: colors.warmOrange, flex: 2 }]}
             onPress={() => setShowAddModal(true)}
           >
             <IconSymbol
@@ -520,7 +520,7 @@ export default function MemoriesScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: colors.warmOrange }]}
                   onPress={handleAddMemory}
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>Toevoegen</Text>
@@ -606,7 +606,7 @@ export default function MemoriesScreen() {
                   <Text style={styles.modalButtonText}>Annuleren</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: colors.warmOrange }]}
                   onPress={handleOrderPhotoBook}
                   disabled={!selectedMemberForPhotoBook}
                 >

@@ -141,7 +141,7 @@ export default function ShoppingScreen() {
 
         {activeTab === 'shopping' && (
           <>
-            {/* Export/Share Buttons - Flow Fam Beige Style */}
+            {/* Export/Share Buttons - Flow Fam Beige Style (Secondary) */}
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={styles.actionButton}
