@@ -56,6 +56,8 @@ export default function SettingsScreen() {
     updateFamilyMember,
     deleteFamilyMember,
     currentFamily,
+    setCurrentUser,
+    reloadCurrentUser,
   } = useFamily();
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
@@ -95,14 +97,56 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (!profileName.trim()) {
       Alert.alert('Fout', 'Vul een naam in');
       return;
     }
 
-    Alert.alert('Gelukt!', 'Profiel bijgewerkt');
-    setShowEditProfileModal(false);
+    if (!currentUser || !currentFamily) {
+      Alert.alert('Fout', 'Geen gebruiker of gezin gevonden');
+      return;
+    }
+
+    try {
+      const updateData: any = {
+        name: profileName.trim(),
+        photo_uri: profilePhoto,
+      };
+
+      const { error } = await supabase
+        .from('family_members')
+        .update(updateData)
+        .eq('id', currentUser.id)
+        .eq('family_id', currentFamily.id);
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        Alert.alert('Fout', 'Kon profiel niet bijwerken');
+        return;
+      }
+
+      // Update local state
+      const updatedUser = {
+        ...currentUser,
+        name: profileName.trim(),
+        photoUri: profilePhoto || undefined,
+      };
+
+      setCurrentUser(updatedUser);
+      updateFamilyMember(currentUser.id, {
+        name: profileName.trim(),
+        photoUri: profilePhoto || undefined,
+      });
+
+      await reloadCurrentUser();
+
+      Alert.alert('Gelukt!', 'Profiel bijgewerkt');
+      setShowEditProfileModal(false);
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      Alert.alert('Fout', 'Er ging iets mis bij het opslaan van het profiel');
+    }
   };
 
   const handlePickImage = async () => {
@@ -131,32 +175,68 @@ export default function SettingsScreen() {
       return;
     }
 
-    if (!currentFamily) {
-      Alert.alert('Fout', 'Geen gezin gevonden');
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('family_members')
-        .insert([{
-          family_id: currentFamily.id,
-          user_id: null,
-          name: newMemberName.trim(),
-          role: newMemberRole,
-          color: newMemberColor,
-          photo_uri: newMemberPhoto,
-          coins: 0,
-        }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error adding family member:', error);
-        Alert.alert('Fout', 'Kon gezinslid niet toevoegen');
+      // Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('Add child - auth error:', userError);
+        Alert.alert('Fout', 'Kon gebruiker niet ophalen. Log opnieuw in.');
         return;
       }
 
+      // Get family_id from context or database
+      let family_id = currentFamily?.id;
+
+      if (!family_id) {
+        // Try to get family_id from family_members table
+        const { data: membership, error: membershipError } = await supabase
+          .from('family_members')
+          .select('family_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (membershipError) {
+          console.error('Add child - membership error:', membershipError);
+        }
+
+        family_id = membership?.family_id;
+      }
+
+      if (!family_id) {
+        console.error('Add child - No family found for user:', user.id);
+        Alert.alert('Fout', 'Geen gezin gevonden. Refresh data en probeer opnieuw.');
+        return;
+      }
+
+      // Insert child into database
+      const insertPayload = {
+        family_id,
+        user_id: null,
+        name: newMemberName.trim(),
+        role: 'child',
+        color: newMemberColor,
+        photo_uri: newMemberPhoto,
+        coins: 0,
+      };
+
+      console.log('Inserting child with payload:', insertPayload);
+
+      const { data, error: insertError } = await supabase
+        .from('family_members')
+        .insert([insertPayload])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Add child - Insert error:', insertError);
+        Alert.alert('Fout', `Kon kind niet toevoegen\n\n${insertError.message}`);
+        return;
+      }
+
+      console.log('Child added successfully:', data);
+
+      // Update local state
       addFamilyMember({
         id: data.id,
         userId: data.user_id,
@@ -167,15 +247,19 @@ export default function SettingsScreen() {
         coins: data.coins || 0,
       });
 
+      await reloadCurrentUser();
+
+      // Reset form and close modal
       setNewMemberName('');
       setNewMemberRole('child');
       setNewMemberColor(AVAILABLE_COLORS[0].value);
       setNewMemberPhoto(null);
       setShowAddMemberModal(false);
+
       Alert.alert('Gelukt!', `${newMemberName} is toegevoegd aan het gezin`);
     } catch (error: any) {
-      console.error('Error adding member:', error);
-      Alert.alert('Fout', 'Er ging iets mis bij het toevoegen van het gezinslid');
+      console.error('Add child - Error:', error);
+      Alert.alert('Fout', `Er ging iets mis bij het toevoegen van het kind\n\n${error?.message ?? ''}`);
     }
   };
 
@@ -287,6 +371,13 @@ export default function SettingsScreen() {
     );
   };
 
+  const openEditProfileModal = () => {
+    if (!currentUser) return;
+    setProfileName(currentUser.name);
+    setProfilePhoto(currentUser.photoUri || undefined);
+    setShowEditProfileModal(true);
+  };
+
   const settingsSections = [
     {
       title: 'Account',
@@ -294,10 +385,10 @@ export default function SettingsScreen() {
         {
           id: 'profile',
           title: 'Profiel bewerken',
-          subtitle: 'Naam, foto en voorkeuren',
+          subtitle: 'Naam en foto',
           icon: { ios: 'person.circle.fill', android: 'account-circle' },
           type: 'navigation' as const,
-          onPress: () => setShowEditProfileModal(true),
+          onPress: openEditProfileModal,
         },
       ],
     },
@@ -472,7 +563,10 @@ export default function SettingsScreen() {
                   <Text style={styles.familyMembersTitle}>Kinderen</Text>
                   <TouchableOpacity
                     style={styles.addMemberButton}
-                    onPress={() => setShowAddMemberModal(true)}
+                    onPress={() => {
+                      console.log('Add child button pressed');
+                      setShowAddMemberModal(true);
+                    }}
                   >
                     <IconSymbol
                       ios_icon_name="plus.circle.fill"
@@ -600,64 +694,16 @@ export default function SettingsScreen() {
                 onChangeText={setProfileName}
               />
 
-              <Text style={styles.inputLabel}>Avatar kleur</Text>
-              <View style={styles.colorSelector}>
-                {colorOptions.map((color, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[
-                        styles.colorOption,
-                        { backgroundColor: color },
-                        avatarColor === color && styles.colorOptionActive,
-                      ]}
-                      onPress={() => setAvatarColor(color)}
-                    >
-                      {avatarColor === color && (
-                        <IconSymbol
-                          ios_icon_name="checkmark"
-                          android_material_icon_name="check"
-                          size={20}
-                          color="#FFFFFF"
-                        />
-                      )}
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))}
-              </View>
-
-              <Text style={styles.inputLabel}>Taal</Text>
-              <View style={styles.languageSelector}>
-                {['Nederlands', 'English'].map((lang, index) => (
-                  <React.Fragment key={index}>
-                    <TouchableOpacity
-                      style={[
-                        styles.languageOption,
-                        language === lang && styles.languageOptionActive,
-                      ]}
-                      onPress={() => setLanguage(lang)}
-                    >
-                      <Text
-                        style={[
-                          styles.languageOptionText,
-                          language === lang && styles.languageOptionTextActive,
-                        ]}
-                      >
-                        {lang}
-                      </Text>
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))}
-              </View>
-
-              <View style={styles.preferenceRow}>
-                <Text style={styles.preferenceLabel}>Notificaties</Text>
-                <Switch
-                  value={notificationsEnabled}
-                  onValueChange={setNotificationsEnabled}
-                  trackColor={{ false: '#D1D1D6', true: colors.vibrantOrange + '80' }}
-                  thumbColor={notificationsEnabled ? colors.vibrantOrange : '#F4F3F4'}
-                  ios_backgroundColor="#D1D1D6"
+              <View style={styles.roleInfoBox}>
+                <IconSymbol
+                  ios_icon_name="info.circle"
+                  android_material_icon_name="info"
+                  size={20}
+                  color={colors.vibrantOrange}
                 />
+                <Text style={styles.roleInfoText}>
+                  Je rol ({currentUser?.role === 'parent' ? 'Ouder' : 'Kind'}) kan niet worden gewijzigd.
+                </Text>
               </View>
 
               <View style={styles.modalButtons}>
@@ -1119,6 +1165,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontFamily: 'Nunito_400Regular',
   },
+  roleInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+    gap: 10,
+  },
+  roleInfoText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
   colorSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1136,48 +1197,6 @@ const styles = StyleSheet.create({
   },
   colorOptionActive: {
     borderColor: colors.text,
-  },
-  languageSelector: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  languageOption: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  languageOptionActive: {
-    borderColor: colors.vibrantOrange,
-    backgroundColor: colors.vibrantOrange + '20',
-  },
-  languageOptionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    fontFamily: 'Poppins_600SemiBold',
-  },
-  languageOptionTextActive: {
-    color: colors.text,
-  },
-  preferenceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 20,
-  },
-  preferenceLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: 'Poppins_600SemiBold',
   },
   modalButtons: {
     flexDirection: 'row',

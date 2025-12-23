@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   StyleSheet,
@@ -55,6 +56,7 @@ export default function SettingsScreen() {
   const [languageSelectorVisible, setLanguageSelectorVisible] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showEditMemberModal, setShowEditMemberModal] = useState(false);
+  const [showEditAccountModal, setShowEditAccountModal] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<'parent' | 'child'>('child');
@@ -115,44 +117,6 @@ export default function SettingsScreen() {
     }
   };
 
-  /**
-   * ✅ NEW: resolve family_id in a robust way
-   * - 1) Use currentFamily from context
-   * - 2) Try RPC get_user_family_id (security definer)
-   * - 3) Fallback: select from family_members
-   */
-  const resolveFamilyIdForUser = async (userId: string): Promise<string | null> => {
-    // 1) context (beste)
-    if (currentFamily?.id) return currentFamily.id;
-
-    // 2) rpc (om RLS select-problemen te omzeilen)
-    try {
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_family_id', {
-        user_uuid: userId,
-      });
-
-      if (!rpcError && rpcData) return rpcData as string;
-      // rpc kan ook "null" teruggeven als er echt geen gezin is
-    } catch (e) {
-      // ignore, fallback hieronder
-    }
-
-    // 3) fallback select
-    const { data: membership, error: membershipError } = await supabase
-      .from('family_members')
-      .select('family_id')
-      .eq('user_id', userId)
-      .limit(1)
-      .maybeSingle();
-
-    if (membershipError) {
-      console.error('resolveFamilyId - membershipError:', membershipError);
-      return null;
-    }
-
-    return membership?.family_id ?? null;
-  };
-
   const handleAddMember = async () => {
     if (!newMemberName.trim()) {
       Alert.alert(t('common.error'), t('profile.fillName'));
@@ -160,7 +124,7 @@ export default function SettingsScreen() {
     }
 
     try {
-      // 1) auth user
+      // Get authenticated user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         console.error('Add child - auth error:', userError);
@@ -168,20 +132,35 @@ export default function SettingsScreen() {
         return;
       }
 
-      // 2) family_id resolve
-      const family_id = await resolveFamilyIdForUser(user.id);
+      // Get family_id from context or database
+      let family_id = currentFamily?.id;
+
+      if (!family_id) {
+        // Try to get family_id from family_members table
+        const { data: membership, error: membershipError } = await supabase
+          .from('family_members')
+          .select('family_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (membershipError) {
+          console.error('Add child - membership error:', membershipError);
+        }
+
+        family_id = membership?.family_id;
+      }
 
       if (!family_id) {
         console.error('Add child - No family found for user:', user.id);
         Alert.alert(
           t('common.error'),
-          // als je translation key bestaat: t('settings.noFamily')
           t('settings.noFamily') || 'Geen gezin gevonden. Refresh data en probeer opnieuw.'
         );
         return;
       }
 
-      // 3) insert child
+      // Insert child into database
       const insertPayload = {
         family_id,
         user_id: null,
@@ -191,6 +170,8 @@ export default function SettingsScreen() {
         photo_uri: newMemberPhoto,
         coins: 0,
       };
+
+      console.log('Inserting child with payload:', insertPayload);
 
       const { data, error: insertError } = await supabase
         .from('family_members')
@@ -207,7 +188,9 @@ export default function SettingsScreen() {
         return;
       }
 
-      // 4) update local state + reload
+      console.log('Child added successfully:', data);
+
+      // Update local state
       addFamilyMember({
         id: data.id,
         userId: data.user_id,
@@ -220,7 +203,7 @@ export default function SettingsScreen() {
 
       await reloadCurrentUser();
 
-      // 5) reset + close
+      // Reset form and close modal
       const addedName = newMemberName.trim();
       setNewMemberName('');
       setNewMemberRole('child');
@@ -256,14 +239,11 @@ export default function SettingsScreen() {
     }
 
     try {
-      const isCurrentUser = editingMember.id === currentUser?.id;
       const updateData: any = {
         name: newMemberName.trim(),
         color: newMemberColor,
         photo_uri: newMemberPhoto,
       };
-
-      if (isCurrentUser) updateData.role = newMemberRole;
 
       const { error } = await supabase
         .from('family_members')
@@ -282,15 +262,8 @@ export default function SettingsScreen() {
         color: newMemberColor,
         photoUri: newMemberPhoto || undefined,
       };
-      if (isCurrentUser) updates.role = newMemberRole;
 
       updateFamilyMember(editingMember.id, updates);
-
-      if (isCurrentUser) {
-        const updatedUser = { ...currentUser, ...updates };
-        setCurrentUser(updatedUser);
-        await reloadCurrentUser();
-      }
 
       setEditingMember(null);
       setNewMemberName('');
@@ -324,6 +297,69 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const openEditAccountModal = () => {
+    if (!currentUser) return;
+    setNewMemberName(currentUser.name);
+    setNewMemberColor(currentUser.color || AVAILABLE_COLORS[0].value);
+    setNewMemberPhoto(currentUser.photoUri || null);
+    setShowEditAccountModal(true);
+  };
+
+  const handleEditAccount = async () => {
+    if (!newMemberName.trim()) {
+      Alert.alert(t('common.error'), t('profile.fillName'));
+      return;
+    }
+
+    if (!currentUser || !currentFamily) {
+      Alert.alert(t('common.error'), t('settings.noFamily'));
+      return;
+    }
+
+    try {
+      const updateData: any = {
+        name: newMemberName.trim(),
+        photo_uri: newMemberPhoto,
+      };
+
+      const { error } = await supabase
+        .from('family_members')
+        .update(updateData)
+        .eq('id', currentUser.id)
+        .eq('family_id', currentFamily.id);
+
+      if (error) {
+        console.error('Error updating account:', error);
+        Alert.alert(t('common.error'), t('settings.couldNotUpdateMember'));
+        return;
+      }
+
+      // Update local state
+      const updatedUser = {
+        ...currentUser,
+        name: newMemberName.trim(),
+        photoUri: newMemberPhoto || undefined,
+      };
+
+      setCurrentUser(updatedUser);
+      updateFamilyMember(currentUser.id, {
+        name: newMemberName.trim(),
+        photoUri: newMemberPhoto || undefined,
+      });
+
+      await reloadCurrentUser();
+
+      setNewMemberName('');
+      setNewMemberColor(AVAILABLE_COLORS[0].value);
+      setNewMemberPhoto(null);
+      setShowEditAccountModal(false);
+      Alert.alert(t('common.success'), t('profile.memberUpdated'));
+    } catch (error: any) {
+      console.error('Error updating account:', error);
+      Alert.alert(t('common.error'), t('settings.errorUpdatingMember'));
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -342,16 +378,26 @@ export default function SettingsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
             <View style={styles.card}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{t('common.name')}</Text>
-                <Text style={styles.infoValue}>{currentUser?.name || t('settings.notSet')}</Text>
-              </View>
+              <TouchableOpacity style={styles.infoRow} onPress={openEditAccountModal}>
+                <View style={styles.infoLeft}>
+                  <Text style={styles.infoLabel}>{t('common.name')}</Text>
+                  <Text style={styles.infoValue}>{currentUser?.name || t('settings.notSet')}</Text>
+                </View>
+                <IconSymbol
+                  ios_icon_name="pencil"
+                  android_material_icon_name="edit"
+                  size={20}
+                  color={colors.vibrantOrange}
+                />
+              </TouchableOpacity>
               <View style={styles.divider} />
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{t('settings.role')}</Text>
-                <Text style={styles.infoValue}>
-                  {currentUser?.role === 'parent' ? t('settings.parent') : t('settings.child')}
-                </Text>
+                <View style={styles.infoLeft}>
+                  <Text style={styles.infoLabel}>{t('settings.role')}</Text>
+                  <Text style={styles.infoValue}>
+                    {currentUser?.role === 'parent' ? t('settings.parent') : t('settings.child')}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
@@ -394,7 +440,10 @@ export default function SettingsScreen() {
                   <Text style={styles.familyMembersTitle}>{t('settings.children')}</Text>
                   <TouchableOpacity
                     style={styles.addMemberButton}
-                    onPress={() => setShowAddMemberModal(true)}
+                    onPress={() => {
+                      console.log('Add child button pressed');
+                      setShowAddMemberModal(true);
+                    }}
                   >
                     <IconSymbol
                       ios_icon_name="plus.circle.fill"
@@ -535,6 +584,82 @@ export default function SettingsScreen() {
       {/* Language Selector Modal */}
       <LanguageSelector visible={languageSelectorVisible} onClose={() => setLanguageSelectorVisible(false)} />
 
+      {/* Edit Account Modal */}
+      <Modal
+        visible={showEditAccountModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditAccountModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Profiel bewerken</Text>
+
+              <TouchableOpacity style={styles.photoPickerButton} onPress={handlePickImage}>
+                {newMemberPhoto ? (
+                  <Image source={{ uri: newMemberPhoto }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <View style={styles.cameraIconCircle}>
+                      <IconSymbol
+                        ios_icon_name="camera.fill"
+                        android_material_icon_name="camera-alt"
+                        size={40}
+                        color={colors.card}
+                      />
+                    </View>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TextInput
+                style={styles.input}
+                placeholder={t('common.name')}
+                placeholderTextColor={colors.textSecondary}
+                value={newMemberName}
+                onChangeText={setNewMemberName}
+              />
+
+              <View style={styles.roleInfoBox}>
+                <IconSymbol
+                  ios_icon_name="info.circle"
+                  android_material_icon_name="info"
+                  size={20}
+                  color={colors.vibrantOrange}
+                />
+                <Text style={styles.roleInfoText}>
+                  Je rol ({currentUser?.role === 'parent' ? t('settings.parent') : t('settings.child')}) kan niet worden gewijzigd.
+                </Text>
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowEditAccountModal(false);
+                    setNewMemberName('');
+                    setNewMemberColor(AVAILABLE_COLORS[0].value);
+                    setNewMemberPhoto(null);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonConfirm]}
+                  onPress={handleEditAccount}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
+                    {t('common.save')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
       {/* Add Member Modal */}
       <Modal
         visible={showAddMemberModal}
@@ -626,7 +751,7 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* Edit Member Modal (ongewijzigd) */}
+      {/* Edit Member Modal */}
       <Modal
         visible={showEditMemberModal}
         transparent
@@ -662,30 +787,6 @@ export default function SettingsScreen() {
                 value={newMemberName}
                 onChangeText={setNewMemberName}
               />
-
-              {editingMember?.id === currentUser?.id && (
-                <>
-                  <Text style={styles.inputLabel}>{t('settings.role')}</Text>
-                  <View style={styles.roleSelector}>
-                    <TouchableOpacity
-                      style={[styles.roleButton, newMemberRole === 'parent' && styles.roleButtonActive]}
-                      onPress={() => setNewMemberRole('parent')}
-                    >
-                      <Text style={[styles.roleButtonText, newMemberRole === 'parent' && styles.roleButtonTextActive]}>
-                        {t('settings.parent')}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.roleButton, newMemberRole === 'child' && styles.roleButtonActive]}
-                      onPress={() => setNewMemberRole('child')}
-                    >
-                      <Text style={[styles.roleButtonText, newMemberRole === 'child' && styles.roleButtonTextActive]}>
-                        {t('settings.child')}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
 
               <Text style={styles.inputLabel}>{t('settings.chooseColor')}</Text>
               <View style={styles.colorSelector}>
@@ -744,7 +845,6 @@ export default function SettingsScreen() {
   );
 }
 
-// styles: jouw originele styles (ongewijzigd)
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -787,11 +887,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
   },
+  infoLeft: {
+    flex: 1,
+  },
   infoLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
     fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 4,
   },
   infoValue: {
     fontSize: 16,
@@ -914,11 +1018,21 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inputLabel: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 10, fontFamily: 'Poppins_600SemiBold' },
-  roleSelector: { flexDirection: 'row', gap: 10, marginBottom: 15 },
-  roleButton: { flex: 1, backgroundColor: colors.background, borderRadius: 15, padding: 15, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
-  roleButtonActive: { borderColor: colors.vibrantOrange, backgroundColor: colors.primary },
-  roleButtonText: { fontSize: 16, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
-  roleButtonTextActive: { color: colors.text },
+  roleInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+    gap: 10,
+  },
+  roleInfoText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
   colorSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   colorOption: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'transparent' },
   colorOptionActive: { borderColor: colors.text },
