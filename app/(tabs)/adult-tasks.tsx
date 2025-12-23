@@ -1242,7 +1242,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 20,
+    padding: 24,
+    paddingHorizontal: 28,
     maxHeight: '90%',
   },
   modalTitle: {
@@ -1270,6 +1271,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_400Regular',
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    outlineColor: colors.beige,
   },
   inputError: {
     borderColor: colors.error,
@@ -1293,6 +1295,7 @@ const styles = StyleSheet.create({
     gap: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    outlineColor: colors.beige,
   },
   iconPickerButtonText: {
     fontSize: 16,
@@ -1335,6 +1338,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    outlineColor: colors.beige,
   },
   timeInputText: {
     fontSize: 18,
