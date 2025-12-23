@@ -91,7 +91,7 @@ function DashboardCard({
         <MaterialCommunityIcons
           name={icon as any}
           size={28}
-          color="#3A2F2A"
+          color="#C8BFB8"
           style={styles.cardIcon}
         />
         <Text style={styles.cardTitle}>{title}</Text>
@@ -190,52 +190,49 @@ export default function HomeScreen() {
     setCurrentSlide(slideIndex);
   };
 
-  // Dashboard cards with three-level beige hierarchy
+  // Dashboard cards with new warm beige color
   const dashboardCards = [
-    // Top row - Lightest beige (#F1ECE6)
     {
       title: t("home.menu.agenda"),
       icon: "calendar-month-outline",
       subtitle: `${todayAppointments} ${todayAppointments === 1 ? 'afspraak' : 'afspraken'}`,
       route: "/(tabs)/agenda",
-      backgroundColor: "#F1ECE6",
+      backgroundColor: "#F3EEE8",
     },
     {
       title: "Taken",
       icon: "calendar-check-outline",
       subtitle: `${todayTasks.length} ${todayTasks.length === 1 ? 'taak' : 'taken'}`,
       route: "/(tabs)/adult-tasks",
-      backgroundColor: "#F1ECE6",
+      backgroundColor: "#F3EEE8",
     },
-    // Middle row - Medium beige (#E6DDD4)
     {
       title: t("home.menu.shopping"),
       icon: "cart-outline",
       subtitle: "Boodschappenlijst",
       route: "/(tabs)/shopping",
-      backgroundColor: "#E6DDD4",
+      backgroundColor: "#F3EEE8",
     },
     {
       title: t("home.menu.finances"),
       icon: "currency-eur",
       subtitle: "Financieel overzicht",
       route: "/(tabs)/finances",
-      backgroundColor: "#E6DDD4",
+      backgroundColor: "#F3EEE8",
     },
-    // Bottom row - Darkest beige (#DDD1C6)
     {
       title: t("home.menu.contactbook"),
       icon: "book-outline",
       subtitle: "Contacten & verjaardagen",
       route: "/(tabs)/contactbook",
-      backgroundColor: "#DDD1C6",
+      backgroundColor: "#F3EEE8",
     },
     {
       title: t("home.menu.photobook"),
       icon: "camera-outline",
       subtitle: "Foto's & herinneringen",
       route: "/(tabs)/memories",
-      backgroundColor: "#DDD1C6",
+      backgroundColor: "#F3EEE8",
     },
   ];
 
@@ -349,7 +346,7 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#3A2F2A",
+    color: "#3B2F2A",
     fontFamily: "Poppins_700Bold",
   },
   sliderContainer: {
@@ -360,25 +357,11 @@ const styles = StyleSheet.create({
   },
   slide: {
     borderRadius: 20,
-    backgroundColor: "#F9F6F1",
+    backgroundColor: "#F3EEE8",
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderWidth: 1,
-    borderColor: "#E2D6CC",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#3A2F2A",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      web: {
-        boxShadow: "0px 2px 12px rgba(58, 47, 42, 0.08)",
-      },
-    }),
+    borderColor: "#E6DED6",
   },
   slideContent: {
     alignItems: "center",
@@ -387,14 +370,14 @@ const styles = StyleSheet.create({
   slideNumber: {
     fontSize: 40,
     fontWeight: "700",
-    color: "#3A2F2A",
+    color: "#F08A48",
     fontFamily: "Poppins_700Bold",
     marginBottom: 6,
   },
   slideLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#3A2F2A",
+    color: "#3B2F2A",
     fontFamily: "Poppins_600SemiBold",
     textAlign: "center",
   },
@@ -405,7 +388,7 @@ const styles = StyleSheet.create({
   },
   taskItem: {
     fontSize: 13,
-    color: "#7A6F67",
+    color: "#8C817A",
     fontFamily: "Nunito_400Regular",
     marginBottom: 4,
     textAlign: "left",
@@ -421,10 +404,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#E2D6CC",
+    backgroundColor: "#E6DED6",
   },
   activeDot: {
-    backgroundColor: "#3A2F2A",
+    backgroundColor: "#F08A48",
     width: 24,
   },
   gridContainer: {
@@ -442,21 +425,7 @@ const styles = StyleSheet.create({
     minHeight: 130,
     justifyContent: "flex-start",
     borderWidth: 1,
-    borderColor: "#E2D6CC",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#3A2F2A",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      web: {
-        boxShadow: "0px 2px 12px rgba(58, 47, 42, 0.08)",
-      },
-    }),
+    borderColor: "#E6DED6",
   },
   cardIcon: {
     marginTop: 0,
@@ -467,13 +436,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "Poppins_700Bold",
     marginBottom: 6,
-    color: "#3A2F2A",
+    color: "#3B2F2A",
   },
   cardSubtitle: {
     fontSize: 13,
     lineHeight: 18,
     fontFamily: "Nunito_400Regular",
-    color: "#7A6F67",
+    color: "#8C817A",
     marginBottom: 0,
   },
 });

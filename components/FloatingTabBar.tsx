@@ -136,7 +136,7 @@ export default function FloatingTabBar({
     };
   });
 
-  // Consistent styling for both debug and release builds
+  // Clean, minimal styling with new color system
   const dynamicStyles = {
     blurContainer: {
       ...styles.blurContainer,
@@ -148,7 +148,7 @@ export default function FloatingTabBar({
     },
     indicator: {
       ...styles.indicator,
-      backgroundColor: '#DDD1C6', // Darkest beige (same as Contactboek tile)
+      backgroundColor: '#F08A48', // Active tab accent color
       width: tabWidth,
       borderRadius: 50,
       height: 52,
@@ -166,6 +166,7 @@ export default function FloatingTabBar({
           },
         ]}
       >
+        <View style={styles.topDivider} />
         <BlurView
           intensity={80}
           style={[dynamicStyles.blurContainer, { borderRadius }]}
@@ -175,9 +176,9 @@ export default function FloatingTabBar({
           <View style={styles.tabsContainer}>
             {tabs.map((tab, index) => {
               const isActive = activeTabIndex === index;
-              // Active tab: dark brown (#3A2F2A), Inactive tab: dark brown (#3A2F2A)
-              const iconColor = isActive ? '#3A2F2A' : '#3A2F2A';
-              const labelColor = isActive ? '#3A2F2A' : '#3A2F2A';
+              // Active tab: white, Inactive tab: secondary text color
+              const iconColor = isActive ? '#FFFFFF' : '#8C817A';
+              const labelColor = isActive ? '#FFFFFF' : '#8C817A';
 
               return (
                 <React.Fragment key={index}>
@@ -233,6 +234,15 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 10,
     alignSelf: 'center',
+  },
+  topDivider: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: '#E6DED6',
+    zIndex: 1001,
   },
   blurContainer: {
     overflow: 'hidden',
