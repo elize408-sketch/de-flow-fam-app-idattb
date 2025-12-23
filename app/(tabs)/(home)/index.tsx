@@ -18,27 +18,8 @@ import { colors } from "@/styles/commonStyles";
 import { useFamily } from "@/contexts/FamilyContext";
 import { supabase } from "@/utils/supabase";
 
-const DAILY_MESSAGES = [
-  "Elke dag is een nieuwe kans.",
-  "Rust en overzicht voor vandaag.",
-  "Samen houden we het overzichtelijk.",
-  "Je hoeft niet alles tegelijk.",
-  "Kleine stappen zijn ook vooruitgang.",
-  "Vandaag mag licht zijn.",
-  "Je doet het goed.",
-  "Alles op zijn tijd.",
-];
-
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SLIDER_WIDTH = SCREEN_WIDTH - 40; // Account for padding
-
-function getDailyMessage(): string {
-  const today = new Date();
-  const dayOfYear = Math.floor(
-    (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  return DAILY_MESSAGES[dayOfYear % DAILY_MESSAGES.length];
-}
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -141,7 +122,6 @@ export default function HomeScreen() {
   // Extract first name from user profile, fallback to empty string
   const firstName = currentUser?.name?.split(" ")[0]?.trim() || "";
   const greeting = getGreeting();
-  const dailyMessage = getDailyMessage();
 
   // Build greeting text with personalization
   const greetingText = firstName ? `${greeting}, ${firstName}!` : `${greeting}!`;
@@ -270,7 +250,6 @@ export default function HomeScreen() {
           {/* Welcome Header */}
           <View style={styles.headerSection}>
             <Text style={styles.greetingText}>{greetingText}</Text>
-            <Text style={styles.dailyMessage}>{dailyMessage}</Text>
           </View>
 
           {/* Daily Dashboard Slider */}
@@ -364,24 +343,17 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   headerSection: {
-    marginBottom: 20,
-    marginTop: 24,
+    marginBottom: 16,
+    marginTop: 20,
   },
   greetingText: {
     fontSize: 28,
     fontWeight: "700",
     color: "#3A2F2A",
     fontFamily: "Poppins_700Bold",
-    marginBottom: 8,
-  },
-  dailyMessage: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#7A6F67",
-    fontFamily: "Nunito_400Regular",
   },
   sliderContainer: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   slider: {
     width: SLIDER_WIDTH,
@@ -389,7 +361,8 @@ const styles = StyleSheet.create({
   slide: {
     borderRadius: 20,
     backgroundColor: "#F9F6F1",
-    padding: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderWidth: 1,
     borderColor: "#E2D6CC",
     ...Platform.select({
@@ -410,39 +383,38 @@ const styles = StyleSheet.create({
   slideContent: {
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 140,
   },
   slideNumber: {
-    fontSize: 56,
+    fontSize: 48,
     fontWeight: "700",
     color: "#3A2F2A",
     fontFamily: "Poppins_700Bold",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   slideLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#3A2F2A",
     fontFamily: "Poppins_600SemiBold",
     textAlign: "center",
   },
   tasksList: {
-    marginTop: 16,
+    marginTop: 12,
     width: "100%",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   taskItem: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#7A6F67",
     fontFamily: "Nunito_400Regular",
-    marginBottom: 6,
+    marginBottom: 4,
     textAlign: "left",
   },
   pagination: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 12,
     gap: 8,
   },
   dot: {
