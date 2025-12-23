@@ -286,6 +286,7 @@
     "fillTaskName": "Vul een taaknaam in",
     "selectStartTime": "Selecteer een starttijd",
     "selectAdult": "Wijs minimaal één volwassene toe",
+    "endTimeBeforeStart": "Eindtijd moet na starttijd zijn",
     "couldNotLoad": "Kon taken niet laden",
     "couldNotAdd": "Kon taak niet toevoegen",
     "couldNotDelete": "Kon taak niet verwijderen",

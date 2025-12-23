@@ -67,6 +67,7 @@ export default function AdultTasksScreen() {
   const [errors, setErrors] = useState<{
     taskName?: string;
     startTime?: string;
+    endTime?: string;
     assignedTo?: string;
   }>({});
 
@@ -180,6 +181,18 @@ export default function AdultTasksScreen() {
 
     if (!startTime) {
       newErrors.startTime = t('tasks.selectStartTime');
+    }
+
+    // Validate end time is after start time
+    if (endTime && startTime) {
+      const startMinutes = startTime.split(':').map(Number);
+      const endMinutes = endTime.split(':').map(Number);
+      const startTotalMinutes = startMinutes[0] * 60 + startMinutes[1];
+      const endTotalMinutes = endMinutes[0] * 60 + endMinutes[1];
+      
+      if (endTotalMinutes <= startTotalMinutes) {
+        newErrors.endTime = t('tasks.endTimeBeforeStart');
+      }
     }
 
     if (selectedAdults.length === 0) {
@@ -694,8 +707,19 @@ export default function AdultTasksScreen() {
                   </Text>
                   <TouchableOpacity
                     style={[styles.timeInput, errors.startTime && styles.inputError]}
-                    onPress={() => setShowStartTimePicker(true)}
+                    onPress={() => {
+                      console.log('Start time picker pressed');
+                      setShowStartTimePicker(true);
+                    }}
+                    activeOpacity={0.7}
                   >
+                    <IconSymbol
+                      ios_icon_name="clock"
+                      android_material_icon_name="schedule"
+                      size={20}
+                      color={colors.accent}
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.timeInputText}>{startTime}</Text>
                   </TouchableOpacity>
                   {errors.startTime && (
@@ -705,11 +729,25 @@ export default function AdultTasksScreen() {
                 <View style={styles.timeColumn}>
                   <Text style={styles.inputLabel}>{t('tasks.endTime')}</Text>
                   <TouchableOpacity
-                    style={styles.timeInput}
-                    onPress={() => setShowEndTimePicker(true)}
+                    style={[styles.timeInput, errors.endTime && styles.inputError]}
+                    onPress={() => {
+                      console.log('End time picker pressed');
+                      setShowEndTimePicker(true);
+                    }}
+                    activeOpacity={0.7}
                   >
+                    <IconSymbol
+                      ios_icon_name="clock"
+                      android_material_icon_name="schedule"
+                      size={20}
+                      color={colors.accent}
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.timeInputText}>{endTime}</Text>
                   </TouchableOpacity>
+                  {errors.endTime && (
+                    <Text style={styles.errorText}>{errors.endTime}</Text>
+                  )}
                 </View>
               </View>
 
@@ -860,14 +898,35 @@ export default function AdultTasksScreen() {
           is24Hour={true}
           display="default"
           onChange={(event, date) => {
-            setShowStartTimePicker(false);
-            if (date) {
+            setShowStartTimePicker(Platform.OS === 'ios');
+            if (event.type === 'set' && date) {
               const hours = date.getHours().toString().padStart(2, '0');
               const minutes = date.getMinutes().toString().padStart(2, '0');
-              setStartTime(`${hours}:${minutes}`);
+              const newStartTime = `${hours}:${minutes}`;
+              setStartTime(newStartTime);
+              
+              // Auto-adjust end time if it's now before start time
+              const startMinutes = hours * 60 + parseInt(minutes);
+              const endMinutes = endTime.split(':').map(Number);
+              const endTotalMinutes = endMinutes[0] * 60 + endMinutes[1];
+              
+              if (endTotalMinutes <= startMinutes) {
+                // Set end time to 30 minutes after start time
+                const newEndMinutes = startMinutes + 30;
+                const newEndHours = Math.floor(newEndMinutes / 60) % 24;
+                const newEndMins = newEndMinutes % 60;
+                setEndTime(`${newEndHours.toString().padStart(2, '0')}:${newEndMins.toString().padStart(2, '0')}`);
+              }
+              
               if (errors.startTime) {
                 setErrors((prev) => ({ ...prev, startTime: undefined }));
               }
+              if (errors.endTime) {
+                setErrors((prev) => ({ ...prev, endTime: undefined }));
+              }
+            }
+            if (event.type === 'dismissed') {
+              setShowStartTimePicker(false);
             }
           }}
         />
@@ -880,11 +939,30 @@ export default function AdultTasksScreen() {
           is24Hour={true}
           display="default"
           onChange={(event, date) => {
-            setShowEndTimePicker(false);
-            if (date) {
+            setShowEndTimePicker(Platform.OS === 'ios');
+            if (event.type === 'set' && date) {
               const hours = date.getHours().toString().padStart(2, '0');
               const minutes = date.getMinutes().toString().padStart(2, '0');
-              setEndTime(`${hours}:${minutes}`);
+              const newEndTime = `${hours}:${minutes}`;
+              
+              // Validate that end time is after start time
+              const startMinutes = startTime.split(':').map(Number);
+              const startTotalMinutes = startMinutes[0] * 60 + startMinutes[1];
+              const endTotalMinutes = parseInt(hours) * 60 + parseInt(minutes);
+              
+              if (endTotalMinutes <= startTotalMinutes) {
+                // Show error but still set the time so user can see what they selected
+                setEndTime(newEndTime);
+                setErrors((prev) => ({ ...prev, endTime: t('tasks.endTimeBeforeStart') }));
+              } else {
+                setEndTime(newEndTime);
+                if (errors.endTime) {
+                  setErrors((prev) => ({ ...prev, endTime: undefined }));
+                }
+              }
+            }
+            if (event.type === 'dismissed') {
+              setShowEndTimePicker(false);
             }
           }}
         />
@@ -1246,7 +1324,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.softCream,
     borderRadius: 12,
     padding: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
