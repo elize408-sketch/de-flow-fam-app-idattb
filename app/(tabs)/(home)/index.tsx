@@ -210,49 +210,52 @@ export default function HomeScreen() {
     setCurrentSlide(slideIndex);
   };
 
-  // Dashboard cards with subtle beige tones
+  // Dashboard cards with three-level beige hierarchy
   const dashboardCards = [
+    // Top row - Lightest beige (#F1ECE6)
     {
       title: t("home.menu.agenda"),
       icon: "calendar-month-outline",
       subtitle: `${todayAppointments} ${todayAppointments === 1 ? 'afspraak' : 'afspraken'}`,
       route: "/(tabs)/agenda",
-      backgroundColor: "#EFE5DC", // Agenda beige
+      backgroundColor: "#F1ECE6",
     },
     {
       title: "Taken",
       icon: "calendar-check-outline",
       subtitle: `${todayTasks.length} ${todayTasks.length === 1 ? 'taak' : 'taken'}`,
       route: "/(tabs)/adult-tasks",
-      backgroundColor: "#EEE9E2", // Taken beige
+      backgroundColor: "#F1ECE6",
     },
+    // Middle row - Medium beige (#E6DDD4)
     {
       title: t("home.menu.shopping"),
       icon: "cart-outline",
       subtitle: "Boodschappenlijst",
       route: "/(tabs)/shopping",
-      backgroundColor: "#F1E7DA", // Boodschappen beige
+      backgroundColor: "#E6DDD4",
     },
     {
       title: t("home.menu.finances"),
       icon: "currency-eur",
       subtitle: "Financieel overzicht",
       route: "/(tabs)/finances",
-      backgroundColor: "#D8C8BC", // Financiën beige (geen rood)
+      backgroundColor: "#E6DDD4",
     },
+    // Bottom row - Darkest beige (#DDD1C6)
     {
       title: t("home.menu.contactbook"),
       icon: "book-outline",
       subtitle: "Contacten & verjaardagen",
       route: "/(tabs)/contactbook",
-      backgroundColor: "#E9D3C6", // Contactboek beige
+      backgroundColor: "#DDD1C6",
     },
     {
       title: t("home.menu.photobook"),
       icon: "camera-outline",
       subtitle: "Foto's & herinneringen",
       route: "/(tabs)/memories",
-      backgroundColor: "#E6DDD4", // Fotoboek beige
+      backgroundColor: "#DDD1C6",
     },
   ];
 
@@ -358,7 +361,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: "#FFFFFF", // White background
+    backgroundColor: "#FFFFFF",
   },
   safeArea: {
     flex: 1,
@@ -379,14 +382,14 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#3A2F2A", // Titel/icoon kleur
+    color: "#3A2F2A",
     fontFamily: "Poppins_700Bold",
     marginBottom: 8,
   },
   dailyMessage: {
     fontSize: 16,
     lineHeight: 24,
-    color: "#7A6F67", // Subtekst kleur
+    color: "#7A6F67",
     fontFamily: "Nunito_400Regular",
   },
   sliderContainer: {
@@ -482,7 +485,7 @@ const styles = StyleSheet.create({
     minHeight: 140,
     justifyContent: "flex-start",
     borderWidth: 1,
-    borderColor: "#E2D6CC", // Subtiele border voor luxe look
+    borderColor: "#E2D6CC",
     ...Platform.select({
       ios: {
         shadowColor: "#3A2F2A",
@@ -506,12 +509,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "Poppins_700Bold",
     marginBottom: 6,
-    color: "#3A2F2A", // Titel kleur
+    color: "#3A2F2A",
   },
   cardSubtitle: {
     fontSize: 13,
     lineHeight: 18,
     fontFamily: "Nunito_400Regular",
-    color: "#7A6F67", // Subtekst kleur
+    color: "#7A6F67",
   },
 });
