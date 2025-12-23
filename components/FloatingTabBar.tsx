@@ -148,7 +148,7 @@ export default function FloatingTabBar({
     },
     indicator: {
       ...styles.indicator,
-      backgroundColor: colors.warmOrange,
+      backgroundColor: '#DDD1C6', // Darkest beige (same as Contactboek tile)
       width: tabWidth,
       borderRadius: 50,
       height: 52,
@@ -175,9 +175,9 @@ export default function FloatingTabBar({
           <View style={styles.tabsContainer}>
             {tabs.map((tab, index) => {
               const isActive = activeTabIndex === index;
-              // Consistent colors for both active and inactive states
-              const iconColor = isActive ? '#FFFFFF' : '#3A2F2A';
-              const labelColor = isActive ? '#FFFFFF' : '#3A2F2A';
+              // Active tab: dark brown (#3A2F2A), Inactive tab: dark brown (#3A2F2A)
+              const iconColor = isActive ? '#3A2F2A' : '#3A2F2A';
+              const labelColor = isActive ? '#3A2F2A' : '#3A2F2A';
 
               return (
                 <React.Fragment key={index}>

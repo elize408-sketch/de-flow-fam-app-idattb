@@ -287,12 +287,6 @@ export default function HomeScreen() {
               {/* Slide 1: Appointments */}
               <View style={[styles.slide, { width: SLIDER_WIDTH }]}>
                 <View style={styles.slideContent}>
-                  <MaterialCommunityIcons
-                    name="calendar-month"
-                    size={40}
-                    color="#3A2F2A"
-                    style={styles.slideIcon}
-                  />
                   <Text style={styles.slideNumber}>{todayAppointments}</Text>
                   <Text style={styles.slideLabel}>
                     {todayAppointments === 1 ? 'Afspraak vandaag' : 'Afspraken vandaag'}
@@ -303,12 +297,6 @@ export default function HomeScreen() {
               {/* Slide 2: Tasks */}
               <View style={[styles.slide, { width: SLIDER_WIDTH }]}>
                 <View style={styles.slideContent}>
-                  <MaterialCommunityIcons
-                    name="clipboard-check-outline"
-                    size={40}
-                    color="#3A2F2A"
-                    style={styles.slideIcon}
-                  />
                   <Text style={styles.slideNumber}>{todayTasks.length}</Text>
                   <Text style={styles.slideLabel}>
                     {todayTasks.length === 1 ? 'Taak vandaag' : 'Taken vandaag'}
@@ -422,17 +410,14 @@ const styles = StyleSheet.create({
   slideContent: {
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 160,
-  },
-  slideIcon: {
-    marginBottom: 12,
+    minHeight: 140,
   },
   slideNumber: {
-    fontSize: 48,
+    fontSize: 56,
     fontWeight: "700",
     color: "#3A2F2A",
     fontFamily: "Poppins_700Bold",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   slideLabel: {
     fontSize: 18,
