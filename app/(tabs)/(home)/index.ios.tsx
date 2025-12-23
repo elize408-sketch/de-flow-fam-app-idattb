@@ -288,7 +288,7 @@ export default function HomeScreen() {
                   <MaterialCommunityIcons
                     name="calendar-month"
                     size={40}
-                    color="#D5A093"
+                    color="#3A2F2A"
                     style={styles.slideIcon}
                   />
                   <Text style={styles.slideNumber}>{todayAppointments}</Text>
@@ -304,7 +304,7 @@ export default function HomeScreen() {
                   <MaterialCommunityIcons
                     name="clipboard-check-outline"
                     size={40}
-                    color="#C8D3C0"
+                    color="#3A2F2A"
                     style={styles.slideIcon}
                   />
                   <Text style={styles.slideNumber}>{todayTasks.length}</Text>
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2D6CC",
   },
   activeDot: {
-    backgroundColor: "#D5A093",
+    backgroundColor: "#3A2F2A",
     width: 24,
   },
   gridContainer: {
