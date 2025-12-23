@@ -759,7 +759,7 @@ export default function AgendaScreen() {
                       styles.memberOption,
                       newAppointmentAssignedTo.includes(member.id) && [
                         styles.memberOptionActive,
-                        { borderColor: accentColor },
+                        { borderColor: '#F4EAE1' },
                       ],
                     ]}
                     onPress={() => toggleMemberSelection(member.id)}
@@ -771,8 +771,8 @@ export default function AgendaScreen() {
                     </View>
                     <Text style={styles.memberName}>{member.name}</Text>
                     {newAppointmentAssignedTo.includes(member.id) && (
-                      <View style={[styles.checkmark, { backgroundColor: accentColor }]}>
-                        <Ionicons name="checkmark" size={16} color={colors.card} />
+                      <View style={[styles.checkmark, { backgroundColor: '#F4EAE1' }]}>
+                        <Ionicons name="checkmark" size={16} color={colors.text} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -793,7 +793,7 @@ export default function AgendaScreen() {
                       styles.repeatOption,
                       newAppointmentRepeat === option.value && [
                         styles.repeatOptionActive,
-                        { borderColor: accentColor, backgroundColor: accentColor + '20' },
+                        { borderColor: '#F4EAE1', backgroundColor: '#F4EAE1' + '40' },
                       ],
                     ]}
                     onPress={() => setNewAppointmentRepeat(option.value as any)}
@@ -823,7 +823,7 @@ export default function AgendaScreen() {
                           styles.weekdayButton,
                           newAppointmentWeekdays.includes(weekdayValues[index]) && [
                             styles.weekdayButtonActive,
-                            { backgroundColor: accentColor },
+                            { backgroundColor: '#F4EAE1', borderColor: '#F4EAE1' },
                           ],
                         ]}
                         onPress={() => toggleWeekday(weekdayValues[index])}
@@ -891,7 +891,7 @@ export default function AgendaScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: accentColor }]}
+                  style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: colors.warmOrange }]}
                   onPress={handleAddAppointment}
                   activeOpacity={0.85}
                 >
@@ -1634,7 +1634,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
   },
   weekdayButtonTextActive: {
-    color: colors.card,
+    color: colors.text,
   },
 
   clearEndDateButton: {
