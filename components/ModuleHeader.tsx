@@ -25,7 +25,7 @@ export default function ModuleHeader({
   return (
     <View style={[styles.header, { backgroundColor }]}>
       <View style={styles.headerContent}>
-        {showBackButton ? (
+        {showBackButton && (
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
@@ -38,8 +38,6 @@ export default function ModuleHeader({
               color={colors.text}
             />
           </TouchableOpacity>
-        ) : (
-          <View style={styles.placeholder} />
         )}
 
         <View style={styles.titleContainer}>
@@ -47,10 +45,8 @@ export default function ModuleHeader({
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
 
-        {rightButton ? (
+        {rightButton && (
           <View style={styles.rightButton}>{rightButton}</View>
-        ) : (
-          <View style={styles.placeholder} />
         )}
       </View>
     </View>
@@ -59,8 +55,8 @@ export default function ModuleHeader({
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 48,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
@@ -68,7 +64,6 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   backButton: {
     width: 40,
@@ -77,24 +72,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
   titleContainer: {
     flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
+    textAlign: 'left',
   },
   subtitle: {
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
+    textAlign: 'left',
     marginTop: 4,
   },
   rightButton: {
@@ -102,8 +96,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  placeholder: {
-    width: 40,
+    marginLeft: 12,
   },
 });

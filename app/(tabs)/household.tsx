@@ -54,8 +54,10 @@ export default function HouseholdScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Huishouden</Text>
-          <Text style={styles.subtitle}>Overzicht van alle huishoudelijke taken</Text>
+          <View>
+            <Text style={styles.title}>Huishouden</Text>
+            <Text style={styles.subtitle}>Overzicht van alle huishoudelijke taken</Text>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -272,27 +274,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    paddingTop: 60,
+    paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 120,
   },
   header: {
-    alignItems: 'center',
     marginBottom: 20,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'Poppins_700Bold',
-    textAlign: 'center',
+    textAlign: 'left',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textSecondary,
-    marginTop: 5,
+    marginTop: 4,
     fontFamily: 'Nunito_400Regular',
-    textAlign: 'center',
+    textAlign: 'left',
   },
   addButton: {
     backgroundColor: colors.accent,
