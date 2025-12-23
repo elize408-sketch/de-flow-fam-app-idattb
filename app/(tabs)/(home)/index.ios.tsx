@@ -141,6 +141,9 @@ export default function HomeScreen() {
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
+        console.log("Fetching today's data for family:", family.id);
+        console.log("Date range:", startOfDay.toISOString(), "to", endOfDay.toISOString());
+
         // Fetch today's appointments
         const { data: appointments, error: appointmentsError } = await supabase
           .from("appointments")
@@ -152,6 +155,7 @@ export default function HomeScreen() {
         if (appointmentsError) {
           console.error("Error fetching appointments:", appointmentsError);
         } else {
+          console.log("Appointments found:", appointments?.length || 0);
           setTodayAppointments(appointments?.length || 0);
         }
 
@@ -168,6 +172,7 @@ export default function HomeScreen() {
         if (tasksError) {
           console.error("Error fetching tasks:", tasksError);
         } else {
+          console.log("Tasks found:", tasks?.length || 0);
           setTodayTasks(tasks?.length || 0);
         }
       } catch (error) {
@@ -200,6 +205,8 @@ export default function HomeScreen() {
   };
 
   const dailyOverview = getDailyOverview();
+
+  console.log("Daily overview:", dailyOverview);
 
   // Dashboard cards with specific color scheme
   // Row 1: Agenda (ORANGE), Taken (BEIGE)
