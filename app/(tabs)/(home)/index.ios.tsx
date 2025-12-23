@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { colors } from "@/styles/commonStyles";
 import { useFamily } from "@/contexts/FamilyContext";
+import { supabase } from "@/utils/supabase";
 
 const DAILY_MESSAGES = [
   "Elke dag is een nieuwe kans.",
@@ -113,7 +114,10 @@ function DashboardCard({
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { currentUser } = useFamily();
+  const { currentUser, family } = useFamily();
+  const [todayAppointments, setTodayAppointments] = useState(0);
+  const [todayTasks, setTodayTasks] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   // Extract first name from user profile, fallback to empty string
   const firstName = currentUser?.name?.split(" ")[0]?.trim() || "";
@@ -123,9 +127,83 @@ export default function HomeScreen() {
   // Build greeting text with personalization
   const greetingText = firstName ? `${greeting}, ${firstName}!` : `${greeting}!`;
 
+  // Fetch today's appointments and tasks
+  useEffect(() => {
+    async function fetchTodayData() {
+      if (!family?.id) {
+        console.log("No family ID found");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+        // Fetch today's appointments
+        const { data: appointments, error: appointmentsError } = await supabase
+          .from("appointments")
+          .select("*")
+          .eq("family_id", family.id)
+          .gte("date", startOfDay.toISOString())
+          .lte("date", endOfDay.toISOString());
+
+        if (appointmentsError) {
+          console.error("Error fetching appointments:", appointmentsError);
+        } else {
+          setTodayAppointments(appointments?.length || 0);
+        }
+
+        // Fetch today's open tasks (adult tasks)
+        const { data: tasks, error: tasksError } = await supabase
+          .from("tasks")
+          .select("*")
+          .eq("family_id", family.id)
+          .eq("is_adult_task", true)
+          .eq("completed", false)
+          .gte("due_date", startOfDay.toISOString())
+          .lte("due_date", endOfDay.toISOString());
+
+        if (tasksError) {
+          console.error("Error fetching tasks:", tasksError);
+        } else {
+          setTodayTasks(tasks?.length || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching today's data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTodayData();
+  }, [family?.id]);
+
+  // Build daily overview text
+  const getDailyOverview = () => {
+    const parts = [];
+    
+    if (todayAppointments > 0) {
+      parts.push(`${todayAppointments} ${todayAppointments === 1 ? 'afspraak' : 'afspraken'}`);
+    }
+    
+    if (todayTasks > 0) {
+      parts.push(`${todayTasks} ${todayTasks === 1 ? 'taak' : 'taken'}`);
+    }
+    
+    if (parts.length === 0) {
+      return null; // Don't show anything if there are no appointments or tasks
+    }
+    
+    return `Vandaag: ${parts.join(' • ')}`;
+  };
+
+  const dailyOverview = getDailyOverview();
+
   // Dashboard cards with specific color scheme
   // Row 1: Agenda (ORANGE), Taken (BEIGE)
-  // Row 2: Boodschappen (BEIGE), Financiën (ORANGE)
+  // Row 2: Boodschappen (BEIGE), Financiën (RED)
   // Row 3: Contactboek (ORANGE), Fotoboek (BEIGE)
   const dashboardCards = [
     // Row 1 - Left: Agenda (ORANGE)
@@ -158,13 +236,13 @@ export default function HomeScreen() {
       textColor: "#4c3b34",
       iconColor: "#4c3b34",
     },
-    // Row 2 - Right: Financiën (ORANGE)
+    // Row 2 - Right: Financiën (WARM RED)
     {
       title: t("home.menu.finances"),
       icon: "currency-eur",
       subtitle: "Deze week bijgewerkt",
       route: "/finances",
-      backgroundColor: "#f08a48", // Flow Fam oranje
+      backgroundColor: "#D5534F", // Warm red matching Flow Fam style
       textColor: "#FFFFFF",
       iconColor: "#FFFFFF",
     },
@@ -201,6 +279,9 @@ export default function HomeScreen() {
           {/* Welcome Header */}
           <View style={styles.headerSection}>
             <Text style={styles.greetingText}>{greetingText}</Text>
+            {dailyOverview && (
+              <Text style={styles.dailyOverview}>{dailyOverview}</Text>
+            )}
             <Text style={styles.dailyMessage}>{dailyMessage}</Text>
           </View>
 
@@ -245,7 +326,7 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     marginBottom: 32,
-    marginTop: 24, // ✅ Increased from 8 to 24 (+16px extra spacing)
+    marginTop: 24,
   },
   greetingText: {
     fontSize: 28,
@@ -253,6 +334,14 @@ const styles = StyleSheet.create({
     color: "#4c3b34",
     fontFamily: "Poppins_700Bold",
     marginBottom: 8,
+  },
+  dailyOverview: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#4c3b34",
+    opacity: 0.7,
+    fontFamily: "Nunito_400Regular",
+    marginBottom: 4,
   },
   dailyMessage: {
     fontSize: 16,
