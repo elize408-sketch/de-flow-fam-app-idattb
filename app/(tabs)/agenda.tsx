@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -17,7 +18,6 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { useTranslation } from 'react-i18next';
 import { useModuleTheme, ModuleName } from '@/contexts/ThemeContext';
 import ModuleHeader from '@/components/ModuleHeader';
-import ThemedButton from '@/components/ThemedButton';
 import { Appointment } from '@/types/family';
 
 export default function AgendaScreen() {
@@ -50,7 +50,6 @@ export default function AgendaScreen() {
     setModule('agenda' as ModuleName);
   }, [setModule]);
 
-  // ✅ UUID guard (om de echte oorzaak zichtbaar te maken)
   const isUuid = (value: string) =>
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
@@ -99,7 +98,7 @@ export default function AgendaScreen() {
     const thirtyDaysFromNow = new Date(today);
     thirtyDaysFromNow.setDate(today.getDate() + 30);
 
-    const upcoming: Array<{ date: Date; appointment: Appointment }> = [];
+    const upcoming: { date: Date; appointment: Appointment }[] = [];
 
     for (let d = new Date(today); d <= thirtyDaysFromNow; d.setDate(d.getDate() + 1)) {
       const dayAppointments = getAppointmentsForDate(new Date(d));
@@ -119,7 +118,7 @@ export default function AgendaScreen() {
       if (dateCompare !== 0) return dateCompare;
       return a.appointment.time.localeCompare(b.appointment.time);
     });
-  }, [appointments, selectedMemberFilters]);
+  }, [appointments, selectedMemberFilters, getAppointmentsForDate]);
 
   const toggleMemberSelection = (memberId: string) => {
     setNewAppointmentAssignedTo((prev) => (prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]));
@@ -178,7 +177,6 @@ export default function AgendaScreen() {
   };
 
   const handleDeleteAppointment = async (appointmentId: string, isRecurring: boolean) => {
-    // ✅ Dit maakt jouw uuid-probleem direct zichtbaar i.p.v. vage errors
     if (!appointmentId || !isUuid(String(appointmentId))) {
       Alert.alert(
         t('common.error'),
@@ -301,6 +299,12 @@ export default function AgendaScreen() {
     }
   };
 
+  const goToToday = () => {
+    const today = new Date();
+    setSelectedMonth(today.getMonth());
+    setSelectedYear(today.getFullYear());
+  };
+
   const renderMonthCalendar = () => {
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
     const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1).getDay();
@@ -327,7 +331,6 @@ export default function AgendaScreen() {
       }
 
       const isToday = date.getTime() === today.getTime();
-      const totalCount = dayAppointments.length;
 
       days.push(
         <TouchableOpacity
@@ -335,36 +338,20 @@ export default function AgendaScreen() {
           style={[
             styles.dayCell,
             styles.dayCellActive,
-            isToday && [styles.dayCellToday, { borderColor: accentColor }],
+            isToday && styles.dayCellToday,
           ]}
           onPress={() => setSelectedDay(date)}
           activeOpacity={0.8}
           hitSlop={6}
         >
-          <View style={styles.dayCellHeader}>
-            <Text style={[styles.dayNumber, isToday && [styles.dayNumberToday, { color: accentColor }]]}>
-              {day}
-            </Text>
-            {totalCount > 0 && (
-              <View style={[styles.badge, { backgroundColor: accentColor }]}>
-                <Text style={styles.badgeText}>{totalCount}</Text>
-              </View>
-            )}
-          </View>
+          <Text style={[styles.dayNumber, isToday && styles.dayNumberToday]}>
+            {day}
+          </Text>
 
-          <View style={styles.appointmentsContainer}>
-            {dayAppointments.slice(0, 3).map((apt, index) => {
-              const isRepeating = apt.repeatType && apt.repeatType !== 'none';
-              const bgColor = isRepeating ? '#ADD6FF' : apt.color;
-
-              return (
-                <View key={index} style={[styles.appointmentBar, { backgroundColor: bgColor }]}>
-                  <Text style={styles.appointmentBarText} numberOfLines={1}>
-                    {apt.time} {apt.title}
-                  </Text>
-                </View>
-              );
-            })}
+          <View style={styles.eventsContainer}>
+            {dayAppointments.slice(0, 2).map((apt, index) => (
+              <View key={index} style={[styles.eventDot, { backgroundColor: apt.color }]} />
+            ))}
           </View>
         </TouchableOpacity>
       );
@@ -457,32 +444,76 @@ export default function AgendaScreen() {
       <ModuleHeader title={t('agenda.title')} subtitle={t('agenda.subtitle')} backgroundColor="#FFFFFF" />
 
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <ThemedButton
-          title={t('agenda.addAppointment')}
-          onPress={() => setShowAddModal(true)}
-          icon="plus"
-          androidIcon="add"
-          style={styles.addButton}
-        />
+        {/* Family Member Filter Pills */}
+        <View style={styles.filterSection}>
+          <Text style={styles.filterLabel}>FILTER BY FAMILY</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScrollView}>
+            <TouchableOpacity
+              style={[
+                styles.filterPill,
+                selectedMemberFilters.length === 0 && styles.filterPillActive,
+              ]}
+              onPress={() => setSelectedMemberFilters([])}
+              activeOpacity={0.8}
+            >
+              <Text style={[
+                styles.filterPillText,
+                selectedMemberFilters.length === 0 && styles.filterPillTextActive,
+              ]}>
+                All
+              </Text>
+            </TouchableOpacity>
 
-        <View style={styles.monthlyCalendar}>
-          <View style={styles.monthHeader}>
+            {familyMembers.map((member, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.filterPill,
+                  selectedMemberFilters.includes(member.id) && styles.filterPillActive,
+                ]}
+                onPress={() => toggleMemberFilter(member.id)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.memberDot, { backgroundColor: member.color }]} />
+                <Text style={[
+                  styles.filterPillText,
+                  selectedMemberFilters.includes(member.id) && styles.filterPillTextActive,
+                ]}>
+                  {member.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Calendar */}
+        <View style={styles.calendarCard}>
+          <View style={styles.calendarHeader}>
             <TouchableOpacity
               onPress={() => changeMonth('prev')}
-              style={styles.monthNavButton}
+              style={styles.navButton}
               hitSlop={12}
               activeOpacity={0.7}
             >
               <Ionicons name="chevron-back" size={24} color={colors.text} />
             </TouchableOpacity>
 
-            <Text style={styles.monthTitle}>
-              {monthNames[selectedMonth]} {selectedYear}
-            </Text>
+            <View style={styles.monthTitleContainer}>
+              <Text style={styles.monthTitle}>
+                {monthNames[selectedMonth].toUpperCase()} {selectedYear}
+              </Text>
+              <TouchableOpacity
+                onPress={goToToday}
+                style={styles.todayButton}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.todayButtonText}>TODAY</Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               onPress={() => changeMonth('next')}
-              style={styles.monthNavButton}
+              style={styles.navButton}
               hitSlop={12}
               activeOpacity={0.7}
             >
@@ -491,7 +522,7 @@ export default function AgendaScreen() {
           </View>
 
           <View style={styles.weekDaysHeader}>
-            {dayNames.map((day, index) => (
+            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, index) => (
               <View key={index} style={styles.weekDayCell}>
                 <Text style={styles.weekDayText}>{day}</Text>
               </View>
@@ -501,64 +532,30 @@ export default function AgendaScreen() {
           <View style={styles.monthGrid}>{renderMonthCalendar()}</View>
         </View>
 
-        <View style={styles.filterSection}>
-          <Text style={styles.filterTitle}>Toon afspraken voor:</Text>
-          <View style={styles.memberFilterContainer}>
-            {familyMembers.map((member, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.memberFilterChip,
-                  selectedMemberFilters.includes(member.id) && [
-                    styles.memberFilterChipActive,
-                    { backgroundColor: member.color },
-                  ],
-                ]}
-                onPress={() => toggleMemberFilter(member.id)}
-                activeOpacity={0.8}
-                hitSlop={6}
-              >
-                <View style={[styles.memberFilterAvatar, { backgroundColor: member.color }]}>
-                  <Text style={styles.memberFilterAvatarText}>{member.name.charAt(0)}</Text>
-                </View>
-                <Text
-                  style={[
-                    styles.memberFilterName,
-                    selectedMemberFilters.includes(member.id) && styles.memberFilterNameActive,
-                  ]}
-                >
-                  {member.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
+        {/* Upcoming Events */}
         <View style={styles.upcomingSection}>
-          <Text style={styles.upcomingTitle}>Komende afspraken</Text>
+          <Text style={styles.upcomingTitle}>ALLEEN MIJN AFSPRAKEN</Text>
           {upcomingAppointments.length === 0 ? (
             <View style={styles.emptyUpcoming}>
               <Text style={styles.emptyUpcomingText}>Geen komende afspraken</Text>
             </View>
           ) : (
-            upcomingAppointments.map((item, index) => {
+            upcomingAppointments.slice(0, 5).map((item, index) => {
               const members = familyMembers.filter((m) => item.appointment.assignedTo.includes(m.id));
               const isRecurring = item.appointment.repeatType && item.appointment.repeatType !== 'none';
 
               return (
-                <View key={index} style={[styles.upcomingCard, { borderLeftColor: item.appointment.color }]}>
-                  <View style={styles.upcomingCardDate}>
+                <View key={index} style={styles.upcomingCard}>
+                  <View style={styles.upcomingCardLeft}>
                     <Text style={styles.upcomingCardDay}>
-                      {item.date.toLocaleDateString('nl-NL', { weekday: 'short' })}
+                      {item.date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}
                     </Text>
-                    <Text style={styles.upcomingCardDayNumber}>{item.date.getDate()}</Text>
-                    <Text style={styles.upcomingCardMonth}>
-                      {item.date.toLocaleDateString('nl-NL', { month: 'short' })}
-                    </Text>
+                    <Text style={styles.upcomingCardDate}>{item.date.getDate()}</Text>
                   </View>
 
                   <View style={styles.upcomingCardContent}>
-                    <View style={styles.upcomingCardHeader}>
+                    <Text style={styles.upcomingCardTitle}>{item.appointment.title}</Text>
+                    <View style={styles.upcomingCardMeta}>
                       <Text style={styles.upcomingCardTime}>
                         {item.appointment.time}
                         {item.appointment.endTime ? ` - ${item.appointment.endTime}` : ''}
@@ -569,16 +566,12 @@ export default function AgendaScreen() {
                         </View>
                       )}
                     </View>
+                  </View>
 
-                    <Text style={styles.upcomingCardTitle}>{item.appointment.title}</Text>
-
-                    <View style={styles.upcomingCardMembers}>
-                      {members.map((member, mIndex) => (
-                        <View key={mIndex} style={[styles.memberBadge, { backgroundColor: member.color }]}>
-                          <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
-                        </View>
-                      ))}
-                    </View>
+                  <View style={styles.upcomingCardRight}>
+                    {members.map((member, mIndex) => (
+                      <View key={mIndex} style={[styles.memberBadge, { backgroundColor: member.color }]} />
+                    ))}
                   </View>
                 </View>
               );
@@ -586,6 +579,15 @@ export default function AgendaScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Floating Add Button */}
+      <TouchableOpacity
+        style={[styles.floatingButton, { backgroundColor: colors.warmOrange }]}
+        onPress={() => setShowAddModal(true)}
+        activeOpacity={0.9}
+      >
+        <Ionicons name="add" size={32} color="#FFFFFF" />
+      </TouchableOpacity>
 
       {/* Day Detail Modal */}
       {selectedDay && (
@@ -635,7 +637,7 @@ export default function AgendaScreen() {
 
                           <View style={styles.appointmentCardMembers}>
                             {members.map((member, mIndex) => (
-                              <View key={mIndex} style={[styles.memberBadge, { backgroundColor: member.color }]}>
+                              <View key={mIndex} style={[styles.memberBadgeSmall, { backgroundColor: member.color }]}>
                                 <Text style={styles.memberBadgeText}>{member.name.charAt(0)}</Text>
                               </View>
                             ))}
@@ -711,7 +713,6 @@ export default function AgendaScreen() {
                 onChangeText={setNewAppointmentTitle}
               />
 
-              {/* ✅ Date open modal */}
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => {
@@ -902,7 +903,7 @@ export default function AgendaScreen() {
         </View>
       </Modal>
 
-      {/* ✅ Calendar Picker Modal (FIX: overlay sluit niet bij pijlen/dagen) */}
+      {/* Calendar Picker Modal */}
       <Modal
         visible={showDatePicker}
         transparent
@@ -974,7 +975,7 @@ export default function AgendaScreen() {
         </Pressable>
       </Modal>
 
-      {/* ✅ End Date Picker Modal (zelfde fix) */}
+      {/* End Date Picker Modal */}
       <Modal
         visible={showEndDatePicker}
         transparent
@@ -1050,178 +1051,739 @@ export default function AgendaScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  contentContainer: { paddingHorizontal: 20, paddingBottom: 40 },
-  addButton: { marginBottom: 20 },
+  container: { flex: 1, backgroundColor: '#F9F6F1' },
+  contentContainer: { paddingHorizontal: 20, paddingBottom: 100 },
 
-  monthlyCalendar: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 15,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
-    marginBottom: 20,
-  },
-  monthHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  monthNavButton: { padding: 8 },
-  monthTitle: { fontSize: 18, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold' },
-
-  weekDaysHeader: { flexDirection: 'row', marginBottom: 10 },
-  weekDayCell: { flex: 1, alignItems: 'center' },
-  weekDayText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
-
-  monthGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCell: { width: '14.28%', minHeight: 85, padding: 6, borderWidth: 0.5, borderColor: colors.textSecondary + '20' },
-  dayCellActive: { backgroundColor: colors.background },
-  dayCellToday: { backgroundColor: '#78C3FF', borderWidth: 2 },
-
-  dayCellHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  dayNumber: { fontSize: 13, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
-  dayNumberToday: { fontWeight: '700', fontFamily: 'Poppins_700Bold' },
-
-  badge: { borderRadius: 8, paddingHorizontal: 4, paddingVertical: 1, minWidth: 18, alignItems: 'center' },
-  badgeText: { fontSize: 9, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
-
-  appointmentsContainer: { flex: 1, gap: 3 },
-  appointmentBar: { borderRadius: 3, paddingHorizontal: 3, paddingVertical: 2, marginBottom: 2 },
-  appointmentBarText: { fontSize: 8, fontWeight: '600', color: colors.card, fontFamily: 'Poppins_600SemiBold' },
-
+  // Filter Section (Screenshot 1 style)
   filterSection: {
-    backgroundColor: colors.card,
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  filterLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 12,
+    letterSpacing: 0.5,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  filterScrollView: {
+    flexDirection: 'row',
+  },
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    gap: 8,
+  },
+  filterPillActive: {
+    backgroundColor: colors.warmOrange,
+    borderColor: colors.warmOrange,
+  },
+  filterPillText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+  },
+  memberDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+
+  // Calendar Card (Screenshot 1 style)
+  calendarCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.06)',
+    elevation: 2,
   },
-  filterTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 15, fontFamily: 'Poppins_600SemiBold' },
-  memberFilterContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  memberFilterChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 12, gap: 8 },
-  memberFilterChipActive: {},
-  memberFilterAvatar: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  memberFilterAvatarText: { fontSize: 12, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
-  memberFilterName: { fontSize: 14, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
-  memberFilterNameActive: { color: colors.card },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  navButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  monthTitleContainer: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  monthTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 0.5,
+  },
+  todayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#F5F5F5',
+  },
+  todayButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
 
+  weekDaysHeader: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  weekDayCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  weekDayText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+
+  monthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dayCell: {
+    width: '14.28%',
+    aspectRatio: 1,
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  dayCellActive: {
+    borderRadius: 12,
+  },
+  dayCellToday: {
+    backgroundColor: '#FFF4E6',
+  },
+  dayNumber: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 4,
+  },
+  dayNumberToday: {
+    color: colors.warmOrange,
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+  },
+  eventsContainer: {
+    flexDirection: 'row',
+    gap: 3,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  eventDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+
+  // Upcoming Section (Screenshot 1 style)
   upcomingSection: {
+    marginBottom: 20,
+  },
+  upcomingTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 12,
+    letterSpacing: 0.5,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  emptyUpcoming: {
+    padding: 40,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+  },
+  emptyUpcomingText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  upcomingCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.06)',
+    elevation: 2,
+  },
+  upcomingCardLeft: {
+    alignItems: 'center',
+    marginRight: 16,
+    minWidth: 50,
+  },
+  upcomingCardDay: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 2,
+  },
+  upcomingCardDate: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
+  upcomingCardContent: {
+    flex: 1,
+  },
+  upcomingCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+    marginBottom: 4,
+  },
+  upcomingCardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  upcomingCardTime: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
+  repeatBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.textSecondary + '20',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  repeatBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  upcomingCardRight: {
+    flexDirection: 'row',
+    gap: 4,
+    marginLeft: 12,
+  },
+  memberBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+
+  // Floating Button (Screenshot 1 style)
+  floatingButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+    elevation: 5,
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  dayDetailModal: {
     backgroundColor: colors.card,
     borderRadius: 20,
     padding: 20,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
+    maxHeight: '80%',
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.15)',
+    elevation: 5,
   },
-  upcomingTitle: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 15, fontFamily: 'Poppins_700Bold' },
-  emptyUpcoming: { padding: 20, alignItems: 'center' },
-  emptyUpcomingText: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+  dayDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  dayDetailTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  dayDetailContent: {
+    maxHeight: 400,
+  },
+  noAppointments: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  noAppointmentsText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
 
-  upcomingCard: { backgroundColor: colors.background, borderRadius: 15, padding: 15, marginBottom: 12, flexDirection: 'row', borderLeftWidth: 4 },
-  upcomingCardDate: { alignItems: 'center', marginRight: 15, minWidth: 50 },
-  upcomingCardDay: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase' },
-  upcomingCardDayNumber: { fontSize: 24, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold' },
-  upcomingCardMonth: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase' },
-  upcomingCardContent: { flex: 1 },
-  upcomingCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, gap: 8 },
-  upcomingCardTime: { fontSize: 14, fontWeight: '600', color: colors.accent, fontFamily: 'Poppins_600SemiBold' },
-  upcomingCardTitle: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold', marginBottom: 8 },
-  upcomingCardMembers: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  appointmentCard: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+  },
+  appointmentCardContent: {
+    gap: 10,
+  },
+  appointmentCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  appointmentCardTime: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.accent,
+    fontFamily: 'Poppins_700Bold',
+  },
+  appointmentCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', padding: 20 },
-  dayDetailModal: { backgroundColor: colors.card, borderRadius: 20, padding: 20, maxHeight: '80%', boxShadow: `0px 8px 24px ${colors.shadow}`, elevation: 5 },
-  dayDetailHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  dayDetailTitle: { fontSize: 18, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold', textAlign: 'center', flex: 1 },
-  dayDetailContent: { maxHeight: 400 },
-  noAppointments: { padding: 40, alignItems: 'center' },
-  noAppointmentsText: { fontSize: 16, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+  appointmentCardMembers: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  memberBadgeSmall: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberNames: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontFamily: 'Nunito_400Regular',
+  },
 
-  appointmentCard: { backgroundColor: colors.background, borderRadius: 12, padding: 15, marginBottom: 12, borderLeftWidth: 4 },
-  appointmentCardContent: { gap: 10 },
-  appointmentCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  appointmentCardTime: { fontSize: 14, fontWeight: '700', color: colors.accent, fontFamily: 'Poppins_700Bold' },
-  repeatBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.textSecondary + '20', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  repeatBadgeText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
-  appointmentCardTitle: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  deleteButtonsContainer: {
+    marginTop: 8,
+    gap: 8,
+  },
+  deleteButton: {
+    backgroundColor: '#E74C3C',
+    borderRadius: 10,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    fontFamily: 'Poppins_600SemiBold',
+  },
 
-  appointmentCardMembers: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  memberBadge: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  memberBadgeText: { fontSize: 12, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
-  memberNames: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Nunito_400Regular' },
+  closeButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
 
-  deleteButtonsContainer: { marginTop: 8, gap: 8 },
-  deleteButton: { backgroundColor: '#E74C3C', borderRadius: 10, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  deleteButtonText: { fontSize: 14, fontWeight: '600', color: '#fff', fontFamily: 'Poppins_600SemiBold' },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.15)',
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  modalBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  modalHeaderSpacer: {
+    width: 40,
+  },
 
-  closeButton: { backgroundColor: colors.background, borderRadius: 15, padding: 15, alignItems: 'center', marginTop: 15 },
-  closeButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  input: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 15,
+    fontFamily: 'Nunito_400Regular',
+  },
 
-  modalScrollContent: { flexGrow: 1, justifyContent: 'center' },
-  modalContent: { backgroundColor: colors.card, borderRadius: 20, padding: 20, width: '100%', maxWidth: 400, alignSelf: 'center', boxShadow: `0px 8px 24px ${colors.shadow}`, elevation: 5 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  modalBackButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
-  modalTitle: { fontSize: 24, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold', textAlign: 'center', flex: 1 },
-  modalHeaderSpacer: { width: 40 },
+  dateButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+    flex: 1,
+  },
 
-  input: { backgroundColor: colors.background, borderRadius: 15, padding: 15, fontSize: 16, color: colors.text, marginBottom: 15, fontFamily: 'Nunito_400Regular' },
+  timeInputContainer: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  timeInput: {
+    fontSize: 16,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+    flex: 1,
+  },
 
-  dateButton: { backgroundColor: colors.background, borderRadius: 15, padding: 15, marginBottom: 15, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  dateButtonText: { fontSize: 16, color: colors.text, fontFamily: 'Nunito_400Regular', flex: 1 },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 10,
+    fontFamily: 'Poppins_600SemiBold',
+  },
 
-  timeInputContainer: { backgroundColor: colors.background, borderRadius: 15, padding: 15, marginBottom: 15, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  timeInput: { fontSize: 16, color: colors.text, fontFamily: 'Nunito_400Regular', flex: 1 },
+  memberSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  memberOption: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 10,
+    alignItems: 'center',
+    minWidth: 70,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+  },
+  memberOptionActive: {
+    backgroundColor: colors.primary,
+  },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  memberAvatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.card,
+    fontFamily: 'Poppins_700Bold',
+  },
+  memberName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  checkmark: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
-  inputLabel: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 10, fontFamily: 'Poppins_600SemiBold' },
-
-  memberSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  memberOption: { backgroundColor: colors.background, borderRadius: 15, padding: 10, alignItems: 'center', minWidth: 70, borderWidth: 2, borderColor: 'transparent', position: 'relative' },
-  memberOptionActive: { backgroundColor: colors.primary },
-  memberAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 5 },
-  memberAvatarText: { fontSize: 18, fontWeight: '700', color: colors.card, fontFamily: 'Poppins_700Bold' },
-  memberName: { fontSize: 12, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
-  checkmark: { position: 'absolute', top: 5, right: 5, borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
-
-  repeatSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  repeatOption: { backgroundColor: colors.background, borderRadius: 15, padding: 12, flex: 1, minWidth: '45%', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  repeatSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  repeatOption: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 12,
+    flex: 1,
+    minWidth: '45%',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
   repeatOptionActive: {},
-  repeatOptionText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
-  repeatOptionTextActive: { color: colors.text },
+  repeatOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  repeatOptionTextActive: {
+    color: colors.text,
+  },
 
-  weekdaySelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  weekdayButton: { backgroundColor: colors.background, borderRadius: 12, padding: 12, minWidth: 45, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  weekdaySelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  weekdayButton: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 12,
+    minWidth: 45,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
   weekdayButtonActive: {},
-  weekdayButtonText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
-  weekdayButtonTextActive: { color: colors.card },
+  weekdayButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  weekdayButtonTextActive: {
+    color: colors.card,
+  },
 
-  clearEndDateButton: { backgroundColor: colors.background, borderRadius: 10, padding: 10, alignItems: 'center', marginBottom: 15 },
-  clearEndDateText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+  clearEndDateButton: {
+    backgroundColor: colors.background,
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  clearEndDateText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
 
-  modalButtons: { flexDirection: 'row', gap: 10 },
-  modalButton: { flex: 1, padding: 15, borderRadius: 15, alignItems: 'center' },
-  modalButtonCancel: { backgroundColor: colors.background },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: colors.background,
+  },
   modalButtonConfirm: {},
-  modalButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
-  modalButtonTextConfirm: { color: colors.card },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  modalButtonTextConfirm: {
+    color: colors.card,
+  },
 
-  calendarOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  calendarModal: { backgroundColor: colors.card, borderRadius: 20, padding: 20, width: '100%', maxWidth: 350, boxShadow: `0px 8px 24px ${colors.shadow}`, elevation: 5 },
+  calendarOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  calendarModal: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 350,
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.15)',
+    elevation: 5,
+  },
 
-  calendarPickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  calendarBackButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
-  calendarPickerTitle: { fontSize: 20, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold', textAlign: 'center', flex: 1 },
-  calendarHeaderSpacer: { width: 40 },
+  calendarPickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  calendarBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calendarPickerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
+    flex: 1,
+  },
+  calendarHeaderSpacer: {
+    width: 40,
+  },
 
-  calendarMonthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  calendarNavButton: { padding: 8 },
-  calendarMonthYear: { fontSize: 18, fontWeight: '700', color: colors.text, fontFamily: 'Poppins_700Bold' },
+  calendarMonthNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  calendarNavButton: {
+    padding: 8,
+  },
+  calendarMonthYear: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: 'Poppins_700Bold',
+  },
 
-  calendarWeekDays: { flexDirection: 'row', marginBottom: 10 },
-  calendarWeekDay: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', color: colors.textSecondary, fontFamily: 'Poppins_600SemiBold' },
+  calendarWeekDays: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  calendarWeekDay: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Poppins_600SemiBold',
+  },
 
-  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 },
-  calendarDay: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', padding: 4 },
-  calendarDayActive: { borderRadius: 8 },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+  },
+  calendarDay: {
+    width: '14.28%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  calendarDayActive: {
+    borderRadius: 8,
+  },
   calendarDaySelected: {},
-  calendarDayText: { fontSize: 14, color: colors.text, fontFamily: 'Nunito_400Regular' },
-  calendarDayTextSelected: { color: colors.card, fontWeight: '700', fontFamily: 'Poppins_700Bold' },
+  calendarDayText: {
+    fontSize: 14,
+    color: colors.text,
+    fontFamily: 'Nunito_400Regular',
+  },
+  calendarDayTextSelected: {
+    color: colors.card,
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+  },
 
-  calendarCloseButton: { backgroundColor: colors.background, borderRadius: 15, padding: 15, alignItems: 'center' },
-  calendarCloseButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: 'Poppins_600SemiBold' },
+  calendarCloseButton: {
+    backgroundColor: colors.background,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+  },
+  calendarCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    fontFamily: 'Poppins_600SemiBold',
+  },
 });
