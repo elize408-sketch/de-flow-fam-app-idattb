@@ -644,7 +644,7 @@ export default function AdultTasksScreen() {
               <TextInput
                 style={[styles.input, errors.taskName && styles.inputError]}
                 placeholder={t('tasks.taskNamePlaceholder')}
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor="#B0B0B0"
                 value={taskName}
                 onChangeText={(text) => {
                   setTaskName(text);
@@ -667,7 +667,7 @@ export default function AdultTasksScreen() {
                   ios_icon_name={taskIcon}
                   android_material_icon_name={taskIcon}
                   size={24}
-                  color={colors.accent}
+                  color={colors.darkBrown}
                 />
                 <Text style={styles.iconPickerButtonText}>{t('tasks.chooseIcon')}</Text>
               </TouchableOpacity>
@@ -691,7 +691,7 @@ export default function AdultTasksScreen() {
                         android_material_icon_name={icon.name}
                         size={24}
                         color={
-                          taskIcon === icon.name ? colors.card : colors.text
+                          taskIcon === icon.name ? colors.card : colors.darkBrown
                         }
                       />
                     </TouchableOpacity>
@@ -717,7 +717,7 @@ export default function AdultTasksScreen() {
                       ios_icon_name="clock"
                       android_material_icon_name="schedule"
                       size={20}
-                      color={colors.accent}
+                      color={colors.darkBrown}
                       style={{ marginRight: 8 }}
                     />
                     <Text style={styles.timeInputText}>{startTime}</Text>
@@ -740,7 +740,7 @@ export default function AdultTasksScreen() {
                       ios_icon_name="clock"
                       android_material_icon_name="schedule"
                       size={20}
-                      color={colors.accent}
+                      color={colors.darkBrown}
                       style={{ marginRight: 8 }}
                     />
                     <Text style={styles.timeInputText}>{endTime}</Text>
@@ -858,7 +858,7 @@ export default function AdultTasksScreen() {
               <TextInput
                 style={[styles.input, styles.notesInput]}
                 placeholder={t('tasks.notesPlaceholder')}
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor="#B0B0B0"
                 value={taskNotes}
                 onChangeText={setTaskNotes}
                 multiline
@@ -906,7 +906,7 @@ export default function AdultTasksScreen() {
               setStartTime(newStartTime);
               
               // Auto-adjust end time if it's now before start time
-              const startMinutes = hours * 60 + parseInt(minutes);
+              const startMinutes = parseInt(hours) * 60 + parseInt(minutes);
               const endMinutes = endTime.split(':').map(Number);
               const endTotalMinutes = endMinutes[0] * 60 + endMinutes[1];
               
@@ -1251,6 +1251,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 20,
     fontFamily: 'Poppins_700Bold',
+    textAlign: 'left',
   },
   inputLabel: {
     fontSize: 14,
@@ -1261,14 +1262,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
   },
   input: {
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Nunito_400Regular',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   inputError: {
     borderColor: colors.error,
@@ -1286,14 +1287,16 @@ const styles = StyleSheet.create({
   iconPickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 14,
     gap: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   iconPickerButtonText: {
     fontSize: 16,
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Nunito_400Regular',
   },
   iconGrid: {
@@ -1306,11 +1309,11 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   iconOptionActive: {
     backgroundColor: colors.accent,
@@ -1324,19 +1327,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   timeInput: {
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   timeInputText: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_600SemiBold',
   },
   adultSelector: {
@@ -1345,16 +1348,16 @@ const styles = StyleSheet.create({
   adultOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 12,
     gap: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   adultOptionActive: {
-    backgroundColor: colors.beige,
-    borderColor: colors.accent,
+    backgroundColor: colors.softCream,
+    borderColor: colors.beige,
   },
   adultAvatar: {
     width: 36,
@@ -1385,19 +1388,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.beige,
   },
   repeatOptionActive: {
     backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   repeatOptionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_600SemiBold',
   },
   repeatOptionTextActive: {
-    color: colors.card,
+    color: '#FFFFFF',
   },
   customDaysSelector: {
     flexDirection: 'row',
@@ -1407,20 +1413,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.beige,
   },
   dayOptionActive: {
     backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   dayOptionText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_600SemiBold',
   },
   dayOptionTextActive: {
-    color: colors.card,
+    color: '#FFFFFF',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -1434,7 +1443,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalButtonCancel: {
-    backgroundColor: colors.softCream,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.beige,
   },
   modalButtonConfirm: {
     backgroundColor: colors.accent,
@@ -1444,10 +1455,10 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.darkBrown,
     fontFamily: 'Poppins_600SemiBold',
   },
   modalButtonTextConfirm: {
-    color: colors.card,
+    color: '#FFFFFF',
   },
 });
