@@ -9,6 +9,7 @@ import {
   Text,
   Animated,
   TouchableOpacity,
+  Dimensions,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -27,6 +28,9 @@ const DAILY_MESSAGES = [
   "Je doet het goed.",
   "Alles op zijn tijd.",
 ];
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SLIDER_WIDTH = SCREEN_WIDTH - 40; // Account for padding
 
 function getDailyMessage(): string {
   const today = new Date();
@@ -118,13 +122,22 @@ function DashboardCard({
   );
 }
 
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+  due_date: string;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { currentUser, family } = useFamily();
   const [todayAppointments, setTodayAppointments] = useState(0);
-  const [todayTasks, setTodayTasks] = useState(0);
+  const [todayTasks, setTodayTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Extract first name from user profile, fallback to empty string
   const firstName = currentUser?.name?.split(" ")[0]?.trim() || "";
@@ -180,7 +193,7 @@ export default function HomeScreen() {
           console.error("Error fetching tasks:", tasksError);
         } else {
           console.log("Tasks found:", tasks?.length || 0);
-          setTodayTasks(tasks?.length || 0);
+          setTodayTasks(tasks || []);
         }
       } catch (error) {
         console.error("Error fetching today's data:", error);
@@ -192,28 +205,11 @@ export default function HomeScreen() {
     fetchTodayData();
   }, [family?.id]);
 
-  // Build daily overview text
-  const getDailyOverview = () => {
-    const parts = [];
-    
-    if (todayAppointments > 0) {
-      parts.push(`${todayAppointments} ${todayAppointments === 1 ? 'afspraak' : 'afspraken'}`);
-    }
-    
-    if (todayTasks > 0) {
-      parts.push(`${todayTasks} ${todayTasks === 1 ? 'taak' : 'taken'}`);
-    }
-    
-    if (parts.length === 0) {
-      return null;
-    }
-    
-    return `Vandaag: ${parts.join(' • ')}`;
+  // Handle scroll event to update current slide
+  const handleScroll = (event: any) => {
+    const slideIndex = Math.round(event.nativeEvent.contentOffset.x / SLIDER_WIDTH);
+    setCurrentSlide(slideIndex);
   };
-
-  const dailyOverview = getDailyOverview();
-
-  console.log("Daily overview:", dailyOverview);
 
   // Dashboard cards with subtle beige tones
   const dashboardCards = [
@@ -227,7 +223,7 @@ export default function HomeScreen() {
     {
       title: "Taken",
       icon: "calendar-check-outline",
-      subtitle: `${todayTasks} ${todayTasks === 1 ? 'taak' : 'taken'}`,
+      subtitle: `${todayTasks.length} ${todayTasks.length === 1 ? 'taak' : 'taken'}`,
       route: "/adult-tasks",
       backgroundColor: "#EEE9E2", // Taken beige
     },
@@ -272,10 +268,72 @@ export default function HomeScreen() {
           {/* Welcome Header */}
           <View style={styles.headerSection}>
             <Text style={styles.greetingText}>{greetingText}</Text>
-            {dailyOverview && (
-              <Text style={styles.dailyOverview}>{dailyOverview}</Text>
-            )}
             <Text style={styles.dailyMessage}>{dailyMessage}</Text>
+          </View>
+
+          {/* Daily Dashboard Slider */}
+          <View style={styles.sliderContainer}>
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              style={styles.slider}
+            >
+              {/* Slide 1: Appointments */}
+              <View style={[styles.slide, { width: SLIDER_WIDTH }]}>
+                <View style={styles.slideContent}>
+                  <MaterialCommunityIcons
+                    name="calendar-month"
+                    size={40}
+                    color="#D5A093"
+                    style={styles.slideIcon}
+                  />
+                  <Text style={styles.slideNumber}>{todayAppointments}</Text>
+                  <Text style={styles.slideLabel}>
+                    {todayAppointments === 1 ? 'Afspraak vandaag' : 'Afspraken vandaag'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Slide 2: Tasks */}
+              <View style={[styles.slide, { width: SLIDER_WIDTH }]}>
+                <View style={styles.slideContent}>
+                  <MaterialCommunityIcons
+                    name="clipboard-check-outline"
+                    size={40}
+                    color="#C8D3C0"
+                    style={styles.slideIcon}
+                  />
+                  <Text style={styles.slideNumber}>{todayTasks.length}</Text>
+                  <Text style={styles.slideLabel}>
+                    {todayTasks.length === 1 ? 'Taak vandaag' : 'Taken vandaag'}
+                  </Text>
+                  {todayTasks.length > 0 && (
+                    <View style={styles.tasksList}>
+                      {todayTasks.slice(0, 3).map((task, index) => (
+                        <Text key={index} style={styles.taskItem}>
+                          • {task.title}
+                        </Text>
+                      ))}
+                      {todayTasks.length > 3 && (
+                        <Text style={styles.taskItem}>
+                          + {todayTasks.length - 3} meer
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Pagination Dots */}
+            <View style={styles.pagination}>
+              <View style={[styles.dot, currentSlide === 0 && styles.activeDot]} />
+              <View style={[styles.dot, currentSlide === 1 && styles.activeDot]} />
+            </View>
           </View>
 
           {/* Dashboard Grid */}
@@ -316,7 +374,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   headerSection: {
-    marginBottom: 32,
+    marginBottom: 20,
     marginTop: 24,
   },
   greetingText: {
@@ -326,18 +384,89 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_700Bold",
     marginBottom: 8,
   },
-  dailyOverview: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#7A6F67", // Subtekst kleur
-    fontFamily: "Nunito_400Regular",
-    marginBottom: 4,
-  },
   dailyMessage: {
     fontSize: 16,
     lineHeight: 24,
     color: "#7A6F67", // Subtekst kleur
     fontFamily: "Nunito_400Regular",
+  },
+  sliderContainer: {
+    marginBottom: 32,
+  },
+  slider: {
+    width: SLIDER_WIDTH,
+  },
+  slide: {
+    borderRadius: 20,
+    backgroundColor: "#F9F6F1",
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "#E2D6CC",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3A2F2A",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+      web: {
+        boxShadow: "0px 2px 12px rgba(58, 47, 42, 0.08)",
+      },
+    }),
+  },
+  slideContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 160,
+  },
+  slideIcon: {
+    marginBottom: 12,
+  },
+  slideNumber: {
+    fontSize: 48,
+    fontWeight: "700",
+    color: "#3A2F2A",
+    fontFamily: "Poppins_700Bold",
+    marginBottom: 8,
+  },
+  slideLabel: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#3A2F2A",
+    fontFamily: "Poppins_600SemiBold",
+    textAlign: "center",
+  },
+  tasksList: {
+    marginTop: 16,
+    width: "100%",
+    paddingHorizontal: 20,
+  },
+  taskItem: {
+    fontSize: 14,
+    color: "#7A6F67",
+    fontFamily: "Nunito_400Regular",
+    marginBottom: 6,
+    textAlign: "left",
+  },
+  pagination: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 16,
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#E2D6CC",
+  },
+  activeDot: {
+    backgroundColor: "#D5A093",
+    width: 24,
   },
   gridContainer: {
     flexDirection: "row",
