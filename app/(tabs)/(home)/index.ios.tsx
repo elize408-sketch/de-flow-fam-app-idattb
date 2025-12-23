@@ -91,7 +91,7 @@ function DashboardCard({
         <MaterialCommunityIcons
           name={icon as any}
           size={28}
-          color="#C8BFB8"
+          color="#F08A48"
           style={styles.cardIcon}
         />
         <Text style={styles.cardTitle}>{title}</Text>
