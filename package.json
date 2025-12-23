@@ -1,9 +1,10 @@
+
 {
   "name": "Natively",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "dev": "EXPO_NO_TELEMETRY=1 expo start --tunnel",
+    "dev": "EXPO_NO_TELEMETRY=1 expo start --clear --tunnel",
     "android": "EXPO_NO_TELEMETRY=1 expo start --android",
     "ios": "EXPO_NO_TELEMETRY=1 expo start --ios",
     "web": "EXPO_NO_TELEMETRY=1 expo start --web",
@@ -66,6 +67,7 @@
     "react-native": "0.81.4",
     "react-native-css-interop": "^0.1.22",
     "react-native-edge-to-edge": "^1.7.0",
+    "react-native-get-random-values": "^2.0.0",
     "react-native-gesture-handler": "^2.24.0",
     "react-native-maps": "^1.20.1",
     "react-native-reanimated": "~4.1.0",

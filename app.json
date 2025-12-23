@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "Flow Fam",
@@ -84,5 +83,6 @@
     "cli": {
       "appVersionSource": "local"
     }
-  }
+  },
+  "scheme": "Flow Fam"
 }
