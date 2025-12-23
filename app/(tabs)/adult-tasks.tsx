@@ -1243,7 +1243,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingHorizontal: 28,
+    paddingHorizontal: 32,
     maxHeight: '90%',
   },
   modalTitle: {
@@ -1269,12 +1269,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.darkBrown,
     fontFamily: 'Nunito_400Regular',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#E0E0E0',
+    outlineStyle: 'solid',
+    outlineWidth: 1.5,
     outlineColor: colors.beige,
   },
   inputError: {
     borderColor: colors.error,
+    outlineColor: colors.error,
   },
   errorText: {
     fontSize: 12,
@@ -1293,8 +1296,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     gap: 12,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#E0E0E0',
+    outlineStyle: 'solid',
+    outlineWidth: 1.5,
     outlineColor: colors.beige,
   },
   iconPickerButtonText: {
@@ -1315,7 +1320,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#E0E0E0',
   },
   iconOptionActive: {
@@ -1336,8 +1341,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#E0E0E0',
+    outlineStyle: 'solid',
+    outlineWidth: 1.5,
     outlineColor: colors.beige,
   },
   timeInputText: {
@@ -1356,7 +1363,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     gap: 12,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#E0E0E0',
   },
   adultOptionActive: {
@@ -1393,7 +1400,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.beige,
   },
   repeatOptionActive: {
@@ -1419,7 +1426,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.beige,
   },
   dayOptionActive: {
@@ -1448,7 +1455,7 @@ const styles = StyleSheet.create({
   },
   modalButtonCancel: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.beige,
   },
   modalButtonConfirm: {
