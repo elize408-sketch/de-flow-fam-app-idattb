@@ -386,11 +386,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   slideNumber: {
-    fontSize: 48,
+    fontSize: 40,
     fontWeight: "700",
     color: "#3A2F2A",
     fontFamily: "Poppins_700Bold",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   slideLabel: {
     fontSize: 16,
@@ -439,8 +439,8 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 20,
-    padding: 16,
-    minHeight: 140,
+    padding: 14,
+    minHeight: 130,
     justifyContent: "flex-start",
     borderWidth: 1,
     borderColor: "#E2D6CC",
@@ -460,7 +460,8 @@ const styles = StyleSheet.create({
     }),
   },
   cardIcon: {
-    marginBottom: 12,
+    marginTop: 0,
+    marginBottom: 10,
   },
   cardTitle: {
     fontSize: 16,
@@ -474,5 +475,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontFamily: "Nunito_400Regular",
     color: "#7A6F67",
+    marginBottom: 0,
   },
 });
