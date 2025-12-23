@@ -9,6 +9,7 @@ import {
   Text,
   Animated,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { HomeMenuItem } from "@/components/HomeMenuItem";
@@ -16,14 +17,14 @@ import { colors } from "@/styles/commonStyles";
 import { useFamily } from "@/contexts/FamilyContext";
 
 const DAILY_MESSAGES = [
-  "Vandaag hoeft niet perfect te zijn.",
-  "Kleine stappen maken ook vooruitgang.",
-  "Alles wat je vandaag doet, is genoeg.",
-  "Rust in je hoofd begint met overzicht.",
-  "Je doet het geweldig.",
   "Elke dag is een nieuwe kans.",
-  "Samen maken we het verschil.",
-  "Geniet van de kleine momenten.",
+  "Rust in je hoofd begint hier.",
+  "Je hoeft het niet perfect te doen.",
+  "Samen maken we het overzichtelijk.",
+  "Kleine stappen zijn ook vooruitgang.",
+  "Vandaag mag licht zijn.",
+  "Je doet het goed.",
+  "Alles op zijn tijd.",
 ];
 
 function getDailyMessage(): string {
@@ -43,9 +44,12 @@ function getGreeting(): string {
 
 function WavingHand() {
   const rotation = useRef(new Animated.Value(0)).current;
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
-    const animate = () => {
+    // Wave only once when component mounts
+    if (!hasAnimated.current) {
+      hasAnimated.current = true;
       Animated.sequence([
         Animated.timing(rotation, {
           toValue: 1,
@@ -67,12 +71,8 @@ function WavingHand() {
           duration: 150,
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        setTimeout(animate, 3000);
-      });
-    };
-
-    animate();
+      ]).start();
+    }
   }, [rotation]);
 
   const rotateInterpolate = rotation.interpolate({
@@ -150,60 +150,83 @@ export default function HomeScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.welcomeCard}>
-          <View style={styles.greetingRow}>
-            <Text style={styles.greetingText}>
-              {greeting}, {firstName}
-            </Text>
-            <WavingHand />
+    <View style={styles.wrapper}>
+      <LinearGradient
+        colors={["#f08a48", "#FFFFFF"]}
+        locations={[0, 0.3]}
+        style={styles.headerGradient}
+      />
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.welcomeCard}>
+            <View style={styles.orangeAccent} />
+            <View style={styles.welcomeContent}>
+              <View style={styles.greetingRow}>
+                <Text style={styles.greetingText}>
+                  {greeting},{" "}
+                  <Text style={styles.firstNameText}>{firstName}</Text>
+                </Text>
+                <WavingHand />
+              </View>
+              <Text style={styles.dailyMessage}>{dailyMessage}</Text>
+            </View>
           </View>
-          <Text style={styles.dailyMessage}>{dailyMessage}</Text>
-        </View>
 
-        <View style={styles.menuContainer}>
-          {menuItems.map((item, index) => (
-            <React.Fragment key={index}>
-              <HomeMenuItem
-                title={item.title}
-                icon={item.icon}
-                onPress={() => router.push(item.route as any)}
-                index={index}
-              />
-            </React.Fragment>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.menuContainer}>
+            {menuItems.map((item, index) => (
+              <React.Fragment key={index}>
+                <HomeMenuItem
+                  title={item.title}
+                  icon={item.icon}
+                  onPress={() => router.push(item.route as any)}
+                  index={index}
+                />
+              </React.Fragment>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  wrapper: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    opacity: 0.4,
+  },
+  safeArea: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
   },
   container: {
     flexGrow: 1,
-    backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
     paddingTop: Platform.OS === "android" ? 48 : 12,
     paddingBottom: 120,
     alignItems: "stretch",
   },
   welcomeCard: {
-    backgroundColor: "#f4eae1",
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 24,
+    marginTop: 8,
+    flexDirection: "row",
     ...Platform.select({
       ios: {
         shadowColor: colors.darkBrown,
@@ -211,16 +234,25 @@ const styles = StyleSheet.create({
           width: 0,
           height: 2,
         },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
       },
       android: {
         elevation: 2,
       },
       web: {
-        boxShadow: `0px 2px 12px rgba(76, 59, 52, 0.08)`,
+        boxShadow: `0px 2px 16px rgba(76, 59, 52, 0.06)`,
       },
     }),
+  },
+  orangeAccent: {
+    width: 4,
+    backgroundColor: "#f08a48",
+    borderRadius: 2,
+    marginRight: 16,
+  },
+  welcomeContent: {
+    flex: 1,
   },
   greetingRow: {
     flexDirection: "row",
@@ -233,6 +265,9 @@ const styles = StyleSheet.create({
     color: "#4c3b34",
     fontFamily: "Poppins_700Bold",
     marginRight: 8,
+  },
+  firstNameText: {
+    color: "#f08a48",
   },
   wavingHand: {
     fontSize: 24,
