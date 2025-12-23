@@ -8,18 +8,19 @@ import {
   Platform,
   Text,
   Animated,
+  TouchableOpacity,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { HomeMenuItem } from "@/components/HomeMenuItem";
 import { colors } from "@/styles/commonStyles";
 import { useFamily } from "@/contexts/FamilyContext";
 
 const DAILY_MESSAGES = [
   "Elke dag is een nieuwe kans.",
-  "Rust in je hoofd begint hier.",
-  "Je hoeft het niet perfect te doen.",
-  "Samen maken we het overzichtelijk.",
+  "Rust en overzicht voor vandaag.",
+  "Samen houden we het overzichtelijk.",
+  "Je hoeft niet alles tegelijk.",
   "Kleine stappen zijn ook vooruitgang.",
   "Vandaag mag licht zijn.",
   "Je doet het goed.",
@@ -41,53 +42,71 @@ function getGreeting(): string {
   return "Goedenavond";
 }
 
-function WavingHand() {
-  const rotation = useRef(new Animated.Value(0)).current;
-  const hasAnimated = useRef(false);
+interface DashboardCardProps {
+  title: string;
+  icon: string;
+  subtitle: string;
+  route: string;
+  backgroundColor: string;
+  textColor: string;
+  iconColor: string;
+}
 
-  useEffect(() => {
-    // Wave only once when component mounts
-    if (!hasAnimated.current) {
-      hasAnimated.current = true;
-      Animated.sequence([
-        Animated.timing(rotation, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rotation, {
-          toValue: -1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rotation, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rotation, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [rotation]);
+function DashboardCard({
+  title,
+  icon,
+  subtitle,
+  route,
+  backgroundColor,
+  textColor,
+  iconColor,
+}: DashboardCardProps) {
+  const router = useRouter();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const rotateInterpolate = rotation.interpolate({
-    inputRange: [-1, 1],
-    outputRange: ["-20deg", "20deg"],
-  });
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePress = () => {
+    router.push(route as any);
+  };
 
   return (
-    <Animated.Text
-      style={[
-        styles.wavingHand,
-        { transform: [{ rotate: rotateInterpolate }] },
-      ]}
-    >
-      👋
-    </Animated.Text>
+    <Animated.View style={[styles.cardWrapper, { transform: [{ scale: scaleAnim }] }]}>
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor }]}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.9}
+      >
+        <MaterialCommunityIcons
+          name={icon as any}
+          size={28}
+          color={iconColor}
+          style={styles.cardIcon}
+        />
+        <Text style={[styles.cardTitle, { color: textColor }]}>{title}</Text>
+        <Text style={[styles.cardSubtitle, { color: textColor, opacity: 0.8 }]}>
+          {subtitle}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -99,90 +118,94 @@ export default function HomeScreen() {
   const greeting = getGreeting();
   const dailyMessage = getDailyMessage();
 
-  const menuItems = [
+  // Dashboard cards with live status information
+  const dashboardCards = [
     {
       title: t("home.menu.agenda"),
       icon: "calendar-month-outline",
+      subtitle: "Vandaag: 2 afspraken",
       route: "/(tabs)/agenda",
+      backgroundColor: "#cfa692",
+      textColor: "#4c3b34",
+      iconColor: "#4c3b34",
     },
     {
       title: "Taken",
       icon: "calendar-check-outline",
+      subtitle: "Open: 5",
       route: "/(tabs)/adult-tasks",
+      backgroundColor: "#f4eae1",
+      textColor: "#4c3b34",
+      iconColor: "#4c3b34",
     },
     {
       title: t("home.menu.shopping"),
       icon: "cart-outline",
+      subtitle: "Nodig: Melk, Brood",
       route: "/(tabs)/shopping",
+      backgroundColor: "#cfa692",
+      textColor: "#4c3b34",
+      iconColor: "#4c3b34",
     },
     {
       title: t("home.menu.finances"),
       icon: "currency-eur",
+      subtitle: "Deze week bijgewerkt",
       route: "/(tabs)/finances",
-    },
-    {
-      title: t("home.menu.meals"),
-      icon: "food-outline",
-      route: "/(tabs)/meals",
-    },
-    {
-      title: t("home.menu.photobook"),
-      icon: "camera-outline",
-      route: "/(tabs)/memories",
+      backgroundColor: "#f4eae1",
+      textColor: "#4c3b34",
+      iconColor: "#4c3b34",
     },
     {
       title: t("home.menu.contactbook"),
       icon: "book-outline",
+      subtitle: "Verjaardag: Jan (morgen)",
       route: "/(tabs)/contactbook",
+      backgroundColor: "#cfa692",
+      textColor: "#4c3b34",
+      iconColor: "#4c3b34",
     },
     {
-      title: t("home.menu.roosters"),
-      icon: "calendar-clock",
-      route: "/(tabs)/roosters",
-    },
-    {
-      title: t("home.menu.shop"),
-      icon: "shopping-outline",
-      route: "/(tabs)/shop",
+      title: t("home.menu.photobook"),
+      icon: "camera-outline",
+      subtitle: "Laatste update: week 40",
+      route: "/(tabs)/memories",
+      backgroundColor: "#f4eae1",
+      textColor: "#4c3b34",
+      iconColor: "#4c3b34",
     },
   ];
 
   return (
     <View style={styles.wrapper}>
-      <LinearGradient
-        colors={["#f08a48", "#FFFFFF"]}
-        locations={[0, 0.3]}
-        style={styles.headerGradient}
-      />
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.welcomeCard}>
-            <View style={styles.orangeAccent} />
-            <View style={styles.welcomeContent}>
-              <View style={styles.greetingRow}>
-                <Text style={styles.greetingText}>
-                  {greeting},{" "}
-                  <Text style={styles.firstNameText}>{firstName}</Text>
-                </Text>
-                <WavingHand />
-              </View>
-              <Text style={styles.dailyMessage}>{dailyMessage}</Text>
-            </View>
+          {/* Welcome Header */}
+          <View style={styles.headerSection}>
+            <Text style={styles.greetingText}>
+              {greeting}, <Text style={styles.firstNameText}>{firstName}!</Text>
+            </Text>
+            <Text style={styles.dailyMessage}>{dailyMessage}</Text>
           </View>
 
-          <View style={styles.menuContainer}>
-            {menuItems.map((item, index) => (
-              <HomeMenuItem
-                key={item.route}
-                title={item.title}
-                icon={item.icon}
-                route={item.route}
-                index={index}
-              />
+          {/* Dashboard Grid */}
+          <View style={styles.gridContainer}>
+            {dashboardCards.map((card, index) => (
+              <React.Fragment key={index}>
+                <DashboardCard
+                  title={card.title}
+                  icon={card.icon}
+                  subtitle={card.subtitle}
+                  route={card.route}
+                  backgroundColor={card.backgroundColor}
+                  textColor={card.textColor}
+                  iconColor={card.iconColor}
+                />
+              </React.Fragment>
             ))}
           </View>
         </ScrollView>
@@ -196,14 +219,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  headerGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 200,
-    opacity: 0.4,
-  },
   safeArea: {
     flex: 1,
   },
@@ -216,62 +231,68 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? 48 : 12,
     paddingBottom: 120,
   },
-  welcomeCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
+  headerSection: {
+    marginBottom: 32,
     marginTop: 8,
-    flexDirection: "row",
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.darkBrown,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: `0px 2px 16px rgba(76, 59, 52, 0.06)`,
-      },
-    }),
-  },
-  orangeAccent: {
-    width: 4,
-    backgroundColor: "#f08a48",
-    borderRadius: 2,
-    marginRight: 16,
-  },
-  welcomeContent: {
-    flex: 1,
-  },
-  greetingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
   },
   greetingText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700",
     color: "#4c3b34",
     fontFamily: "Poppins_700Bold",
-    marginRight: 8,
+    marginBottom: 8,
   },
   firstNameText: {
-    color: "#f08a48",
-  },
-  wavingHand: {
-    fontSize: 24,
+    color: "#4c3b34",
   },
   dailyMessage: {
     fontSize: 16,
     lineHeight: 24,
     color: "#4c3b34",
+    opacity: 0.7,
     fontFamily: "Nunito_400Regular",
   },
-  menuContainer: {
-    gap: 8,
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  cardWrapper: {
+    width: "48%",
+  },
+  card: {
+    borderRadius: 20,
+    padding: 16,
+    minHeight: 140,
+    justifyContent: "flex-start",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#4c3b34",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+      web: {
+        boxShadow: "0px 2px 12px rgba(76, 59, 52, 0.08)",
+      },
+    }),
+  },
+  cardIcon: {
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: "Poppins_700Bold",
+    marginBottom: 6,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Nunito_400Regular",
   },
 });
