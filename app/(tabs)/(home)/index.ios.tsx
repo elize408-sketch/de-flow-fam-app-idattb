@@ -119,59 +119,68 @@ export default function HomeScreen() {
   const greeting = getGreeting();
   const dailyMessage = getDailyMessage();
 
-  // Dashboard cards with live status information
+  // Dashboard cards with specific color scheme
+  // Row 1: Agenda (ORANGE), Taken (BEIGE)
+  // Row 2: Boodschappen (BEIGE), Financiën (ORANGE)
+  // Row 3: Contactboek (ORANGE), Fotoboek (BEIGE)
   const dashboardCards = [
+    // Row 1 - Left: Agenda (ORANGE)
     {
       title: t("home.menu.agenda"),
       icon: "calendar-month-outline",
       subtitle: "Vandaag: 2 afspraken",
       route: "/agenda",
-      backgroundColor: "#cfa692",
-      textColor: "#4c3b34",
-      iconColor: "#4c3b34",
+      backgroundColor: "#f08a48", // Flow Fam oranje
+      textColor: "#FFFFFF",
+      iconColor: "#FFFFFF",
     },
+    // Row 1 - Right: Taken (BEIGE)
     {
       title: "Taken",
       icon: "calendar-check-outline",
       subtitle: "Open: 5",
       route: "/adult-tasks",
-      backgroundColor: "#f4eae1",
+      backgroundColor: "#f4eae1", // Flow Fam beige
       textColor: "#4c3b34",
       iconColor: "#4c3b34",
     },
+    // Row 2 - Left: Boodschappen (BEIGE)
     {
       title: t("home.menu.shopping"),
       icon: "cart-outline",
       subtitle: "Nodig: Melk, Brood",
       route: "/shopping",
-      backgroundColor: "#cfa692",
+      backgroundColor: "#f4eae1", // Flow Fam beige
       textColor: "#4c3b34",
       iconColor: "#4c3b34",
     },
+    // Row 2 - Right: Financiën (ORANGE)
     {
       title: t("home.menu.finances"),
       icon: "currency-eur",
       subtitle: "Deze week bijgewerkt",
       route: "/finances",
-      backgroundColor: "#f4eae1",
-      textColor: "#4c3b34",
-      iconColor: "#4c3b34",
+      backgroundColor: "#f08a48", // Flow Fam oranje
+      textColor: "#FFFFFF",
+      iconColor: "#FFFFFF",
     },
+    // Row 3 - Left: Contactboek (ORANGE)
     {
       title: t("home.menu.contactbook"),
       icon: "book-outline",
       subtitle: "Verjaardag: Jan (morgen)",
       route: "/contactbook",
-      backgroundColor: "#cfa692",
-      textColor: "#4c3b34",
-      iconColor: "#4c3b34",
+      backgroundColor: "#f08a48", // Flow Fam oranje
+      textColor: "#FFFFFF",
+      iconColor: "#FFFFFF",
     },
+    // Row 3 - Right: Fotoboek (BEIGE)
     {
       title: t("home.menu.photobook"),
       icon: "camera-outline",
       subtitle: "Laatste update: week 40",
       route: "/memories",
-      backgroundColor: "#f4eae1",
+      backgroundColor: "#f4eae1", // Flow Fam beige
       textColor: "#4c3b34",
       iconColor: "#4c3b34",
     },
