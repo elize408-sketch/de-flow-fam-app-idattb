@@ -300,7 +300,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: "#F9F6F1", // App achtergrond
+    backgroundColor: "#FFFFFF", // White background
   },
   safeArea: {
     flex: 1,
