@@ -49,8 +49,6 @@ interface DashboardCardProps {
   subtitle: string;
   route: string;
   backgroundColor: string;
-  textColor: string;
-  iconColor: string;
 }
 
 function DashboardCard({
@@ -59,8 +57,6 @@ function DashboardCard({
   subtitle,
   route,
   backgroundColor,
-  textColor,
-  iconColor,
 }: DashboardCardProps) {
   const router = useRouter();
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -84,26 +80,37 @@ function DashboardCard({
   };
 
   const handlePress = () => {
-    router.push(route as any);
+    console.log("Card pressed, navigating to:", route);
+    try {
+      router.push(route as any);
+    } catch (error) {
+      console.error("Navigation error:", error);
+    }
   };
 
   return (
-    <Animated.View style={[styles.cardWrapper, { transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View 
+      style={[styles.cardWrapper, { transform: [{ scale: scaleAnim }] }]}
+      pointerEvents="box-none"
+    >
       <TouchableOpacity
         style={[styles.card, { backgroundColor }]}
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={0.9}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={`${title} - ${subtitle}`}
       >
         <MaterialCommunityIcons
           name={icon as any}
           size={28}
-          color={iconColor}
+          color="#3A2F2A"
           style={styles.cardIcon}
         />
-        <Text style={[styles.cardTitle, { color: textColor }]}>{title}</Text>
-        <Text style={[styles.cardSubtitle, { color: textColor, opacity: 0.8 }]}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardSubtitle}>
           {subtitle}
         </Text>
       </TouchableOpacity>
@@ -198,7 +205,7 @@ export default function HomeScreen() {
     }
     
     if (parts.length === 0) {
-      return null; // Don't show anything if there are no appointments or tasks
+      return null;
     }
     
     return `Vandaag: ${parts.join(' • ')}`;
@@ -208,75 +215,54 @@ export default function HomeScreen() {
 
   console.log("Daily overview:", dailyOverview);
 
-  // Dashboard cards with specific color scheme
-  // Row 1: Agenda (ORANGE), Taken (BEIGE)
-  // Row 2: Boodschappen (BEIGE), Financiën (RED)
-  // Row 3: Contactboek (ORANGE), Fotoboek (BEIGE)
+  // Dashboard cards with subtle beige tones
   const dashboardCards = [
-    // Row 1 - Left: Agenda (ORANGE)
     {
       title: t("home.menu.agenda"),
       icon: "calendar-month-outline",
-      subtitle: "Vandaag: 2 afspraken",
+      subtitle: `${todayAppointments} ${todayAppointments === 1 ? 'afspraak' : 'afspraken'}`,
       route: "/agenda",
-      backgroundColor: "#f08a48", // Flow Fam oranje
-      textColor: "#FFFFFF",
-      iconColor: "#FFFFFF",
+      backgroundColor: "#EFE5DC", // Agenda beige
     },
-    // Row 1 - Right: Taken (BEIGE)
     {
       title: "Taken",
       icon: "calendar-check-outline",
-      subtitle: "Open: 5",
+      subtitle: `${todayTasks} ${todayTasks === 1 ? 'taak' : 'taken'}`,
       route: "/adult-tasks",
-      backgroundColor: "#f4eae1", // Flow Fam beige
-      textColor: "#4c3b34",
-      iconColor: "#4c3b34",
+      backgroundColor: "#EEE9E2", // Taken beige
     },
-    // Row 2 - Left: Boodschappen (BEIGE)
     {
       title: t("home.menu.shopping"),
       icon: "cart-outline",
-      subtitle: "Nodig: Melk, Brood",
+      subtitle: "Boodschappenlijst",
       route: "/shopping",
-      backgroundColor: "#f4eae1", // Flow Fam beige
-      textColor: "#4c3b34",
-      iconColor: "#4c3b34",
+      backgroundColor: "#F1E7DA", // Boodschappen beige
     },
-    // Row 2 - Right: Financiën (WARM RED)
     {
       title: t("home.menu.finances"),
       icon: "currency-eur",
-      subtitle: "Deze week bijgewerkt",
+      subtitle: "Financieel overzicht",
       route: "/finances",
-      backgroundColor: "#D5534F", // Warm red matching Flow Fam style
-      textColor: "#FFFFFF",
-      iconColor: "#FFFFFF",
+      backgroundColor: "#D8C8BC", // Financiën beige (geen rood)
     },
-    // Row 3 - Left: Contactboek (ORANGE)
     {
       title: t("home.menu.contactbook"),
       icon: "book-outline",
-      subtitle: "Verjaardag: Jan (morgen)",
+      subtitle: "Contacten & verjaardagen",
       route: "/contactbook",
-      backgroundColor: "#f08a48", // Flow Fam oranje
-      textColor: "#FFFFFF",
-      iconColor: "#FFFFFF",
+      backgroundColor: "#E9D3C6", // Contactboek beige
     },
-    // Row 3 - Right: Fotoboek (BEIGE)
     {
       title: t("home.menu.photobook"),
       icon: "camera-outline",
-      subtitle: "Laatste update: week 40",
+      subtitle: "Foto's & herinneringen",
       route: "/memories",
-      backgroundColor: "#f4eae1", // Flow Fam beige
-      textColor: "#4c3b34",
-      iconColor: "#4c3b34",
+      backgroundColor: "#E6DDD4", // Fotoboek beige
     },
   ];
 
   return (
-    <View style={styles.wrapper}>
+    <View style={styles.wrapper} pointerEvents="box-none">
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           style={styles.scrollView}
@@ -293,7 +279,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Dashboard Grid */}
-          <View style={styles.gridContainer}>
+          <View style={styles.gridContainer} pointerEvents="box-none">
             {dashboardCards.map((card, index) => (
               <React.Fragment key={index}>
                 <DashboardCard
@@ -302,8 +288,6 @@ export default function HomeScreen() {
                   subtitle={card.subtitle}
                   route={card.route}
                   backgroundColor={card.backgroundColor}
-                  textColor={card.textColor}
-                  iconColor={card.iconColor}
                 />
               </React.Fragment>
             ))}
@@ -317,7 +301,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F9F6F1", // App achtergrond
   },
   safeArea: {
     flex: 1,
@@ -338,23 +322,21 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#4c3b34",
+    color: "#3A2F2A", // Titel/icoon kleur
     fontFamily: "Poppins_700Bold",
     marginBottom: 8,
   },
   dailyOverview: {
     fontSize: 16,
     lineHeight: 24,
-    color: "#4c3b34",
-    opacity: 0.7,
+    color: "#7A6F67", // Subtekst kleur
     fontFamily: "Nunito_400Regular",
     marginBottom: 4,
   },
   dailyMessage: {
     fontSize: 16,
     lineHeight: 24,
-    color: "#4c3b34",
-    opacity: 0.7,
+    color: "#7A6F67", // Subtekst kleur
     fontFamily: "Nunito_400Regular",
   },
   gridContainer: {
@@ -371,9 +353,11 @@ const styles = StyleSheet.create({
     padding: 16,
     minHeight: 140,
     justifyContent: "flex-start",
+    borderWidth: 1,
+    borderColor: "#E2D6CC", // Subtiele border voor luxe look
     ...Platform.select({
       ios: {
-        shadowColor: "#4c3b34",
+        shadowColor: "#3A2F2A",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
@@ -382,7 +366,7 @@ const styles = StyleSheet.create({
         elevation: 3,
       },
       web: {
-        boxShadow: "0px 2px 12px rgba(76, 59, 52, 0.08)",
+        boxShadow: "0px 2px 12px rgba(58, 47, 42, 0.08)",
       },
     }),
   },
@@ -394,10 +378,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "Poppins_700Bold",
     marginBottom: 6,
+    color: "#3A2F2A", // Titel kleur
   },
   cardSubtitle: {
     fontSize: 13,
     lineHeight: 18,
     fontFamily: "Nunito_400Regular",
+    color: "#7A6F67", // Subtekst kleur
   },
 });

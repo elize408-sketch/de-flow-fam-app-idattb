@@ -112,7 +112,12 @@ export default function FloatingTabBar({
   }, [activeTabIndex, animatedValue]);
 
   const handleTabPress = (route: Href) => {
-    router.push(route);
+    console.log("Tab pressed, navigating to:", route);
+    try {
+      router.push(route);
+    } catch (error) {
+      console.error("Tab navigation error:", error);
+    }
   };
 
   const tabWidth = (containerWidth - 8) / tabs.length;
@@ -131,20 +136,14 @@ export default function FloatingTabBar({
     };
   });
 
+  // Consistent styling for both debug and release builds
   const dynamicStyles = {
     blurContainer: {
       ...styles.blurContainer,
-      ...Platform.select({
-        ios: {
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        },
-        android: {
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        },
-        web: {
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(10px)',
-        },
+      backgroundColor: Platform.select({
+        ios: 'rgba(255, 255, 255, 0.9)',
+        android: 'rgba(255, 255, 255, 0.95)',
+        web: 'rgba(255, 255, 255, 0.95)',
       }),
     },
     indicator: {
@@ -176,8 +175,9 @@ export default function FloatingTabBar({
           <View style={styles.tabsContainer}>
             {tabs.map((tab, index) => {
               const isActive = activeTabIndex === index;
-              const iconColor = isActive ? '#FFFFFF' : colors.darkBrown;
-              const labelColor = isActive ? '#FFFFFF' : colors.darkBrown;
+              // Consistent colors for both active and inactive states
+              const iconColor = isActive ? '#FFFFFF' : '#3A2F2A';
+              const labelColor = isActive ? '#FFFFFF' : '#3A2F2A';
 
               return (
                 <React.Fragment key={index}>
@@ -185,6 +185,10 @@ export default function FloatingTabBar({
                     style={styles.tab}
                     onPress={() => handleTabPress(tab.route)}
                     activeOpacity={0.7}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel={tab.label}
+                    accessibilityState={{ selected: isActive }}
                   >
                     <View style={styles.tabContent}>
                       <IconSymbol
@@ -224,6 +228,7 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 1000,
     alignItems: 'center',
+    pointerEvents: 'box-none',
   },
   container: {
     marginHorizontal: 10,
@@ -231,6 +236,11 @@ const styles = StyleSheet.create({
   },
   blurContainer: {
     overflow: 'hidden',
+    ...Platform.select({
+      web: {
+        backdropFilter: 'blur(10px)',
+      },
+    }),
   },
   background: {
     ...StyleSheet.absoluteFillObject,
