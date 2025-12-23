@@ -1,4 +1,5 @@
-const tintColorLight = "#0a7ea4";
+
+const tintColorLight = "#f08a48"; // Flow Fam warm orange
 const tintColorDark = "#fff";
 
 export const zincColors = {
@@ -20,14 +21,16 @@ export const appleRed = "#FF3B30";
 
 export const borderColor = "#A1A1AA80";
 export const appleGreen = "#34C759";
+
+// Flow Fam Core Colors
 export const Colors = {
   light: {
-    text: "#11181C",
-    background: "#fff",
-    tint: tintColorLight,
-    icon: "#687076",
-    tabIconDefault: "#687076",
-    tabIconSelected: tintColorLight,
+    text: "#4c3b34",           // warm dark brown
+    background: "#FFFFFF",      // white background
+    tint: tintColorLight,       // warm orange
+    icon: "#4c3b34",           // warm dark brown
+    tabIconDefault: "#4c3b34",  // warm dark brown
+    tabIconSelected: tintColorLight, // warm orange
   },
   dark: {
     text: "#ECEDEE",

@@ -1,35 +1,51 @@
 
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
-// Official Flow Fam Color Palette
+// Official Flow Fam Color Palette - Standardized
 export const colors = {
   // Primary Flow Fam Colors
-  redPink: '#e53f59',           // red/pink - primary accent
-  beige: '#cfa692',             // soft beige-rose - secondary accent
-  warmOrange: '#f08a48',        // warm orange - primary buttons
-  softCream: '#f4eae1',         // soft cream - for cards/accents only
-  darkBrown: '#4c3b34',         // dark brown - text
-  lightGrey: '#f5f5f5',         // light grey - cards/surfaces
+  warmOrange: '#f08a48',        // Primary brand color (CTA / focus)
+  beige: '#cfa692',             // Secondary neutral (warm beige / sand)
+  softCream: '#f4eae1',         // Background light (soft cream)
+  darkBrown: '#4c3b34',         // Text dark (warm dark brown, not black)
+  lightGrey: '#f5f5f5',         // Background white
   
-  // Semantic mappings - REVERTED TO NEUTRAL BACKGROUNDS
-  background: '#FFFFFF',        // white background (original neutral)
-  text: '#4c3b34',              // dark brown
-  textSecondary: '#8a7a72',     // lighter brown for secondary text
-  primary: '#e53f59',           // red/pink - for buttons
-  secondary: '#cfa692',         // soft beige-rose - for buttons
-  accent: '#f08a48',            // warm orange - for buttons
-  card: '#f5f5f5',              // light grey - for cards
-  highlight: '#e53f59',         // red/pink for highlights
-  shadow: 'rgba(76, 59, 52, 0.12)',  // dark brown with transparency
+  // Semantic mappings
+  background: '#FFFFFF',        // Main background (white)
+  backgroundAlt: '#f4eae1',     // Alternative background (soft cream)
+  text: '#4c3b34',              // Primary text (dark brown)
+  textSecondary: '#8a7a72',     // Secondary text (lighter brown)
+  primary: '#f08a48',           // Primary buttons (warm orange)
+  secondary: '#cfa692',         // Secondary buttons (beige)
+  accent: '#f08a48',            // Accent color (warm orange)
+  card: '#f5f5f5',              // Card background (light grey)
+  cardAlt: '#FFFFFF',           // Alternative card (white)
+  highlight: '#f08a48',         // Highlights (warm orange)
+  shadow: 'rgba(76, 59, 52, 0.12)',  // Shadows (dark brown with transparency)
+  border: 'rgba(76, 59, 52, 0.15)',  // Borders (dark brown with transparency)
   
-  // Additional UI colors derived from palette
-  vibrantPink: '#e53f59',       // red/pink
-  vibrantBlue: '#4A90E2',       // Keep for specific modules
-  vibrantGreen: '#7ED321',      // Keep for specific modules
-  vibrantOrange: '#f08a48',     // warm orange
-  vibrantPurple: '#9013FE',     // Keep for specific modules
-  vibrantTeal: '#50E3C2',       // Keep for specific modules
-  vibrantRed: '#e53f59',        // red/pink
+  // Function colors (subtle accents only - not dominant)
+  accentBlue: '#4A90E2',        // Agenda accent
+  accentGreen: '#7ED321',       // Tasks accent
+  accentOrange: '#f08a48',      // Boodschappen accent
+  accentGreenAlt: '#34C759',    // Financiën accent
+  accentRed: '#e53f59',         // Fotoboek accent
+  accentPurple: '#9013FE',      // Contactboek accent
+  
+  // Legacy support (for gradual migration)
+  vibrantPink: '#e53f59',
+  vibrantBlue: '#4A90E2',
+  vibrantGreen: '#7ED321',
+  vibrantOrange: '#f08a48',
+  vibrantPurple: '#9013FE',
+  vibrantTeal: '#50E3C2',
+  vibrantRed: '#e53f59',
+  
+  // Status colors (muted)
+  success: '#7ED321',
+  error: '#e53f59',
+  warning: '#f08a48',
+  info: '#4A90E2',
 };
 
 export const buttonStyles = StyleSheet.create({
@@ -94,7 +110,7 @@ export const commonStyles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.cardAlt,
     borderRadius: 20,
     padding: 16,
     marginVertical: 8,

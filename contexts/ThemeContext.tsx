@@ -3,18 +3,20 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { colors } from '@/styles/commonStyles';
 
 // Module color mapping using Flow Fam palette
+// Function colors are subtle accents, not dominant
 export const MODULE_COLORS = {
-  agenda: '#4A90E2',           // Blue (keep for calendar)
-  tasks: '#7ED321',            // Green (keep for tasks)
-  shopping: '#f08a48',         // warm orange
-  finances: '#34C759',         // Green (keep for money)
-  memories: '#e53f59',         // red/pink
-  meals: '#f08a48',            // warm orange
-  notes: '#cfa692',            // soft beige-rose
-  documents: '#50E3C2',        // Turquoise (keep for docs)
-  shop: '#e53f59',             // red/pink
-  profile: '#cfa692',          // soft beige-rose
-  home: colors.warmOrange,     // warm orange
+  agenda: '#4A90E2',           // Blue accent (small icons, status)
+  tasks: '#7ED321',            // Green accent (checkbox, progress)
+  shopping: '#f08a48',         // Orange accent (primary)
+  finances: '#34C759',         // Green accent (money)
+  memories: '#e53f59',         // Red accent (photos)
+  meals: '#f08a48',            // Orange accent (food)
+  notes: '#cfa692',            // Beige accent (notes)
+  documents: '#50E3C2',        // Teal accent (docs)
+  shop: '#e53f59',             // Red accent (rewards)
+  profile: '#cfa692',          // Beige accent (profile)
+  home: colors.warmOrange,     // Primary orange
+  contactbook: '#9013FE',      // Purple accent (contacts)
 } as const;
 
 export type ModuleName = keyof typeof MODULE_COLORS;

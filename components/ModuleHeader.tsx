@@ -1,99 +1,109 @@
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { IconSymbol } from './IconSymbol';
+import { useRouter } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
-import { useModuleTheme } from '@/contexts/ThemeContext';
-import { useFamily } from '@/contexts/FamilyContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconSymbol } from '@/components/IconSymbol';
 
 interface ModuleHeaderProps {
   title: string;
   subtitle?: string;
-  onAddPress?: () => void;
-  showAddButton?: boolean;
-  addButtonIcon?: { ios: string; android: string };
   backgroundColor?: string;
+  showBackButton?: boolean;
+  rightButton?: React.ReactNode;
 }
 
 export default function ModuleHeader({
   title,
   subtitle,
-  onAddPress,
-  showAddButton = false,
-  addButtonIcon = { ios: 'plus', android: 'add' },
-  backgroundColor,
+  backgroundColor = colors.background,
+  showBackButton = false,
+  rightButton,
 }: ModuleHeaderProps) {
-  const { accentColor } = useModuleTheme();
-  const { currentUser } = useFamily();
-  const insets = useSafeAreaInsets();
-
-  // Only show add button if user is a parent and showAddButton is true
-  const shouldShowAddButton = showAddButton && currentUser?.role === 'parent' && onAddPress;
+  const router = useRouter();
 
   return (
-    <View
-      style={[
-        styles.container,
-        backgroundColor ? { backgroundColor } : null,
-        { paddingTop: insets.top + 12 }, // ✅ fix voor notch/Dynamic Island
-      ]}
-    >
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-      </View>
+    <View style={[styles.header, { backgroundColor }]}>
+      <View style={styles.headerContent}>
+        {showBackButton ? (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            hitSlop={12}
+          >
+            <IconSymbol
+              ios_icon_name="chevron.left"
+              android_material_icon_name="arrow-back"
+              size={24}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.placeholder} />
+        )}
 
-      {shouldShowAddButton && (
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: accentColor }]}
-          onPress={onAddPress}
-          activeOpacity={0.7}
-        >
-          <IconSymbol
-            ios_icon_name={addButtonIcon.ios}
-            android_material_icon_name={addButtonIcon.android}
-            size={24}
-            color="#FFFFFF"
-          />
-        </TouchableOpacity>
-      )}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{title}</Text>
+          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        </View>
+
+        {rightButton ? (
+          <View style={styles.rightButton}>{rightButton}</View>
+        ) : (
+          <View style={styles.placeholder} />
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  header: {
+    paddingTop: 60,
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
-  textContainer: {
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleContainer: {
     flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 10,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    color: colors.darkBrown,
+    color: colors.text,
     fontFamily: 'Poppins_700Bold',
-    marginBottom: 4,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
     color: colors.textSecondary,
     fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
+    marginTop: 4,
   },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  rightButton: {
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
-    // let op: boxShadow werkt niet op native, maar laten we ‘m staan als jullie web ook doen
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
+  },
+  placeholder: {
+    width: 40,
   },
 });

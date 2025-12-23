@@ -10,7 +10,7 @@ interface ThemedButtonProps {
   onPress: () => void;
   icon?: string;
   androidIcon?: string;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'outline' | 'destructive';
   style?: ViewStyle;
   textStyle?: TextStyle;
   disabled?: boolean;
@@ -31,30 +31,36 @@ export default function ThemedButton({
   const getButtonStyle = () => {
     switch (variant) {
       case 'primary':
-        return { backgroundColor: accentColor };
+        return { backgroundColor: colors.warmOrange };
       case 'secondary':
-        return { backgroundColor: colors.background };
+        return { 
+          backgroundColor: colors.beige,
+        };
       case 'outline':
         return { 
           backgroundColor: 'transparent', 
           borderWidth: 2, 
-          borderColor: accentColor 
+          borderColor: colors.warmOrange,
         };
+      case 'destructive':
+        return { backgroundColor: colors.error };
       default:
-        return { backgroundColor: accentColor };
+        return { backgroundColor: colors.warmOrange };
     }
   };
 
   const getTextColor = () => {
     switch (variant) {
       case 'primary':
-        return colors.card;
+        return '#FFFFFF';
       case 'secondary':
         return colors.text;
       case 'outline':
-        return accentColor;
+        return colors.warmOrange;
+      case 'destructive':
+        return '#FFFFFF';
       default:
-        return colors.card;
+        return '#FFFFFF';
     }
   };
 
