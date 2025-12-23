@@ -141,18 +141,20 @@ export default function ShoppingScreen() {
 
         {activeTab === 'shopping' && (
           <>
-            {/* Export/Share Buttons */}
+            {/* Export/Share Buttons - Flow Fam Beige Style */}
             <View style={styles.actionButtons}>
               <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: colors.vibrantPurple }]}
+                style={styles.actionButton}
                 onPress={handleExportPDF}
+                activeOpacity={0.7}
               >
                 <Text style={styles.actionButtonText}>Exporteer als PDF</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: colors.vibrantBlue }]}
+                style={styles.actionButton}
                 onPress={handleShareText}
+                activeOpacity={0.7}
               >
                 <Text style={styles.actionButtonText}>Deel lijst</Text>
               </TouchableOpacity>
@@ -396,13 +398,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 15,
     padding: 12,
-    boxShadow: `0px 4px 12px ${colors.shadow}`,
-    elevation: 3,
+    backgroundColor: '#f4eae1',
+    boxShadow: '0px 2px 8px rgba(76, 59, 52, 0.08)',
+    elevation: 2,
   },
   actionButtonText: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.card,
+    color: '#4c3b34',
     fontFamily: 'Poppins_600SemiBold',
     textAlign: 'center',
   },
