@@ -76,7 +76,6 @@ function DashboardCard({
   return (
     <Animated.View 
       style={[styles.cardWrapper, { transform: [{ scale: scaleAnim }] }]}
-      pointerEvents="box-none"
     >
       <TouchableOpacity
         style={[styles.card, { backgroundColor }]}
@@ -253,7 +252,7 @@ export default function HomeScreen() {
   ];
 
   return (
-    <View style={styles.wrapper} pointerEvents="box-none">
+    <View style={styles.wrapper}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           style={styles.scrollView}
@@ -319,7 +318,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Dashboard Grid */}
-          <View style={styles.gridContainer} pointerEvents="box-none">
+          <View style={styles.gridContainer}>
             {dashboardCards.map((card, index) => (
               <React.Fragment key={index}>
                 <DashboardCard
